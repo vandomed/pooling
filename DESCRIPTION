@@ -1,0 +1,12 @@
+Package: pooling
+Type: Package
+Title: Pooling in Epidemiological Studies
+Version: 0.1.0
+Author: Dane R. Van Domelen
+Maintainer: Dane R. Van Domelen <vandomed@gmail.com>
+Description: Functions for calculating power and fitting regression models in studies where a biomarker is measured in "pooled" samples rather than for each individual.
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
+Imports: cubature, dvmisc, mvtnorm, pracma, stats

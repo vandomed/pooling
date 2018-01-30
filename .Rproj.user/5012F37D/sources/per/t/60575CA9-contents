@@ -1,0 +1,953 @@
+#' Poolwise Logistic Regression with Errors in Continuous Exposure Variable
+#'
+#' Implements a poolwise logistic regression method using similar ideas as in
+#' [1-3]. Manuscript fully describing the approach is currently under review.
+#'
+#'
+#' @param g Numeric vector of pool sizes (number of individuals in each pool).
+#'
+#' @param y Numeric vector with poolwise \code{Y} values, coded 0 if all members
+#' are controls and 1 if all members are cases.
+#'
+#' @param xtilde Numeric vector (or list of numeric vectors, if some pools have
+#' replicates) with \code{Xtilde} values.
+#'
+#' @param c Numeric matrix with poolwise \strong{\code{C}} values, if any.
+#'
+#' @param error.type Character string specifying the errors that \code{X} is
+#' subject to.  Possible values are \code{"neither"} for neither processing
+#' error nor measurement error, \code{"processing"} for processing error only,
+#' \code{"measurement"} for measurement error only, and \code{"both"} for both.
+#'
+#' @param diff.pe,diff.me If \code{TRUE}, the processing (measurement) error
+#' variance is allowed to be different for case pools vs. control pools.
+#'
+#' @param constant.pe If \code{TRUE}, the processing error variance is assumed
+#' to be constant with pool size; if \code{FALSE}, it is assumed to increase
+#' with pool size such that, for example, the processing error affecting a pool
+#' twice as large as another will have twice the variance.
+#'
+#' @param p_y1 Optional numeric value specifying disease prevalence, allowing
+#' for valid estimation of the intercept with case-control sampling.  If it's
+#' easier, you can specify \code{p_sample_y1y0} instead.  Only used if
+#' \code{offset.formula = 1}.
+#'
+#' @param p_sample.y1y0 Optional numeric vector if length 2 specifying sampling
+#' probabilities for cases and controls, allowing for valid estimation of the
+#' intercept with case-control sampling.  If it's easier, you can specify
+#' \code{p_y1} instead.
+#'
+#' @param approx.integral If \code{TRUE}, probit approximation for the
+#' logistic-normal integral is used to avoid numerically integrating \code{X}'s
+#' out of the likelihood function.
+#'
+#' @param integrate.tol Numeric value specifying the \code{tol} input to
+#' \code{\link{adaptIntegrate}}.  Only used if \code{approx.integral = FALSE}.
+#'
+#' @param integrate.tol.start Same as \code{integrate.tol}, but applies only to
+#' the very first iteration of ML maximization.  The first iteration tends to
+#' take much longer than subsequent ones, so less precise integration at the
+#' start can speed things up.
+#'
+#' @param integrate.tol.hessian Same as \code{integrate.tol}, but for use when
+#' estimating the Hessian matrix only.  Sometimes more precise integration
+#' (i.e. smaller tolerance) than used for maximizing the likelihood helps
+#' prevent cases where the inverse Hessian is not positive definite.
+#'
+#' @param estimate.var If \code{TRUE}, function returns variance-covariance
+#' matrix for parameter estimates, calculated as the inverse of the estimated
+#' Hessian matrix at the MLE's.
+#'
+#' @param ... Additional arguments to pass to \code{\link{nlminb}} function for
+#' maximizing the log-likelihood function.
+#'
+#'
+#' @return A list containing the following:
+#' \enumerate{
+#'   \item Numeric vector of parameter estimates.
+#'   \item Variance-covariance matrix (if \code{estimate.var = TRUE}).
+#'   \item The returned \code{\link[stats]{nlminb}} object from maximizing the
+#' log-likelihood function.
+#'   \item Akaike information criterion (AIC).
+#' }
+#'
+#'
+#' @references 1. Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J.
+#' (2010) "Hybrid Pooled-Unpooled Design for Cost-Efficient Measurement of
+#' Biomarkers." \emph{Stat. Med.} \strong{29}(5): 597--613.
+#' @references 2. Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and
+#' Schisterman, E.F. (2015) "A Discriminant Function Approach to Adjust for
+#' Processing and Measurement Error When a Biomarker is Assayed in Pooled
+#' Samples."
+#' \emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
+#' @references 3. Weinberg, C.R. and Umbach, D.M. (1999) "Using Pooled Exposure
+#' Assessment to Improve Efficiency in Case-Control Studies."
+#' \emph{Biometrics} \strong{55}: 718--726.
+#' @references Acknowledgment: This material is based upon work supported by the
+#' National Science Foundation Graduate Research Fellowship under Grant No.
+#' DGE-0940903.
+#'
+#'
+#' @export
+p.logreg.xerrors <- function(g, y, xtilde, c = NULL,
+                             error.type = "both",
+                             diff.pe = FALSE, diff.me = FALSE,
+                             constant.pe = TRUE,
+                             p_y1 = NULL, p_sample.y1y0 = NULL,
+                             approx.integral = TRUE,
+                             integrate.tol = 1e-8,
+                             integrate.tol.start = integrate.tol,
+                             integrate.tol.hessian = integrate.tol,
+                             estimate.var = FALSE,
+                             ...) {
+
+  # Check that inputs are valid
+  if (! error.type %in% c("neither", "processing", "measurement", "both")) {
+    stop("The input 'error.type' should be set to 'neither', 'processing',
+         'measurement', or 'both'.")
+  }
+  if (! is.logical(diff.pe)) {
+    stop("The input 'diff.pe' should be TRUE for differential processing error or FALSE for non-differential processing error.")
+  }
+  if (! is.logical(diff.me)) {
+    stop("The input 'diff.me' should be TRUE for differential measurement error or FALSE for non-differential measurement error.")
+  }
+  if (! is.logical(constant.pe)) {
+    stop("The input 'constant.pe' sholud be TRUE or FALSE.")
+  }
+  if (! is.null(p_y1)) {
+    if (p_y1 < 0 | p_y1 > 1) {
+      stop("The input 'p_y1' is the disease prevalence, and must be between 0 and 1.")
+    }
+  }
+  if (! is.null(p_sample.y1y0)) {
+    if (! (length(p_sample.y1y0) == 2 &
+           min(p_sample.y1y0) > 0 & max(p_sample.y1y0) < 1)) {
+      stop("The input 'p_sample.y1y0' is the sampling probabilities for cases and controls, and should be a numeric vector of two probabilities.")
+    }
+  }
+  if (! is.logical(approx.integral)) {
+    stop("The input 'approx.integral' should be TRUE or FALSE.")
+  }
+  if (! (is.numeric(integrate.tol) & inside(integrate.tol, c(1e-32, Inf)))) {
+    stop("The input 'integrate.tol' must be a numeric value greater than 1e-32.")
+  }
+  if (! (is.numeric(integrate.tol.start) & inside(integrate.tol.start, c(1e-32, Inf)))) {
+    stop("The input 'integrate.tol.start' must be a numeric value greater than 1e-32.")
+  }
+  if (! is.logical(estimate.var)) {
+    stop("The input 'estimate.var' should be TRUE or FALSE.")
+  }
+
+  # Get name of xtilde input
+  x.varname <- deparse(substitute(xtilde))
+
+  # Get name of c input and calculate number of C variables
+  if (is.null(c)) {
+    c.varnames <- NULL
+    n.cvars <- 0
+    some.cs <- FALSE
+  } else {
+    c.varname <- deparse(substitute(c))
+    if (class(c) != "matrix") {
+      c <- as.matrix(c)
+    }
+    n.cvars <- ncol(c)
+    some.cs <- TRUE
+    c.varnames <- colnames(c)
+    if (is.null(c.varnames)) {
+      if (n.cvars == 1) {
+        c.varnames <- c.varname
+      } else {
+        c.varnames <- paste("c", 1: n.cvars, sep = "")
+      }
+    }
+  }
+
+  # Get number of betas and alphas
+  n.betas <- 2 + n.cvars
+  n.alphas <- 1 + n.cvars
+
+  # Create indicator vectors for pool and case status
+  ipool <- ifelse(g > 1, 1, 0)
+
+  # Calculate offsets according to Weinberg and Umbach (Biometrics 1999, 2010)
+  # formula, incorporating disease prevalence or sampling probabilities if known
+  n.pools <- length(y)
+  locs.cases <- which(y == 1)
+  n_1 <- sum(g[locs.cases])
+  n_0 <- sum(g[-locs.cases])
+  g.vals <- unique(g)
+  qg <- rep(NA, n.pools)
+
+  if (! is.null(p_y1)) {
+
+    for (jj in 1: length(g.vals)) {
+      g.jj <- g.vals[jj]
+      locs.g <- which(g == g.jj)
+      n.casepools <- sum(g == g.jj & y == 1)
+      n.controlpools <- sum(g == g.jj & y == 0)
+      qg[locs.g] <- log(n.casepools / n.controlpools) -
+        g.jj * log(p_y1 / (1 - p_y1))
+    }
+
+  } else if (! is.null(p_sample.y1y0)) {
+
+    for (jj in 1: length(g.vals)) {
+      g.jj <- g.vals[jj]
+      locs.g <- which(g == g.jj)
+      n.casepools <- sum(g == g.jj & y == 1)
+      n.controlpools <- sum(g == g.jj & y == 0)
+      qg[locs.g] <- log(n.casepools / n.controlpools) -
+        g.jj * log(n_1 / n_0) - g.jj * log(p_sample.y1y0[2] /
+                                             p_sample.y1y0[1])
+    }
+
+  } else {
+
+    for (jj in 1: length(g.vals)) {
+      g.jj <- g.vals[jj]
+      locs.g <- which(g == g.jj)
+      n.casepools <- sum(g == g.jj & y == 1)
+      n.controlpools <- sum(g == g.jj & y == 0)
+      qg[locs.g] <- log(n.casepools / n.controlpools) - g.jj * log(n_1 / n_0)
+    }
+
+  }
+
+  # Separate out pools with precisely measured X
+  if (error.type == "neither") {
+    which.p <- 1: n.pools
+  } else if (error.type == "processing") {
+    which.p <- which(ipool == 0)
+  } else {
+    which.p <- NULL
+  }
+  n.p <- length(which.p)
+  some.p <- n.p > 0
+  if (some.p) {
+    g.p <- g[which.p]
+    y.p <- y[which.p]
+    x.p <- unlist(xtilde[which.p])
+    c.p <- c[which.p, , drop = FALSE]
+    qg.p <- qg[which.p]
+    gxc.p <- cbind(g.p, x.p, c.p)
+    gc.p <- gxc.p[, -2, drop = FALSE]
+  }
+
+  # Separate out pools with replicate Xtilde measurements
+  class.xtilde <- class(xtilde)
+  if (class.xtilde == "list") {
+    k <- sapply(xtilde, length)
+    which.r <- which(k > 1)
+    n.r <- length(which.r)
+    some.r <- n.r > 0
+    if (some.r) {
+      k.r <- k[which.r]
+      g.r <- g[which.r]
+      ipool.r <- ipool[which.r]
+      y.r <- y[which.r]
+      c.r <- c[which.r, , drop = FALSE]
+      qg.r <- qg[which.r]
+      gc.r <- cbind(g.r, c.r)
+      xtilde.r <- xtilde[which.r]
+    }
+  } else {
+    k <- rep(1, n.pools)
+    some.r <- FALSE
+  }
+
+  # Separate out pools with single Xtilde measurement
+  if (error.type == "neither") {
+    which.i <- NULL
+  } else if (error.type == "processing") {
+    which.i <- which(ipool == 1 & k == 1)
+  } else if (error.type %in% c("measurement", "both")) {
+    which.i <- which(k == 1)
+  }
+  n.i <- length(which.i)
+  some.i <- n.i > 0
+  if (some.i) {
+    g.i <- g[which.i]
+    ipool.i <- ipool[which.i]
+    y.i <- y[which.i]
+    c.i <- c[which.i, , drop = FALSE]
+    qg.i <- qg[which.i]
+    gc.i <- cbind(g.i, c.i)
+    xtilde.i <- unlist(xtilde[which.i])
+  }
+
+  # Estimate (alpha, sigsq_x.c, sigsq_p, sigsq_m) if pseudo-lik...
+
+  # Get indices for parameters being estimated, and create labels as well
+  loc.betas <- 1: n.betas
+  beta.labels <- paste("beta", c("0", x.varname, c.varnames), sep = "_")
+
+  loc.alphas <- (n.betas + 1): (n.betas + n.alphas)
+  alpha.labels <- paste("alpha", c("0", c.varnames), sep = "_")
+
+  loc.sigsq_x.c <- n.betas + n.alphas + 1
+
+  if (error.type == "neither") {
+    theta.labels <- c(beta.labels, alpha.labels, "sigsq_x.c")
+  } else if (error.type == "processing") {
+    if (diff.pe) {
+      loc.sigsq_p1 <- loc.sigsq_x.c + 1
+      loc.sigsq_p0 <- loc.sigsq_x.c + 2
+      theta.labels <- c(beta.labels, alpha.labels,
+                        "sigsq_x.c", "sigsq_p1", "sigsq_p0")
+    } else {
+      loc.sigsq_p1 <- loc.sigsq_p0 <- loc.sigsq_x.c + 1
+      theta.labels <- c(beta.labels, alpha.labels, "sigsq_x.c", "sigsq_p")
+    }
+  } else if (error.type == "measurement") {
+    if (diff.me) {
+      loc.sigsq_m1 <- loc.sigsq_x.c + 1
+      loc.sigsq_m0 <- loc.sigsq_x.c + 2
+      theta.labels <- c(beta.labels, alpha.labels,
+                        "sigsq_x.c", "sigsq_m1", "sigsq_m0")
+    } else {
+      loc.sigsq_m1 <- loc.sigsq_m0 <- loc.sigsq_x.c + 1
+      theta.labels <- c(beta.labels, alpha.labels, "sigsq_x.c", "sigsq_m")
+    }
+  } else if (error.type == "both") {
+    if (diff.pe & diff.me) {
+      loc.sigsq_p1 <- loc.sigsq_x.c + 1
+      loc.sigsq_p0 <- loc.sigsq_x.c + 2
+      loc.sigsq_m1 <- loc.sigsq_x.c + 3
+      loc.sigsq_m0 <- loc.sigsq_x.c + 4
+      theta.labels <- c(beta.labels, alpha.labels,
+                        "sigsq_x.c", "sigsq_p1", "sigsq_p0", "sigsq_m1",
+                        "sigsq_m0")
+    } else if (diff.pe & ! diff.me) {
+      loc.sigsq_p1 <- loc.sigsq_x.c + 1
+      loc.sigsq_p0 <- loc.sigsq_x.c + 2
+      loc.sigsq_m1 <- loc.sigsq_m0 <- loc.sigsq_x.c + 3
+      theta.labels <- c(beta.labels, alpha.labels,
+                        "sigsq_x.c", "sigsq_p1", "sigsq_p0", "sigsq_m")
+    } else if (! diff.pe & diff.me) {
+      loc.sigsq_p1 <- loc.sigsq_p0 <- loc.sigsq_x.c + 1
+      loc.sigsq_m1 <- loc.sigsq_x.c + 2
+      loc.sigsq_m0 <- loc.sigsq_x.c + 3
+      theta.labels <- c(beta.labels, alpha.labels,
+                        "sigsq_x.c", "sigsq_p", "sigsq_m1", "sigsq_m0")
+    } else if (! diff.pe & ! diff.me) {
+      loc.sigsq_p1 <- loc.sigsq_p0 <- loc.sigsq_x.c + 1
+      loc.sigsq_m1 <- loc.sigsq_m0 <- loc.sigsq_x.c + 2
+      theta.labels <- c(beta.labels, alpha.labels,
+                        "sigsq_x.c", "sigsq_p", "sigsq_m")
+    }
+  }
+
+  # Log-likelihood function
+  ll.f <- function(f.theta, estimating.hessian = FALSE) {
+
+    # Extract parameters
+    f.betas <- matrix(f.theta[loc.betas], ncol = 1)
+    f.beta_0 <- f.betas[1]
+    f.beta_x <- f.betas[2]
+    f.beta_c <- matrix(f.betas[-c(1: 2)], ncol = 1)
+
+    f.alphas <- matrix(f.theta[loc.alphas], ncol = 1)
+    f.alpha_0 <- f.alphas[1]
+    f.alpha_c <- matrix(f.alphas[-1], ncol = 1)
+
+    f.sigsq_x.c <- f.theta[loc.sigsq_x.c]
+
+    if (error.type == "neither") {
+      f.sigsq_p1 <- f.sigsq_p0 <- f.sigsq_m1 <- f.sigsq_m0 <- 0
+    }
+    if (error.type %in% c("processing", "both")) {
+      f.sigsq_p1 <- f.theta[loc.sigsq_p1]
+      f.sigsq_p0 <- f.theta[loc.sigsq_p0]
+    } else {
+      f.sigsq_p1 <- f.sigsq_p0 <- 0
+    }
+    if (error.type %in% c("measurement", "both")) {
+      f.sigsq_m1 <- f.theta[loc.sigsq_m1]
+      f.sigsq_m0 <- f.theta[loc.sigsq_m0]
+    } else {
+      f.sigsq_m1 <- f.sigsq_m0 <- 0
+    }
+
+    # # Return Inf if any variance terms are non-positive
+    # if (any(f.theta < extra.args$lower)) {
+    #   print(f.theta)
+    #   return(NA)
+    # }
+
+    if (some.p) {
+
+      # Likelihood for pools with precisely measured X:
+      # L = f(Y|X,C) f(X|C)
+
+      # P(Y|X,C)
+      eta <- gxc.p %*% f.betas + qg.p
+      p_y.xc <- (1 + exp(-eta))^(-1)
+
+      # E(X|C) and V(X|C)
+      mu_x.c <- gc.p %*% f.alphas
+      sigsq_x.c <- g.p * f.sigsq_x.c
+
+      # Log-likelihood
+      ll.p <- sum(stats::dbinom(x = y.p, log = TRUE,
+                         size = 1, prob = p_y.xc) +
+                    stats::dnorm(x = x.p, log = TRUE,
+                          mean = mu_x.c, sd = sqrt(sigsq_x.c)))
+
+    } else {
+      ll.p <- 0
+    }
+
+    # Set skip.rest flag to FALSE
+    skip.rest <- FALSE
+
+    if (some.r & ! skip.rest) {
+
+      # Likelihood for pools with replicate Xtilde measurements
+      # L = f(Y, Xtilde|C)
+      #   = [\int_X f(Y|X,C) f(X|Xtilde,C) dX] f(Xtilde|C)
+      #   = int_X f(Y|X,C) f(Xtilde|X) f(X|C) dX
+
+      # Create error vectors
+      #sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * ipool.r * (g.r - 1)
+      # if (constant.pe) {
+      #   sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * ipool.r
+      # } else {
+      #   sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * (g.r - 1)
+      # }
+      sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * ipool.r
+      sigsq_m <- ifelse(y.r, f.sigsq_m1, f.sigsq_m0)
+
+      # Calculate E(X|C) and V(X|C)
+      mu_x.c <- gc.r %*% f.alphas
+      sigsq_x.c <- g.r * f.sigsq_x.c
+
+      if (approx.integral) {
+
+        # Probit approximation for logistic-normal integral
+
+        ll.vals <- c()
+        for (ii in 1: length(xtilde.r)) {
+
+          # Values for ith subject
+          k_i <- k.r[ii]
+          g_i <- g.r[ii]
+          y_i <- y.r[ii]
+          c_i <- c.r[ii, ]
+          qg_i <- qg.r[ii]
+          mu_x.c_i <- mu_x.c[ii]
+          sigsq_x.c_i <- sigsq_x.c[ii]
+          xtilde_i <- xtilde.r[[ii]]
+          sigsq_p_i <- sigsq_p[ii]
+          sigsq_m_i <- sigsq_m[ii]
+
+          # E(X|Xtilde,C) and V(X|Xtilde,C)
+          Mu_xxtilde.c <- matrix(mu_x.c_i, nrow = k_i + 1)
+          Sigma_xxtilde.c_11 <- sigsq_x.c_i
+          Sigma_xxtilde.c_12 <- matrix(sigsq_x.c_i, ncol = k_i)
+          Sigma_xxtilde.c_21 <- t(Sigma_xxtilde.c_12)
+          # Sigma_xxtilde.c_22 <- g_i * f.sigsq_x.c +
+          #   g_i^2 * sigsq_p_i +
+          #   diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
+          Sigma_xxtilde.c_22 <- g_i * f.sigsq_x.c +
+            g_i^2 * ifelse(constant.pe, 1, (g_i - 1)) * sigsq_p_i +
+            diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
+
+          mu_x.xtildec <- Mu_xxtilde.c[1] + Sigma_xxtilde.c_12 %*%
+            solve(Sigma_xxtilde.c_22) %*% (xtilde_i - Mu_xxtilde.c[-1])
+          sigsq_x.xtildec <- Sigma_xxtilde.c_11 - Sigma_xxtilde.c_12 %*%
+            solve(Sigma_xxtilde.c_22) %*% Sigma_xxtilde.c_21
+
+          # Approximation of \int_X f(Y|X,C) f(X|Xtilde,C) dX
+          if (some.cs) {
+            t <- (g_i * f.beta_0 + f.beta_x * mu_x.xtildec +
+                    c_i %*% f.beta_c + qg_i) /
+              sqrt(1 + sigsq_x.xtildec * f.beta_x^2 / 1.7^2)
+          } else {
+            t <- (g_i * f.beta_0 + f.beta_x * mu_x.xtildec + qg_i) /
+              sqrt(1 + sigsq_x.xtildec * f.beta_x^2 / 1.7^2)
+          }
+          p <- exp(t) / (1 + exp(t))
+          part1 <- stats::dbinom(x = y_i, size = 1, prob = p, log = TRUE)
+
+          # log[f(Xtilde|C)]
+          if (k_i == 2) {
+
+            mu_xtilde1.xtilde2c <- mu_x.c_i + Sigma_xxtilde.c_22[1, 2] /
+              Sigma_xxtilde.c_22[2, 2] * (xtilde_i[2] - mu_x.c_i)
+            sigsq_xtilde1.xtilde2c <- Sigma_xxtilde.c_22[1, 1] -
+              Sigma_xxtilde.c_22[1, 2]^2 / Sigma_xxtilde.c_22[2, 2]
+            part2 <- sum(stats::dnorm(x = xtilde_i, log = TRUE,
+                                      mean = c(mu_xtilde1.xtilde2c, mu_x.c_i),
+                                      sd = sqrt(c(sigsq_xtilde1.xtilde2c,
+                                                  Sigma_xxtilde.c_22[2, 2]))))
+
+          } else {
+
+            part2 <- mvtnorm::dmvnorm(x = xtilde_i, log = TRUE,
+                                      mean = Mu_xxtilde.c[-1],
+                                      sigma = Sigma_xxtilde.c_22)
+
+          }
+
+          # Log-likelihood
+          ll.vals[ii] <- part1 + part2
+
+        }
+        ll.r <- sum(ll.vals)
+
+      } else {
+
+        # Full likelihood
+
+        # Function for integrating out X's
+        int.f_i1 <- function(k_i, g_i,
+                             y_i, x_i, gc_i, qg_i,
+                             mu_x.c_i, sigsq_x.c_i, xtilde_i,
+                             sigsq_p_i, sigsq_m_i) {
+
+          x_i <- matrix(x_i, nrow = 1)
+          f_yxtildex.c <- apply(x_i, 2, function(z) {
+
+            # Transformation
+            s_i <- z / (1 - z^2)
+
+            # P(Y_i|X_i^*,C_i^*)
+            p_y.xc <-
+              (1 + exp(-as.numeric(gc_i %*% f.betas[-2, , drop = FALSE]) -
+                         s_i * f.beta_x - qg_i))^(-1)
+
+            if (g_i == 1) {
+
+              # f(Y,X,Xtilde|C) = f(Y|X,C) f(Xtilde1|Xtilde2,X) f(Xtilde2|X) f(X|C)
+              stats::dbinom(x = y_i, size = 1, prob = p_y.xc) *
+                prod(stats::dnorm(x = xtilde_i, mean = s_i, sd = sqrt(sigsq_m_i))) *
+                stats::dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
+
+            } else {
+
+              # E(Xtilde|X) and V(Xtilde|X)
+              Mu_xtilde.x <- rep(s_i, k_i)
+              # Sigma_xtilde.x <- g_i^2 * sigsq_p_i +
+              #   diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
+              Sigma_xtilde.x <-
+                g_i^2 * ifelse(constant.pe, 1, g_i - 1) * sigsq_p_i +
+                diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
+
+              # f(Y,X,Xtilde|C) = f(Y|X,C) f(Xtilde|X) f(X|C)
+              stats::dbinom(x = y_i, size = 1, prob = p_y.xc) *
+                mvtnorm::dmvnorm(x = xtilde_i,
+                                 mean = Mu_xtilde.x, sigma = Sigma_xtilde.x) *
+                stats::dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
+
+            }
+
+          })
+
+          # Back-transformation
+          out <- matrix(f_yxtildex.c * (1 + x_i^2) / (1 - x_i^2)^2,
+                        ncol = ncol(x_i))
+          return(out)
+
+        }
+
+        # Get integration tolerance
+        if (estimating.hessian) {
+          int.tol <- integrate.tol.hessian
+        } else if (all(f.theta == extra.args$start)) {
+          int.tol <- integrate.tol.start
+        } else {
+          int.tol <- integrate.tol
+        }
+
+        int.vals <- c()
+        for (ii in 1: length(xtilde.r)) {
+
+          # Get values for ith participant
+          k_i <- k.r[ii]
+          g_i <- g.r[ii]
+          y_i <- y.r[ii]
+          gc_i <- gc.r[ii, ]
+          qg_i <- qg.r[ii]
+          mu_x.c_i <- mu_x.c[ii]
+          sigsq_x.c_i <- sigsq_x.c[ii]
+          xtilde_i <- xtilde.r[[ii]]
+          sigsq_p_i <- sigsq_p[ii]
+          sigsq_m_i <- sigsq_m[ii]
+
+          # Try integrating out X with default settings
+          int.ii <-
+            cubature::adaptIntegrate(f = int.f_i1, tol = int.tol,
+                                     lowerLimit = -1, upperLimit = 1,
+                                     vectorInterface = TRUE,
+                                     k_i = k_i, g_i = g_i,
+                                     y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                                     mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                                     xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                                     sigsq_m_i = sigsq_m_i)
+
+          # If integral 0 and sigsq_m_i small, look at region around Xtilde
+          if (int.ii$integral == 0 & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
+
+            center.s <- mean(xtilde_i)
+            center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
+            incr <- 1
+            for (jj in 1: 6) {
+              #print(list("sigsq_m_i small", c(ii, jj)))
+              incr <- incr / 10
+              lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
+              int.ii <-
+                cubature::adaptIntegrate(f = int.f_i1, tol = int.tol,
+                                         lowerLimit = lowupp.x[1],
+                                         upperLimit = lowupp.x[2],
+                                         vectorInterface = TRUE,
+                                         k_i = k_i, g_i = g_i,
+                                         y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                                         mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                                         xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                                         sigsq_m_i = sigsq_m_i)
+              if (int.ii$integral > 0) {
+                break
+              }
+            }
+
+          }
+
+          # If integral 0 and f.sigsq_x.c small, look at region around E(X|C)
+          if (int.ii$integral == 0 & f.sigsq_x.c < 0.1) {
+
+            center.s <- mu_x.c_i
+            center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
+            incr <- 1
+            for (jj in 1: 6) {
+              #print(list("f.sigsq_x.c small", c(ii, jj)))
+              incr <- incr / 10
+              lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
+              int.ii <-
+                cubature::adaptIntegrate(f = int.f_i1, tol = int.tol,
+                                         lowerLimit = lowupp.x[1],
+                                         upperLimit = lowupp.x[2],
+                                         vectorInterface = TRUE,
+                                         k_i = k_i, g_i = g_i,
+                                         y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                                         mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                                         xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                                         sigsq_m_i = sigsq_m_i)
+              if (int.ii$integral > 0) {
+                break
+              }
+            }
+
+          }
+
+          int.vals[ii] <- int.ii$integral
+
+          # If integral 0, set skip.rest to TRUE to skip further LL calculations
+          if (int.ii$integral == 0) {
+            print(paste("Integral is 0 for ii = ", ii, sep = ""))
+            print(f.theta)
+            print(int.ii)
+            skip.rest <- TRUE
+            break
+          }
+
+        }
+        ll.r <- sum(log(int.vals))
+
+      }
+
+    } else {
+      ll.r <- 0
+    }
+
+    if (some.i & ! skip.rest) {
+
+      # Likelihood for pools with single imprecisely measured Xtilde_i^*:
+      # L = f(Y,Xtilde|C) = [\int_X f(Y|X,C) f(X|Xtilde,C) dX] f(Xtilde|C)
+      #                    = int_X f(Y|X,C) f(Xtilde|X) f(X|C) dX
+
+      # Create error vectors
+      sigsq_p <- ifelse(y.i, f.sigsq_p1, f.sigsq_p0) * ipool.i
+      sigsq_m <- ifelse(y.i, f.sigsq_m1, f.sigsq_m0)
+
+      # Calculate E(X|C) and V(X|C)
+      mu_x.c <- gc.i %*% f.alphas
+      sigsq_x.c <- g.i * f.sigsq_x.c
+
+      if (approx.integral) {
+
+        # Probit approximation for logistic-normal integral
+
+        # E(X,Xtilde|C) and V(X,Xtilde|C)
+        Mu_xxtilde.c_1 <- mu_x.c
+        Mu_xxtilde.c_2 <- mu_x.c
+        Sigma_xxtilde.c_11 <- sigsq_x.c
+        Sigma_xxtilde.c_12 <- sigsq_x.c
+        # Sigma_xxtilde.c_22 <-
+        #   g.i * f.sigsq_x.c + g.i^2 * sigsq_p + g.i^2 * sigsq_m
+        if (constant.pe) {
+          Sigma_xxtilde.c_22 <-
+            g.i * f.sigsq_x.c + g.i^2 * sigsq_p + g.i^2 * sigsq_m
+        } else {
+          Sigma_xxtilde.c_22 <-
+            g.i * f.sigsq_x.c + g.i^2 * (g.i - 1) * sigsq_p + g.i^2 * sigsq_m
+        }
+
+        # E(X|Xtilde,C) and V(X|Xtilde,C)
+        mu_x.xtildec <- Mu_xxtilde.c_1 + Sigma_xxtilde.c_12 /
+          Sigma_xxtilde.c_22 * (xtilde.i - Mu_xxtilde.c_2)
+        sigsq_x.xtildec <- Sigma_xxtilde.c_11 - Sigma_xxtilde.c_12^2 /
+          Sigma_xxtilde.c_22
+
+        # Approximation of \int_x f(Y|X,C) f(X|Xtilde,C) dx
+        if (some.cs) {
+          t <- as.numeric(g.i * f.beta_0 + f.beta_x * mu_x.xtildec +
+                            c.i %*% f.beta_c + qg.i) /
+            sqrt(1 + sigsq_x.xtildec * f.beta_x^2 / 1.7^2)
+        } else {
+          t <- (g.i * f.beta_0 + f.beta_x * mu_x.xtildec + qg.i) /
+            sqrt(1 + sigsq_x.xtildec * f.beta_x^2 / 1.7^2)
+        }
+        p <- exp(t) / (1 + exp(t))
+        part1 <- stats::dbinom(x = y.i, size = 1, prob = p, log = TRUE)
+
+        # log[f(Xtilde|C)]
+        part2 <- stats::dnorm(x = xtilde.i, log = TRUE,
+                              mean = Mu_xxtilde.c_2, sd = sqrt(Sigma_xxtilde.c_22))
+
+        # Log-likelihood
+        ll.vals <- part1 + part2
+        ll.i <- sum(ll.vals)
+
+        # ll.vals <- g.i * part1 + part2
+        # ll.i <- sum(ll.vals)
+
+      } else {
+
+        # Full likelihood
+
+        # Function for integrating out X
+        int.f_i2 <- function(g_i,
+                             y_i, x_i, gc_i, qg_i,
+                             mu_x.c_i, sigsq_x.c_i, xtilde_i,
+                             sigsq_p_i, sigsq_m_i) {
+
+          # Transformation
+          s_i <- x_i / (1 - x_i^2)
+
+          # P(Y|X,C)
+          p_y.xc <-
+            (1 + exp(as.numeric(-gc_i %*% f.betas[-2, , drop = FALSE]) -
+                       s_i * f.beta_x - qg_i))^(-1)
+
+          # E(Xtilde|X) and V(Xtilde|X)
+          mu_xtilde.x <- s_i
+          sigsq_xtilde.x <- g_i^2 * sigsq_p_i + g_i^2 * sigsq_m_i
+
+          # f(Y,X,Xtilde|C) = f(Y|X,C) f(Xtilde|X) f(X|C)
+          f_yx.xtildec <-
+            stats::dbinom(x = y_i, size = 1, prob = p_y.xc) *
+            stats::dnorm(x = xtilde_i,
+                         mean = mu_xtilde.x, sd = sqrt(sigsq_xtilde.x)) *
+            stats::dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
+
+          # Back-transformation
+          out <- f_yx.xtildec * (1 + x_i^2) / (1 - x_i^2)^2
+          return(out)
+
+        }
+
+        # Get integration tolerance
+        if (estimating.hessian) {
+          int.tol <- integrate.tol.hessian
+        } else if (all(f.theta == extra.args$start)) {
+          int.tol <- integrate.tol.start
+        } else {
+          int.tol <- integrate.tol
+        }
+
+        int.vals <- c()
+        for (ii in 1: length(xtilde.i)) {
+
+          # Get values for ith participant
+          g_i <- g.i[ii]
+          y_i <- y.i[ii]
+          gc_i <- gc.i[ii, ]
+          qg_i <- qg.i[ii]
+          mu_x.c_i <- mu_x.c[ii]
+          sigsq_x.c_i <- sigsq_x.c[ii]
+          xtilde_i <- xtilde.i[ii]
+          sigsq_p_i <- sigsq_p[ii]
+          sigsq_m_i <- sigsq_m[ii]
+
+          # Try integrating out X_i with default settings
+          int.ii <-
+            cubature::adaptIntegrate(f = int.f_i2, tol = int.tol,
+                                     lowerLimit = -1, upperLimit = 1,
+                                     vectorInterface = TRUE,
+                                     g_i = g_i,
+                                     y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                                     mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                                     xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                                     sigsq_m_i = sigsq_m_i)
+
+          # If integral 0 and f.sigsq_m small, look at region around Xtilde
+          if (int.ii$integral == 0 & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
+
+            center.s <- xtilde_i
+            center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
+            incr <- 1
+            for (jj in 1: 6) {
+              #print(list("sigsq_m_i small", c(ii, jj)))
+              incr <- incr / 10
+              lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
+              int.ii <-
+                cubature::adaptIntegrate(f = int.f_i2, tol = int.tol,
+                                         lowerLimit = lowupp.x[1],
+                                         upperLimit = lowupp.x[2],
+                                         vectorInterface = TRUE,
+                                         g_i = g_i,
+                                         y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                                         mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                                         xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                                         sigsq_m_i = sigsq_m_i)
+              if (int.ii$integral > 0) {
+                break
+              }
+            }
+
+          }
+
+          # If integral 0 and f.sigsq_x.c small, look at region around E(X|C)
+          if (int.ii$integral == 0 & inside(f.sigsq_x.c, c(0, 0.1), FALSE)) {
+
+            center.s <- mu_x.c_i
+            center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
+            incr <- 1
+            for (jj in 1: 6) {
+              #print(list("f.sigsq_x.c small", c(ii, jj)))
+              incr <- incr / 10
+              lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
+              int.ii <-
+                cubature::adaptIntegrate(f = int.f_i2, tol = int.tol,
+                                         lowerLimit = lowupp.x[1],
+                                         upperLimit = lowupp.x[2],
+                                         vectorInterface = TRUE,
+                                         g_i = g_i,
+                                         y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                                         mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                                         xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                                         sigsq_m_i = sigsq_m_i)
+              if (int.ii$integral > 0) {
+                break
+              }
+            }
+
+          }
+
+          int.vals[ii] <- int.ii$integral
+
+          # If integral 0, set skip.rest to TRUE to skip further LL calculations
+          if (int.ii$integral == 0) {
+            print(paste("Integral is 0 for ii = ", ii, sep = ""))
+            print(f.theta)
+            print(int.ii)
+            skip.rest <- TRUE
+            break
+          }
+
+        }
+        ll.i <- sum(log(int.vals))
+
+      }
+
+    } else {
+      ll.i <- 0
+    }
+
+    # Return negative log-likelihood
+    ll <- ll.p + ll.r + ll.i
+    return(-ll)
+
+  }
+
+  # Create list of extra arguments, and assign default starting values and
+  # lower values if not specified by user
+  extra.args <- list(...)
+  if (is.null(extra.args$start)) {
+    if (error.type == "neither") {
+      extra.args$start <- c(rep(0, n.betas + n.alphas), 1)
+    } else if (error.type == "processing") {
+      extra.args$start <- c(rep(0, n.betas + n.alphas),
+                            rep(1, loc.sigsq_p0 - loc.sigsq_x.c + 1))
+    } else if (error.type %in% c("measurement", "both")) {
+      extra.args$start <- c(rep(0, n.betas + n.alphas),
+                            rep(1, loc.sigsq_m0 - loc.sigsq_x.c + 1))
+    }
+  }
+  if (is.null(extra.args$lower)) {
+    if (error.type == "neither") {
+      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas), 1e-3)
+    } else if (error.type == "processing") {
+      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas),
+                            rep(1e-3, loc.sigsq_p0 - loc.sigsq_x.c + 1))
+    } else if (error.type %in% c("measurement", "both")) {
+      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas),
+                            rep(1e-3, loc.sigsq_m0 - loc.sigsq_x.c + 1))
+    }
+  }
+  if (is.null(extra.args$upper)) {
+    if (error.type == "neither") {
+      extra.args$upper <- c(rep(Inf, n.betas + n.alphas), Inf)
+    } else if (error.type == "processing") {
+      extra.args$upper <- c(rep(Inf, n.betas + n.alphas),
+                            rep(Inf, loc.sigsq_p0 - loc.sigsq_x.c + 1))
+    } else if (error.type %in% c("measurement", "both")) {
+      extra.args$upper <- c(rep(Inf, n.betas + n.alphas),
+                            rep(Inf, loc.sigsq_m0 - loc.sigsq_x.c + 1))
+    }
+  }
+  if (is.null(extra.args$control$rel.tol)) {
+    extra.args$control$rel.tol <- 1e-6
+  }
+  if (is.null(extra.args$control$eval.max)) {
+    extra.args$control$eval.max <- 1000
+  }
+  if (is.null(extra.args$control$iter.max)) {
+    extra.args$control$iter.max <- 750
+  }
+
+  # Obtain ML estimates
+  ml.max <- do.call(stats::nlminb, c(list(objective = ll.f,
+                                          int.tol = integrate.tol),
+                                     extra.args))
+
+  # Create list to return
+  theta.hat <- ml.max$par
+  names(theta.hat) <- theta.labels
+  ret.list <- list(theta.hat = theta.hat)
+
+  # If requested, add variance-covariance matrix to ret.list
+  if (estimate.var) {
+    hessian.mat <- pracma::hessian(f = ll.f, x0 = theta.hat,
+                                   int.tol = integrate.tol.hessian)
+    theta.variance <- try(solve(hessian.mat), silent = TRUE)
+    if (class(theta.variance) == "try-error") {
+      print(hessian.mat)
+      message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
+      ret.list$theta.var <- NULL
+    } else {
+      colnames(theta.variance) <- rownames(theta.variance) <- theta.labels
+      ret.list$theta.var <- theta.variance
+    }
+  }
+
+  # Add nlminb object and AIC to ret.list
+  ret.list$nlminb.object <- ml.max
+  ret.list$aic <- 2 * (length(theta.hat) + ml.max$objective)
+
+  # Return ret.list
+  return(ret.list)
+
+}
