@@ -65,8 +65,8 @@ prevent cases where the inverse Hessian is not positive definite.}
 matrix for parameter estimates, calculated as the inverse of the estimated
 Hessian matrix at the MLE's.}
 
-\item{...}{Additional arguments to pass to \code{\link{nlminb}} function for
-maximizing the log-likelihood function.}
+\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}
+function for maximizing the log-likelihood function.}
 }
 \value{
 A list containing the following:
@@ -79,8 +79,10 @@ log-likelihood function.
 }
 }
 \description{
-Implements a poolwise logistic regression method using similar ideas as in
-[1-3]. Manuscript fully describing the approach is currently under review.
+Assumes normal linear model for exposure given covariates, and additive
+normal processing errors and measurement errors acting on the poolwise mean
+exposure. Borrows ideas from [1-3]. Manuscript fully describing the approach
+is currently under review.
 }
 \references{
 1. Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J.

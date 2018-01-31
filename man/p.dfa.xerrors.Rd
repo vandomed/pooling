@@ -25,10 +25,10 @@ error nor measurement error, \code{"processing"} for processing error only,
 \code{"measurement"} for measurement error only, and \code{"both"} for both.}
 
 \item{...}{Additional arguments to pass to \code{\link{nlminb}} function for
-maximizing the log-likelihood function.
-
-
-#' @return A list containing the following:
+maximizing the log-likelihood function.}
+}
+\value{
+A list containing the following:
 \enumerate{
   \item Named numeric vector with point estimates for \code{gamma_y},
   \code{sigsq}, and the covariate-adjusted log-odds ratio, and the estimated
@@ -36,7 +36,7 @@ maximizing the log-likelihood function.
   \item Object returned by \code{\link[stats]{nlminb}} containing information
   about likelihood maximization.
   \item Akaike information criterion (AIC).
- }}
+ }
 }
 \description{
 Implements method described in [1].

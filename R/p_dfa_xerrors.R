@@ -24,7 +24,7 @@
 #' maximizing the log-likelihood function.
 #'
 #'
-#' #' @return A list containing the following:
+#' @return A list containing the following:
 #' \enumerate{
 #'   \item Named numeric vector with point estimates for \code{gamma_y},
 #'   \code{sigsq}, and the covariate-adjusted log-odds ratio, and the estimated

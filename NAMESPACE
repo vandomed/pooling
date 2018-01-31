@@ -3,3 +3,4 @@
 export(inside)
 export(p.dfa.xerrors)
 export(p.logreg.xerrors)
+export(p.logreg.xerrors2)

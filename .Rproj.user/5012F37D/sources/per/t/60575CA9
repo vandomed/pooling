@@ -5,15 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "460817675",
+    "hash" : "416608015",
     "id" : "60575CA9",
-    "lastKnownWriteTime" : 1516918617,
-    "last_content_update" : 1516918617692,
-    "path" : "C:/Users/Dane/Google Drive/Documents/Research/Emory_Accel/R_package/pooling/R/p_logreg_xerrors.R",
+    "lastKnownWriteTime" : 1517261651,
+    "last_content_update" : 1517261651,
+    "path" : "C:/Users/Dane/Google Drive/github/pooling/R/p_logreg_xerrors.R",
     "project_path" : "R/p_logreg_xerrors.R",
     "properties" : {
-        "cursorPosition" : "64,43",
-        "scrollLine" : "60"
+        "cursorPosition" : "64,2",
+        "scrollLine" : "0"
     },
     "relative_order" : 1,
     "source_on_save" : false,
