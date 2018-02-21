@@ -6,93 +6,77 @@
 #' is currently under review.
 #'
 #'
-#' @param g Numeric vector of pool sizes (number of individuals in each pool).
-#'
-#' @param y Numeric vector with poolwise \code{Y} values, coded 0 if all members
-#' are controls and 1 if all members are cases.
+#' @inheritParams p_logreg
 #'
 #' @param xtilde Numeric vector (or list of numeric vectors, if some pools have
 #' replicates) with \code{Xtilde} values.
 #'
-#' @param c Numeric matrix with poolwise \strong{\code{C}} values, if any.
+#' @param c Numeric matrix with poolwise \strong{\code{C}} values (if any), with
+#' one row for each pool. Can be a vector if there is only 1 covariate.
 #'
-#' @param error.type Character string specifying the errors that \code{X} is
-#' subject to.  Possible values are \code{"neither"} for neither processing
-#' error nor measurement error, \code{"processing"} for processing error only,
-#' \code{"measurement"} for measurement error only, and \code{"both"} for both.
+#' @param errors Character string specifying the errors that \code{X} is
+#' subject to. Choices are \code{"neither"} for neither processing error nor
+#' measurement error, \code{"processing"} for processing error only,
+#' \code{"measurement"} for measurement error only, and \code{"both"}.
 #'
-#' @param diff.pe,diff.me If \code{TRUE}, the processing (measurement) error
-#' variance is allowed to be different for case pools vs. control pools.
+#' @param diff.pe,diff.me Logical value for whether the processing (measurement)
+#' error variance is differential, i.e. different in case pools vs. control
+#' pools.
 #'
-#' @param constant.pe If \code{TRUE}, the processing error variance is assumed
-#' to be constant with pool size; if \code{FALSE}, it is assumed to increase
-#' with pool size such that, for example, the processing error affecting a pool
-#' twice as large as another will have twice the variance.
+#' @param constant.pe Logical value for whether the processing error variance is
+#' assumed to be constant with pool size. If \code{FALSE}, it is assumed to
+#' increase with pool size such that, for example, the processing error
+#' affecting a pool twice as large as another has twice the variance.
 #'
-#' @param p_y1 Optional numeric value specifying disease prevalence, allowing
-#' for valid estimation of the intercept with case-control sampling.  If it's
-#' easier, you can specify \code{p_sample_y1y0} instead.  Only used if
-#' \code{offset.formula = 1}.
-#'
-#' @param p_sample.y1y0 Optional numeric vector if length 2 specifying sampling
-#' probabilities for cases and controls, allowing for valid estimation of the
-#' intercept with case-control sampling.  If it's easier, you can specify
-#' \code{p_y1} instead.
-#'
-#' @param approx.integral If \code{TRUE}, probit approximation for the
-#' logistic-normal integral is used to avoid numerically integrating \code{X}'s
-#' out of the likelihood function.
+#' @param approx.integral Logical value for whether to use the probit
+#' approximation for the logistic-normal integral, to avoid numerically
+#' integrating \code{X}'s out of the likelihood function.
 #'
 #' @param integrate.tol Numeric value specifying the \code{tol} input to
 #' \code{\link{adaptIntegrate}}.  Only used if \code{approx.integral = FALSE}.
 #'
 #' @param integrate.tol.start Same as \code{integrate.tol}, but applies only to
-#' the very first iteration of ML maximization.  The first iteration tends to
+#' the very first iteration of ML maximization. The first iteration tends to
 #' take much longer than subsequent ones, so less precise integration at the
 #' start can speed things up.
 #'
 #' @param integrate.tol.hessian Same as \code{integrate.tol}, but for use when
-#' estimating the Hessian matrix only.  Sometimes more precise integration
+#' estimating the Hessian matrix only. Sometimes more precise integration
 #' (i.e. smaller tolerance) than used for maximizing the likelihood helps
 #' prevent cases where the inverse Hessian is not positive definite.
 #'
-#' @param estimate.var If \code{TRUE}, function returns variance-covariance
-#' matrix for parameter estimates, calculated as the inverse of the estimated
-#' Hessian matrix at the MLE's.
 #'
-#' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}
-#' function for maximizing the log-likelihood function.
-#'
-#'
-#' @return A list containing the following:
+#' @return List containing:
 #' \enumerate{
-#'   \item Numeric vector of parameter estimates.
-#'   \item Variance-covariance matrix (if \code{estimate.var = TRUE}).
-#'   \item The returned \code{\link[stats]{nlminb}} object from maximizing the
+#' \item Numeric vector of parameter estimates.
+#' \item Variance-covariance matrix (if \code{estimate.var = TRUE}).
+#' \item Returned \code{\link[stats]{nlminb}} object from maximizing the
 #' log-likelihood function.
-#'   \item Akaike information criterion (AIC).
+#' \item Akaike information criterion (AIC).
 #' }
 #'
 #'
-#' @references 1. Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J.
-#' (2010) "Hybrid Pooled-Unpooled Design for Cost-Efficient Measurement of
-#' Biomarkers." \emph{Stat. Med.} \strong{29}(5): 597--613.
-#' @references 2. Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and
-#' Schisterman, E.F. (2015) "A Discriminant Function Approach to Adjust for
-#' Processing and Measurement Error When a Biomarker is Assayed in Pooled
-#' Samples."
+#' @references
+#' Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
+#' "A Discriminant Function Approach to Adjust for Processing and Measurement
+#' Error When a Biomarker is Assayed in Pooled Samples."
 #' \emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
-#' @references 3. Weinberg, C.R. and Umbach, D.M. (1999) "Using Pooled Exposure
-#' Assessment to Improve Efficiency in Case-Control Studies."
-#' \emph{Biometrics} \strong{55}: 718--726.
-#' @references Acknowledgment: This material is based upon work supported by the
-#' National Science Foundation Graduate Research Fellowship under Grant No.
-#' DGE-0940903.
+#'
+#' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
+#' Pooled-Unpooled Design for Cost-Efficient Measurement of Biomarkers."
+#' \emph{Stat. Med.} \strong{29}(5): 597--613.
+#'
+#' Weinberg, C.R. and Umbach, D.M. (1999) "Using Pooled Exposure Assessment to
+#' Improve Efficiency in Case-Control Studies." \emph{Biometrics} \strong{55}:
+#' 718--726.
+#'
+#' Acknowledgment: This material is based upon work supported by the National
+#' Science Foundation Graduate Research Fellowship under Grant No. DGE-0940903.
 #'
 #'
 #' @export
-p.logreg.xerrors <- function(g, y, xtilde, c = NULL,
-                             error.type = "both",
+p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
+                             errors = "both",
                              diff.pe = FALSE, diff.me = FALSE,
                              constant.pe = TRUE,
                              p_y1 = NULL, p_sample.y1y0 = NULL,
@@ -104,8 +88,8 @@ p.logreg.xerrors <- function(g, y, xtilde, c = NULL,
                              ...) {
 
   # Check that inputs are valid
-  if (! error.type %in% c("neither", "processing", "measurement", "both")) {
-    stop("The input 'error.type' should be set to 'neither', 'processing',
+  if (! errors %in% c("neither", "processing", "measurement", "both")) {
+    stop("The input 'errors' should be set to 'neither', 'processing',
          'measurement', or 'both'.")
   }
   if (! is.logical(diff.pe)) {
@@ -221,9 +205,9 @@ p.logreg.xerrors <- function(g, y, xtilde, c = NULL,
   }
 
   # Separate out pools with precisely measured X
-  if (error.type == "neither") {
+  if (errors == "neither") {
     which.p <- 1: n.pools
-  } else if (error.type == "processing") {
+  } else if (errors == "processing") {
     which.p <- which(ipool == 0)
   } else {
     which.p <- NULL
@@ -263,11 +247,11 @@ p.logreg.xerrors <- function(g, y, xtilde, c = NULL,
   }
 
   # Separate out pools with single Xtilde measurement
-  if (error.type == "neither") {
+  if (errors == "neither") {
     which.i <- NULL
-  } else if (error.type == "processing") {
+  } else if (errors == "processing") {
     which.i <- which(ipool == 1 & k == 1)
-  } else if (error.type %in% c("measurement", "both")) {
+  } else if (errors %in% c("measurement", "both")) {
     which.i <- which(k == 1)
   }
   n.i <- length(which.i)
@@ -293,9 +277,9 @@ p.logreg.xerrors <- function(g, y, xtilde, c = NULL,
 
   loc.sigsq_x.c <- n.betas + n.alphas + 1
 
-  if (error.type == "neither") {
+  if (errors == "neither") {
     theta.labels <- c(beta.labels, alpha.labels, "sigsq_x.c")
-  } else if (error.type == "processing") {
+  } else if (errors == "processing") {
     if (diff.pe) {
       loc.sigsq_p1 <- loc.sigsq_x.c + 1
       loc.sigsq_p0 <- loc.sigsq_x.c + 2
@@ -305,7 +289,7 @@ p.logreg.xerrors <- function(g, y, xtilde, c = NULL,
       loc.sigsq_p1 <- loc.sigsq_p0 <- loc.sigsq_x.c + 1
       theta.labels <- c(beta.labels, alpha.labels, "sigsq_x.c", "sigsq_p")
     }
-  } else if (error.type == "measurement") {
+  } else if (errors == "measurement") {
     if (diff.me) {
       loc.sigsq_m1 <- loc.sigsq_x.c + 1
       loc.sigsq_m0 <- loc.sigsq_x.c + 2
@@ -315,7 +299,7 @@ p.logreg.xerrors <- function(g, y, xtilde, c = NULL,
       loc.sigsq_m1 <- loc.sigsq_m0 <- loc.sigsq_x.c + 1
       theta.labels <- c(beta.labels, alpha.labels, "sigsq_x.c", "sigsq_m")
     }
-  } else if (error.type == "both") {
+  } else if (errors == "both") {
     if (diff.pe & diff.me) {
       loc.sigsq_p1 <- loc.sigsq_x.c + 1
       loc.sigsq_p0 <- loc.sigsq_x.c + 2
@@ -359,16 +343,16 @@ p.logreg.xerrors <- function(g, y, xtilde, c = NULL,
 
     f.sigsq_x.c <- f.theta[loc.sigsq_x.c]
 
-    if (error.type == "neither") {
+    if (errors == "neither") {
       f.sigsq_p1 <- f.sigsq_p0 <- f.sigsq_m1 <- f.sigsq_m0 <- 0
     }
-    if (error.type %in% c("processing", "both")) {
+    if (errors %in% c("processing", "both")) {
       f.sigsq_p1 <- f.theta[loc.sigsq_p1]
       f.sigsq_p0 <- f.theta[loc.sigsq_p0]
     } else {
       f.sigsq_p1 <- f.sigsq_p0 <- 0
     }
-    if (error.type %in% c("measurement", "both")) {
+    if (errors %in% c("measurement", "both")) {
       f.sigsq_m1 <- f.theta[loc.sigsq_m1]
       f.sigsq_m0 <- f.theta[loc.sigsq_m0]
     } else {
@@ -875,23 +859,23 @@ p.logreg.xerrors <- function(g, y, xtilde, c = NULL,
   # lower values if not specified by user
   extra.args <- list(...)
   if (is.null(extra.args$start)) {
-    if (error.type == "neither") {
+    if (errors == "neither") {
       extra.args$start <- c(rep(0, n.betas + n.alphas), 1)
-    } else if (error.type == "processing") {
+    } else if (errors == "processing") {
       extra.args$start <- c(rep(0, n.betas + n.alphas),
                             rep(1, loc.sigsq_p0 - loc.sigsq_x.c + 1))
-    } else if (error.type %in% c("measurement", "both")) {
+    } else if (errors %in% c("measurement", "both")) {
       extra.args$start <- c(rep(0, n.betas + n.alphas),
                             rep(1, loc.sigsq_m0 - loc.sigsq_x.c + 1))
     }
   }
   if (is.null(extra.args$lower)) {
-    if (error.type == "neither") {
+    if (errors == "neither") {
       extra.args$lower <- c(rep(-Inf, n.betas + n.alphas), 1e-3)
-    } else if (error.type == "processing") {
+    } else if (errors == "processing") {
       extra.args$lower <- c(rep(-Inf, n.betas + n.alphas),
                             rep(1e-3, loc.sigsq_p0 - loc.sigsq_x.c + 1))
-    } else if (error.type %in% c("measurement", "both")) {
+    } else if (errors %in% c("measurement", "both")) {
       extra.args$lower <- c(rep(-Inf, n.betas + n.alphas),
                             rep(1e-3, loc.sigsq_m0 - loc.sigsq_x.c + 1))
     }

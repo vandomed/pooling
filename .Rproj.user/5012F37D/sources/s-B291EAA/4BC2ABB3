@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1519183122559.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "4BC2ABB3",
+    "lastKnownWriteTime" : 1519183141,
+    "last_content_update" : 1519183141065,
+    "path" : "C:/Users/Dane/Google Drive/github/pooling/R/pooling.R",
+    "project_path" : "R/pooling.R",
+    "properties" : {
+        "cursorPosition" : "19,67",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
