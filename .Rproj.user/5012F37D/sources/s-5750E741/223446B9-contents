@@ -1,0 +1,86 @@
+# Try to figure out Newton-Raphson for iid Y ~ Bern(p)
+
+
+
+# Implement Newton-Raphson for Z ~ Bern(p) ------------------------------
+
+# Generate Z ~ Bern(p)
+z <- rbinom(n = 200, size = 1, prob = 0.25)
+
+# MLE
+mean(z)
+
+# Newton-Raphson
+p1 <- 0.9
+for (ii in 1: 10) {
+  print(p1)
+  p1 <- p1 - sum((z - p1) / (p1 * (1 - p1))) /
+    sum((2 * p1 * z - z - p1^2) / (p1^2 * (1 - p1)^2))
+}
+
+
+
+# Implement Newton-Raphson for Z ~ N(mu, sigsq) - full ML ----------------------
+n <- 100
+mu <- 2
+sigsq <- 1
+z <- rnorm(n = n, mean = mu, sd = sqrt(sigsq))
+
+# MLEs
+mean(z)
+mean((z - mean(z))^2)
+
+theta1 <- matrix(c(2, 2))
+for (ii in 1: 20) {
+  print(theta1)
+  mu <- theta1[1]
+  sigsq <- theta1[2]
+
+  S <- matrix(c(sum((z - mu) / sigsq),
+                sum(-1 / (2 * sigsq) + 1 / (2 * sigsq^2) * (z - mu)^2)))
+
+  Sprime <- matrix(c(-n / sigsq,
+                     sum(-2 * (z - mu) / sigsq^2),
+                     sum(-(z - mu) / sigsq^2),
+                     sum(1 / (2 * sigsq^2) - 2 / sigsq^3 * (z - mu)^2)), ncol = 2)
+
+  theta1 <- theta1 - solve(Sprime) %*% S
+
+}
+
+# Hessian-based variance
+hess <- matrix(c(1 / sigsq, 0, 0, 2 / sigsq^2), ncol = 2)
+solve(hess)
+
+# Sandwich variance estimate - something wrong
+A <- matrix(c(mean(-1 / sigsq),
+              mean(-2 * (z - mu) / sigsq^2),
+              mean(-(z - mu) / sigsq^2),
+              mean(1 / (2 * sigsq^2) - 2 / sigsq^3 * (z - mu)^2)),
+            ncol = 2)
+B <- matrix(c(mean((z - mu) / sigsq * (z - mu) / sigsq),
+              mean((-1 / (2 * sigsq) + 1 / (2 * sigsq^2) * (z - mu)^2) * (z - mu) / sigsq),
+              mean((-1 / (2 * sigsq) + 1 / (2 * sigsq^2) * (z - mu)^2) * (z - mu) / sigsq),
+              mean((-1 / (2 * sigsq) + 1 / (2 * sigsq^2) * (z - mu)^2)^2)),
+            ncol = 2)
+solve(A) %*% B %*% t(solve(A))
+
+
+
+# Same, but just estimating mu ----------------------------------------------
+
+mu <- 4.123
+for (ii in 1: 20) {
+  print(mu)
+  S <- sum(z - mu)
+  Sprime <- -n
+  mu <- mu - S / Sprime
+}
+A <- mean(-1)
+B <- mean((z - mu) * (z - mu))
+A * B * A
+
+# Get exactly the same point estimate and virtually the same variance estimate!
+
+
+

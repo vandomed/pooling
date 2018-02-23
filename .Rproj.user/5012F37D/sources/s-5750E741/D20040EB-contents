@@ -8,8 +8,18 @@
 #'
 #' @inheritParams p_logreg
 #'
-#' @param xtilde Numeric vector (or list of numeric vectors, if some pools have
-#' replicates) with \code{Xtilde} values.
+#' @param xtilde Numeric vector with one \code{Xtilde} measurement for
+#' each pool.
+#'
+#' If there are replicates, \code{xtilde} can be a list of numeric
+#' vectors (of length 1 for pools without replicates, length 2 for pools with 2
+#' replicates, etc.), or a numeric vector with the lone \code{Xtilde}
+#' measurement for pools without replicates and the mean of all replicates for
+#' pools with replicates. If the second approach is taken, \code{k} has to be
+#' specified.
+#'
+#' @param k Numeric vector with the number of replicates for each pool. See
+#' \code{xtilde}.
 #'
 #' @param c Numeric matrix with poolwise \strong{\code{C}} values (if any), with
 #' one row for each pool. Can be a vector if there is only 1 covariate.
@@ -75,7 +85,7 @@
 #'
 #'
 #' @export
-p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
+p_logreg_xerrors <- function(g, y, xtilde, k = NULL, c = NULL,
                              errors = "both",
                              diff.pe = FALSE, diff.me = FALSE,
                              constant.pe = TRUE,
@@ -204,6 +214,15 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
   }
 
+  # If xtilde is a list, convert to vector and record k's
+  if (is.list(xtilde)) {
+    k <- sapply(xtilde, length)
+    xtilde <- sapply(xtilde, mean)
+  }
+  if (is.null(k)) {
+    k <- rep(1, length(xtilde))
+  }
+
   # Separate out pools with precisely measured X
   if (errors == "neither") {
     which.p <- 1: n.pools
@@ -225,25 +244,18 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   }
 
   # Separate out pools with replicate Xtilde measurements
-  class.xtilde <- class(xtilde)
-  if (class.xtilde == "list") {
-    k <- sapply(xtilde, length)
-    which.r <- which(k > 1)
-    n.r <- length(which.r)
-    some.r <- n.r > 0
-    if (some.r) {
-      k.r <- k[which.r]
-      g.r <- g[which.r]
-      ipool.r <- ipool[which.r]
-      y.r <- y[which.r]
-      c.r <- c[which.r, , drop = FALSE]
-      qg.r <- qg[which.r]
-      gc.r <- cbind(g.r, c.r)
-      xtilde.r <- xtilde[which.r]
-    }
-  } else {
-    k <- rep(1, n.pools)
-    some.r <- FALSE
+  which.r <- which(k > 1)
+  n.r <- length(which.r)
+  some.r <- n.r > 0
+  if (some.r) {
+    k.r <- k[which.r]
+    g.r <- g[which.r]
+    ipool.r <- ipool[which.r]
+    y.r <- y[which.r]
+    c.r <- c[which.r, , drop = FALSE]
+    qg.r <- qg[which.r]
+    gc.r <- cbind(g.r, c.r)
+    xtilde.r <- xtilde[which.r]
   }
 
   # Separate out pools with single Xtilde measurement
@@ -388,9 +400,9 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
     if (some.r) {
 
       # Likelihood for pools with replicate Xtilde measurements
-      # L = f(Y, Xtilde|C)
-      #   = [\int_X f(Y|X,C) f(X|Xtilde,C) dX] f(Xtilde|C)
-      #   = int_X f(Y|X,C) f(Xtilde|X) f(X|C) dX
+      # L = f(Y, Xtildebar|C)
+      #   = [\int_X f(Y|X,C) f(X|Xtildebar,C) dX] f(Xtildebar|C)
+      #   = int_X f(Y|X,C) f(Xtildebar|X) f(X|C) dX
 
       # Create error vectors
       #sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * ipool.r * (g.r - 1)
@@ -410,74 +422,48 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
         # Probit approximation for logistic-normal integral
 
-        ll.vals <- c()
-        for (ii in 1: length(xtilde.r)) {
-
-          # Values for ith subject
-          k_i <- k.r[ii]
-          g_i <- g.r[ii]
-          y_i <- y.r[ii]
-          c_i <- c.r[ii, ]
-          qg_i <- qg.r[ii]
-          mu_x.c_i <- mu_x.c[ii]
-          sigsq_x.c_i <- sigsq_x.c[ii]
-          xtilde_i <- xtilde.r[[ii]]
-          sigsq_p_i <- sigsq_p[ii]
-          sigsq_m_i <- sigsq_m[ii]
-
-          # E(X|Xtilde,C) and V(X|Xtilde,C)
-          Mu_xxtilde.c <- matrix(mu_x.c_i, nrow = k_i + 1)
-          Sigma_xxtilde.c_11 <- sigsq_x.c_i
-          Sigma_xxtilde.c_12 <- matrix(sigsq_x.c_i, ncol = k_i)
-          Sigma_xxtilde.c_21 <- t(Sigma_xxtilde.c_12)
-          # Sigma_xxtilde.c_22 <- g_i * f.sigsq_x.c +
-          #   g_i^2 * sigsq_p_i +
-          #   diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
-          Sigma_xxtilde.c_22 <- g_i * f.sigsq_x.c +
-            g_i^2 * ifelse(constant.pe, 1, (g_i - 1)) * sigsq_p_i +
-            diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
-
-          mu_x.xtildec <- Mu_xxtilde.c[1] + Sigma_xxtilde.c_12 %*%
-            solve(Sigma_xxtilde.c_22) %*% (xtilde_i - Mu_xxtilde.c[-1])
-          sigsq_x.xtildec <- Sigma_xxtilde.c_11 - Sigma_xxtilde.c_12 %*%
-            solve(Sigma_xxtilde.c_22) %*% Sigma_xxtilde.c_21
-
-          # Approximation of \int_X f(Y|X,C) f(X|Xtilde,C) dX
-          if (some.cs) {
-            t <- (g_i * f.beta_0 + f.beta_x * mu_x.xtildec +
-                    c_i %*% f.beta_c + qg_i) /
-              sqrt(1 + sigsq_x.xtildec * f.beta_x^2 / 1.7^2)
-          } else {
-            t <- (g_i * f.beta_0 + f.beta_x * mu_x.xtildec + qg_i) /
-              sqrt(1 + sigsq_x.xtildec * f.beta_x^2 / 1.7^2)
-          }
-          p <- exp(t) / (1 + exp(t))
-          part1 <- stats::dbinom(x = y_i, size = 1, prob = p, log = TRUE)
-
-          # log[f(Xtilde|C)]
-          if (k_i == 2) {
-
-            mu_xtilde1.xtilde2c <- mu_x.c_i + Sigma_xxtilde.c_22[1, 2] /
-              Sigma_xxtilde.c_22[2, 2] * (xtilde_i[2] - mu_x.c_i)
-            sigsq_xtilde1.xtilde2c <- Sigma_xxtilde.c_22[1, 1] -
-              Sigma_xxtilde.c_22[1, 2]^2 / Sigma_xxtilde.c_22[2, 2]
-            part2 <- sum(stats::dnorm(x = xtilde_i, log = TRUE,
-                                      mean = c(mu_xtilde1.xtilde2c, mu_x.c_i),
-                                      sd = sqrt(c(sigsq_xtilde1.xtilde2c,
-                                                  Sigma_xxtilde.c_22[2, 2]))))
-
-          } else {
-
-            part2 <- mvtnorm::dmvnorm(x = xtilde_i, log = TRUE,
-                                      mean = Mu_xxtilde.c[-1],
-                                      sigma = Sigma_xxtilde.c_22)
-
-          }
-
-          # Log-likelihood
-          ll.vals[ii] <- part1 + part2
-
+        # E(X,Xtilde|C) and V(X,Xtilde|C)
+        Mu_xxtilde.c_1 <- mu_x.c
+        Mu_xxtilde.c_2 <- mu_x.c
+        Sigma_xxtilde.c_11 <- sigsq_x.c
+        Sigma_xxtilde.c_12 <- sigsq_x.c
+        if (constant.pe) {
+          Sigma_xxtilde.c_22 <-
+            sigsq_x.c +
+            g.r^2 * sigsq_p +
+            g.r^2 * sigsq_m / k.r
+        } else {
+          Sigma_xxtilde.c_22 <-
+            sigsq_x.c +
+            g.r^2 * (g.r - 1) * sigsq_p +
+            g.r^2 * sigsq_m / k.r
         }
+
+        # E(X|Xtilde,C) and V(X|Xtilde,C)
+        mu_x.xtildec <- Mu_xxtilde.c_1 + Sigma_xxtilde.c_12 /
+          Sigma_xxtilde.c_22 * (xtilde.r - Mu_xxtilde.c_2)
+        sigsq_x.xtildec <- Sigma_xxtilde.c_11 - Sigma_xxtilde.c_12^2 /
+          Sigma_xxtilde.c_22
+
+        # Approximation of \int_x f(Y|X,C) f(X|Xtilde,C) dx
+        if (some.cs) {
+          t <- as.numeric(g.r * f.beta_0 + f.beta_x * mu_x.xtildec +
+                            c.r %*% f.beta_c + qg.r) /
+            sqrt(1 + sigsq_x.xtildec * f.beta_x^2 / 1.7^2)
+        } else {
+          t <- (g.r * f.beta_0 + f.beta_x * mu_x.xtildec + qg.r) /
+            sqrt(1 + sigsq_x.xtildec * f.beta_x^2 / 1.7^2)
+        }
+        p <- exp(t) / (1 + exp(t))
+        part1 <- stats::dbinom(x = y.r, size = 1, prob = p, log = TRUE)
+
+        # log[f(Xtilde|C)]
+        part2 <- stats::dnorm(x = xtilde.r, log = TRUE,
+                              mean = Mu_xxtilde.c_2,
+                              sd = sqrt(Sigma_xxtilde.c_22))
+
+        # Log-likelihood
+        ll.vals <- part1 + part2
         ll.r <- sum(ll.vals)
 
       } else {
@@ -501,30 +487,21 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               (1 + exp(-as.numeric(gc_i %*% f.betas[-2, , drop = FALSE]) -
                          s_i * f.beta_x - qg_i))^(-1)
 
-            if (g_i == 1) {
-
-              # f(Y,X,Xtilde|C) = f(Y|X,C) f(Xtilde1|Xtilde2,X) f(Xtilde2|X) f(X|C)
-              stats::dbinom(x = y_i, size = 1, prob = p_y.xc) *
-                prod(stats::dnorm(x = xtilde_i, mean = s_i, sd = sqrt(sigsq_m_i))) *
-                stats::dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
-
+            # E(Xtilde|X) and V(Xtilde|X)
+            mu_xtilde.x <- s_i
+            if (constant.pe) {
+              sigsq_xtilde.x <-
+                g_i^2 * sigsq_p_i + g_i^2 / k_i * sigsq_m_i
             } else {
-
-              # E(Xtilde|X) and V(Xtilde|X)
-              Mu_xtilde.x <- rep(s_i, k_i)
-              # Sigma_xtilde.x <- g_i^2 * sigsq_p_i +
-              #   diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
-              Sigma_xtilde.x <-
-                g_i^2 * ifelse(constant.pe, 1, g_i - 1) * sigsq_p_i +
-                diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
-
-              # f(Y,X,Xtilde|C) = f(Y|X,C) f(Xtilde|X) f(X|C)
-              stats::dbinom(x = y_i, size = 1, prob = p_y.xc) *
-                mvtnorm::dmvnorm(x = xtilde_i,
-                                 mean = Mu_xtilde.x, sigma = Sigma_xtilde.x) *
-                stats::dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
-
+              sigsq_xtilde.x <-
+                g_i^2 * sigsq_p_i * (g_i - 1) + g_i^2 / k_i * sigsq_m_i
             }
+
+            # f(Y,X,Xtilde|C) = f(Y|X,C) f(Xtilde|X) f(X|C)
+            stats::dbinom(x = y_i, size = 1, prob = p_y.xc) *
+              stats::dnorm(x = xtilde_i, mean = mu_xtilde.x,
+                           sd = sqrt(sigsq_xtilde.x)) *
+              stats::dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
 
           })
 
@@ -555,7 +532,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
           qg_i <- qg.r[ii]
           mu_x.c_i <- mu_x.c[ii]
           sigsq_x.c_i <- sigsq_x.c[ii]
-          xtilde_i <- xtilde.r[[ii]]
+          xtilde_i <- xtilde.r[ii]
           sigsq_p_i <- sigsq_p[ii]
           sigsq_m_i <- sigsq_m[ii]
 
@@ -667,8 +644,6 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
         Mu_xxtilde.c_2 <- mu_x.c
         Sigma_xxtilde.c_11 <- sigsq_x.c
         Sigma_xxtilde.c_12 <- sigsq_x.c
-        # Sigma_xxtilde.c_22 <-
-        #   g.i * f.sigsq_x.c + g.i^2 * sigsq_p + g.i^2 * sigsq_m
         if (constant.pe) {
           Sigma_xxtilde.c_22 <-
             g.i * f.sigsq_x.c + g.i^2 * sigsq_p + g.i^2 * sigsq_m
@@ -702,9 +677,6 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
         # Log-likelihood
         ll.vals <- part1 + part2
         ll.i <- sum(ll.vals)
-
-        # ll.vals <- g.i * part1 + part2
-        # ll.i <- sum(ll.vals)
 
       } else {
 

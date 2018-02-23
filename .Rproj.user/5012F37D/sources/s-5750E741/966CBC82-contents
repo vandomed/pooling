@@ -5,6 +5,7 @@
 
 # Clear workspace and load packages
 rm(list = ls())
+library("pooling")
 
 # Power of two-sample t-test
 (power.trad <- power.t.test(n = 25, delta = 0.5, sd = 1))
@@ -170,13 +171,13 @@ paste(sprintf("%.3f", lra.p$theta.hat[2]), " (",
       sprintf("%.3f", sqrt(lra.p$theta.var[2, 2])), "), ",
       sprintf("%.1f", lra.p$aic), sep = "")
 
-dfa.p <- p.disc.xerrors(g = cpp.df$g,
-                        y = cpp.df$SA,
-                        xtilde = cpp.df$mcp1_10x,
-                        c = cpp.df[, c("m_age", "nw", "smoke")],
-                        error.type = "processing",
-                        lower = c(rep(-Inf, 5), rep(1e-3, 2)),
-                        control = list(trace = 1, rel.tol = 1e-9))
+dfa.p <- p_dfa_xerrors(g = cpp.df$g,
+                       y = cpp.df$SA,
+                       xtilde = cpp.df$mcp1_10x,
+                       c = cpp.df[, c("m_age", "nw", "smoke")],
+                       errors = "processing",
+                       lower = c(rep(-Inf, 5), rep(1e-3, 2)),
+                       control = list(trace = 1, rel.tol = 1e-9))
 dfa.p$estimates
 paste(sprintf("%.3f", dfa.p$estimates["logOR_adj.hat"]), " (",
       sprintf("%.3f", sqrt(dfa.p$estimates["logOR_adj.var"])), "), ",
@@ -184,11 +185,11 @@ paste(sprintf("%.3f", dfa.p$estimates["logOR_adj.hat"]), " (",
 
 # No replicates, ME only
 start <- c(rep(0, 9), rep(1, 2))
-lrf.m <- p.logreg.xerrors(g = cpp.df$g,
+lrf.m <- p_logreg_xerrors(g = cpp.df$g,
                           y = cpp.df$SA_onezero,
                           xtilde = cpp.df$mcp1_10x,
                           c = cpp.df[, c("m_age", "nw", "smoke")],
-                          error.type = "measurement",
+                          errors = "measurement",
                           approx.integral = FALSE,
                           integrate.tol = 1e-11,
                           estimate.var = TRUE,
@@ -200,11 +201,11 @@ paste(sprintf("%.3f", lrf.m$theta.hat[2]), " (",
       sprintf("%.3f", sqrt(lrf.m$theta.var[2, 2])), "), ",
       sprintf("%.2f", lrf.m$aic), sep = "")
 
-lra.m <- p.logreg.xerrors(g = cpp.df$g,
+lra.m <- p_logreg_xerrors(g = cpp.df$g,
                           y = cpp.df$SA_onezero,
                           xtilde = cpp.df$mcp1_10x,
                           c = cpp.df[, c("m_age", "nw", "smoke")],
-                          error.type = "measurement",
+                          errors = "measurement",
                           approx.integral = TRUE,
                           estimate.var = TRUE,
                           lower = c(rep(-Inf, 9), rep(1e-3, 2)),
@@ -215,36 +216,58 @@ paste(sprintf("%.3f", lra.m$theta.hat[2]), " (",
       sprintf("%.3f", sqrt(lra.m$theta.var[2, 2])), "), ",
       sprintf("%.2f", lra.m$aic), sep = "")
 
-mat <- matrix(NA, ncol = 4, nrow = 100)
+mat <- matrix(NA, ncol = 5, nrow = 100)
+set.seed(1)
 for (ii in 1: 100) {
   start <- c(rep(0, 9), rep(1, 2)) + rnorm(n = 11, sd = 0.1)
-  lra.m <- p.logreg.xerrors(g = cpp.df$g,
+  lra.m <- p_logreg_xerrors(g = cpp.df$g,
                             y = cpp.df$SA_onezero,
                             xtilde = cpp.df$mcp1_10x,
                             c = cpp.df[, c("m_age", "nw", "smoke")],
-                            error.type = "measurement",
+                            errors = "measurement",
                             approx.integral = TRUE,
                             estimate.var = TRUE,
                             lower = c(rep(-Inf, 9), rep(1e-3, 2)),
                             start = start,
                             control = list(trace = 0, rel.tol = 1e-9))
-  mat[ii, ] <- c(lra.m$nlminb.object$objective, lra.m$aic, lra.m$theta.hat[2], sqrt(lra.m$theta.var[2, 2]))
+  mat[ii, ] <- c(lra.m$nlminb.object$objective, lra.m$aic, lra.m$theta.hat[2],
+                 sqrt(lra.m$theta.var[2, 2]), lra.m$theta.hat["sigsq_x.c"])
 }
+range(mat[, 3])
+range(mat[, 1])
+range(mat[, 2])
 
-start <- c(rep(0, 5), rep(1e-3, 2))
-start <- c(rep(0, 5), rep(1e-3, 2)) + rnorm(n = 7, sd = 0.1)
-dfa.m <- p.disc.xerrors(g = cpp.df$g,
+start <- c(rep(0, 5), rep(1, 2))
+dfa.m <- p_dfa_xerrors(g = cpp.df$g,
                         y = cpp.df$SA,
                         xtilde = cpp.df$mcp1_10x,
                         c = cpp.df[, c("m_age", "nw", "smoke")],
-                        error.type = "measurement",
+                        errors = "measurement",
                         lower = c(rep(-Inf, 5), rep(1e-3, 2)),
                         start = start,
                         control = list(trace = 1, rel.tol = 1e-9))
-dfa.m$estimates
 paste(sprintf("%.3f", dfa.m$estimates["logOR_adj.hat"]), " (",
       sprintf("%.3f", sqrt(dfa.m$estimates["logOR_adj.var"])), "), ",
       sprintf("%.1f", dfa.m$aic), sep = "")
+
+mat <- matrix(NA, ncol = 6, nrow = 10)
+set.seed(1)
+for (ii in 1: 10) {
+  start <- c(rep(0, 5), rep(1, 2)) + rnorm(n = 7, sd = 0.1)
+  dfa.m <- p_dfa_xerrors(g = cpp.df$g,
+                         y = cpp.df$SA,
+                         xtilde = cpp.df$mcp1_10x,
+                         c = cpp.df[, c("m_age", "nw", "smoke")],
+                         errors = "measurement",
+                         lower = c(rep(-Inf, 5), rep(1e-3, 2)),
+                         start = start,
+                         control = list(trace = 1, rel.tol = 1e-9))
+  mat[ii, ] <- c(dfa.m$estimates["logOR_adj.hat"], sqrt(dfa.m$estimates["logOR_adj.var"]),
+                 dfa.m$estimates["logOR.hat"], sqrt(dfa.m$estimates["logOR.var"]),
+                 dfa.m$nlminb.object$objective, dfa.m$aic)
+}
+mat
+
 
 # Replicates, ME only
 start <- c(rep(0, 9), rep(1, 2))
@@ -253,7 +276,7 @@ lrf.m2 <- p.logreg.xerrors(g = cpp.df$g,
                            y = cpp.df$SA_onezero,
                            xtilde = mcp1_10x.reps,
                            c = cpp.df[, c("m_age", "nw", "smoke")],
-                           error.type = "measurement",
+                           errors = "measurement",
                            approx.integral = FALSE,
                            estimate.var = TRUE,
                            lower = c(rep(-Inf, 9), rep(1e-3, 2)),

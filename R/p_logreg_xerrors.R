@@ -2,8 +2,9 @@
 #'
 #' Assumes normal linear model for exposure given covariates, and additive
 #' normal processing errors and measurement errors acting on the poolwise mean
-#' exposure. Borrows ideas from [1-3]. Manuscript fully describing the approach
-#' is currently under review.
+#' exposure. Borrows ideas from Weinberg \& Umbach (1999), Schisterman et al.
+#' (2015), and Lyles et al. (2015). Manuscript fully describing the approach
+#' is being prepared.
 #'
 #'
 #' @inheritParams p_logreg
@@ -667,8 +668,6 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
         Mu_xxtilde.c_2 <- mu_x.c
         Sigma_xxtilde.c_11 <- sigsq_x.c
         Sigma_xxtilde.c_12 <- sigsq_x.c
-        # Sigma_xxtilde.c_22 <-
-        #   g.i * f.sigsq_x.c + g.i^2 * sigsq_p + g.i^2 * sigsq_m
         if (constant.pe) {
           Sigma_xxtilde.c_22 <-
             g.i * f.sigsq_x.c + g.i^2 * sigsq_p + g.i^2 * sigsq_m
@@ -702,9 +701,6 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
         # Log-likelihood
         ll.vals <- part1 + part2
         ll.i <- sum(ll.vals)
-
-        # ll.vals <- g.i * part1 + part2
-        # ll.i <- sum(ll.vals)
 
       } else {
 
