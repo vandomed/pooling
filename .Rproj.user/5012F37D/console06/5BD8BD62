@@ -1,114 +1,0 @@
-[0m[0KMicrosoft Windows [Version 6.1.7601][0K[?25l
-Copyright (c) 2009 Microsoft Corporation.  All rights reserved.[0K
-[0K
-C:\Users\Dane\Google Drive\github\pooling>[0K[?25hc[0Kd[0K[46G[?25lC:\Users\Dane\Google Drive\github\pooling>cd .[0K[?25h.[0K[?25l
-[0K[?25h[?25l
-C:\Users\Dane\Google Drive\github>[0K[?25hc[0Kd[0K[38G[?25lC:\Users\Dane\Google Drive\github>cd .[0K[?25h.[0K[?25l
-[0K
-C:\Users\Dane\Google Drive>[0K[?25hc[0Kd[0K[31G[?25lC:\Users\Dane\Google Drive>cd .[0K[?25h.[0K[?25l
-[0K
-C:\Users\Dane>[0K[?25hc[0Kd[0K[18G[?25lC:\Users\Dane>cd D[0K[?25ho[0Kc[0Ku[0Ke[0K[?25lC:\Users\Dane>cd Docu[0K[?25hm[0Ke[0Kn[0Kt[0Ks[0K[?25l
-[0K
-C:\Users\Dane\Documents>[0K[?25hl[0Ks[0K]0;  - ls[?25l
-[0K[?25h]0; Career      MEGA                Misc         My Tableau Repository  Research  Taxes        r_files[0K[?25l
-Coursework  MEGA-MASTERKEY.txt  My Music     My Videos              Stocks    Tutoring     stocktable.csv[0K
-GitHub      Magic Briefcase     My Pictures  R                      TAing     desktop.ini  tab[0K
-[0K
-C:\Users\Dane\Documents>[0K[?25hc[0Kd[0K[28G[?25lC:\Users\Dane\Documents>cd R[0K[?25h[?25l
-[0K
-C:\Users\Dane\Documents\R>[0K[?25hl[0Ks[0K]0;  - ls[?25l
-[0K[?25h]0; win-library[0K[?25l
-[0K
-C:\Users\Dane\Documents\R>[0K[?25hc[0Kd[0K[30G[?25lC:\Users\Dane\Documents\R>cd w[0K[?25hi[0Kn[0K-[0Kl[0Ki[0Kb[0Kr[0Ka[0Kr[0Ky[0K[?25l
-[0K
-C:\Users\Dane\Documents\R\win-library>[0K[?25hl[0Ks[0K]0;  - ls[?25l
-[0K[?25h]0; 3.2  3.3  3.4  3.5[0K[?25l
-[0K
-C:\Users\Dane\Documents\R\win-library>[0K[?25hc[0Kd[0K[42G[?25lC:\Users\Dane\Documents\R\win-library>cd 3[0K[?25h.[0K5[0K[?25l
-[0K
-C:\Users\Dane\Documents\R\win-library\3.5>[0K[?25hR[0K[45G[?25lC:\Users\Dane\Documents\R\win-library\3.5>R C[0K[?25hM[0KD[0K[49G[?25lC:\Users\Dane\Documents\R\win-library\3.5>R CMD c[0K[?25hh[0Ke[0Kc[0Kk[0K[55G[?25lC:\Users\Dane\Documents\R\win-library\3.5>R CMD check p[0K[?25ho[0Ko[0Kl[0Ki[0Kn[0Kg[0K_[0K0[0K.[0K1[0K.[0K0[0K.[0Kt[0Ka[0Kr[0K.[0Kg[0Kz[0K]0;  - R  CMD check pooling_0.1.0.tar.gz[?25l
-[0K[?25h]0; Warning: 'pooling_0.1.0.tar.gz' is neither a file nor directory, skipping[0K[?25l
-[0K
-[0K
-C:\Users\Dane\Documents\R\win-library\3.5>[0K[?25hl[0Ks[0K]0;  - ls[?25l
-[0K[?25h]0; BH                    base64enc   dvmisc               jsonlite        mvtnorm     repr         testy[0K[?25l
-Formula               bitops      dvmisc.Rcheck        knitr           nloptr      reshape2     testz[0K
-Hmisc                 brew        dvmisc_1.1.1.tar.gz  labeling        numDeriv    rlang        tibble[0K
-Kmisc                 caTools     dvmisc_1.1.2.tar.gz  latticeExtra    openssl     rmarkdown    tinytex[0K
-MatrixModels          car         evaluate             lazyeval        package1    roxygen2     utf8[0K
-R6                    checkmate   gee                  lme4            package2    rprojroot    viridis[0K
-RApiDatetime          cli         gettz                lmtest          pander      rstudioapi   viridisLite[0K
-RColorBrewer          colorspace  ggplot2              lubridate       pbkrtest    scales       whisker[0K
-Rcpp                  commonmark  git2r                magrittr        pillar      shiny        withr[0K
-RcppEigen             crayon      gridExtra            markdown        plyr        sourcetools  xml2[0K
-SparseM               cubature    gtable               memisc          pooling     stocks       xtable[0K
-TTR                   curl        highr                memoise         pracma      stringi      xts[0K
-acepack               data.table  htmlTable            microbenchmark  praise      stringr      yaml[0K
-anytime.Rcheck        desc        htmltools            mime            printr      survey       zoo[0K
-anytime_0.3.0.tar.gz  devtools    htmlwidgets          minqa           quantmod    tab[0K
-assertthat            dichromat   httpuv               moments         quantreg    testpackage[0K
-backports             digest      httr                 munsell         rbenchmark  testthat[0K
-[0K
-C:\Users\Dane\Documents\R\win-library\3.5>[0K[?25hc[0Kd[0K[46G[?25lC:\Users\Dane\Documents\R\win-library\3.5>cd .[0K[?25h.[0K[?25lC:\Users\Dane\Documents\R\win-library\3.5>cd .[0K[?25h[?25lC:\Users\Dane\Documents\R\win-library\3.5>cd[0K[46G[?25h[?25lC:\Users\Dane\Documents\R\win-library\3.5>cd g[0K[?25hi[0Kt[0Kh[0Ku[0Kb[0K[?25l
-The system cannot find the path specified.[0K
-[0K
-C:\Users\Dane\Documents\R\win-library\3.5>[0K[?25hl[0Ks[0K]0;  - ls[?25l
-[0K[?25h]0; BH                    base64enc   dvmisc               jsonlite        mvtnorm     repr         testy[0K[?25l
-Formula               bitops      dvmisc.Rcheck        knitr           nloptr      reshape2     testz[0K
-Hmisc                 brew        dvmisc_1.1.1.tar.gz  labeling        numDeriv    rlang        tibble[0K
-Kmisc                 caTools     dvmisc_1.1.2.tar.gz  latticeExtra    openssl     rmarkdown    tinytex[0K
-MatrixModels          car         evaluate             lazyeval        package1    roxygen2     utf8[0K
-R6                    checkmate   gee                  lme4            package2    rprojroot    viridis[0K
-RApiDatetime          cli         gettz                lmtest          pander      rstudioapi   viridisLite[0K
-RColorBrewer          colorspace  ggplot2              lubridate       pbkrtest    scales       whisker[0K
-Rcpp                  commonmark  git2r                magrittr        pillar      shiny        withr[0K
-RcppEigen             crayon      gridExtra            markdown        plyr        sourcetools  xml2[0K
-SparseM               cubature    gtable               memisc          pooling     stocks       xtable[0K
-TTR                   curl        highr                memoise         pracma      stringi      xts[0K
-acepack               data.table  htmlTable            microbenchmark  praise      stringr      yaml[0K
-anytime.Rcheck        desc        htmltools            mime            printr      survey       zoo[0K
-anytime_0.3.0.tar.gz  devtools    htmlwidgets          minqa           quantmod    tab[0K
-assertthat            dichromat   httpuv               moments         quantreg    testpackage[0K
-backports             digest      httr                 munsell         rbenchmark  testthat[0K
-[0K
-C:\Users\Dane\Documents\R\win-library\3.5>[0K[?25hc[0Kd[0K[46G[?25lC:\Users\Dane\Documents\R\win-library\3.5>cd .[0K[?25h.[0K[?25l
-[0K
-C:\Users\Dane\Documents\R\win-library>[0K[?25hc[0Kd[0K[42G[?25lC:\Users\Dane\Documents\R\win-library>cd .[0K[?25h.[0K[?25l
-[0K
-C:\Users\Dane\Documents\R>[0K[?25hc[0Kd[0K[30G[?25lC:\Users\Dane\Documents\R>cd .[0K[?25h.[0K[?25l
-[0K
-C:\Users\Dane\Documents>[0K[?25hc[0Kd[0K[28G[?25lC:\Users\Dane\Documents>cd .[0K[?25h.[0K[?25l
-[0K
-C:\Users\Dane>[0K[?25hc[0Kd[0K[18G[?25lC:\Users\Dane>cd G[0K[?25ho[0Ko[0Kg[0Kl[0Ke[0K[25G[?25lC:\Users\Dane>cd Google D[0K[?25hr[0Ki[0Kv[0Ke[0K/[0Kg[0Ki[0Kt[0Kh[0Ku[0Kb[0K/[0Kp[0Ko[0K[?25lC:\Users\Dane>cd Google Drive/github/p[0K[?25h[?25lC:\Users\Dane>cd Google Drive/github/[0K[?25h[?25lC:\Users\Dane>cd Google Drive/github[0K[?25h[?25l
-[0K
-C:\Users\Dane\Google Drive\github>[0K[?25hR[0K[37G[?25lC:\Users\Dane\Google Drive\github>R C[0K[?25hM[0KD[0K[41G[?25lC:\Users\Dane\Google Drive\github>R CMD c[0K[?25hh[0Ke[0Kc[0Kk[0K[47G[?25lC:\Users\Dane\Google Drive\github>R CMD check p[0K[?25ho[0Ko[0Kl[0Ki[0Kn[0Kg[0K_[0K0[0K.[0K1[0K.[0K0[0K.[0Kt[0Ka[0Kr[0K.[0Kg[0Kz[0K]0;  - R  CMD check pooling_0.1.0.tar.gz[?25l
-[0K[?25h* using log directory 'C:/Users/Dane/Google Drive/github/pooling.Rcheck'[0K[?25l
-* using R Under development (unstable) (2018-01-28 r74175)[0K
-* using platform: x86_64-w64-mingw32 (64-bit)[0K
-* using session charse[0K[?25ht: ISO8859-1[0K[?25l
-[0K[?25h* checking for file 'pooling/DESCRIPTION' ... OK[0K[?25l
-* checking extension type ... Package[0K
-* this is package 'pooling' version '0.1.0'[0K
-* checking package namespace information ...[0K[?25h OK[0K[?25l
-* checking package dependencies ...[0K[?25h OK[0K[?25l
-* checking if this is a source package ... OK[0K
-* checking if there is a namespace ... OK[0K
-[0K[?25h* checking for executable files ...[0K OK[0K[?25l
-* checking for hidden files and directories ... OK[0K
-* checking for portable file names ... OK[0K
-* checking whether package 'pooling' can be installed ...[0K[?25h ERROR[0K[?25l
-Installation failed.[0K
-See 'C:/Users/Dane/Google Drive/github/pooling.Rcheck/00install.out' for details.[0K
-* DONE[0K
-[0K
-Status: 1 ERROR[0K
-See[0K
-  'C:/Users/Dane/Google Drive/github/pooling.Rcheck/00check.log'[0K
-for details.[0K
-[0K
-[0K[?25h]0; [?25l
-C:\Users\Dane\Google Drive\github>[0K[?25h.[0Kl[0Ki[0Kb[0KP[0Ka[0Kt[0Kh[0Ks[0K([0K)[0K[?25l
-[0K[?25h'.libPaths' is not recognized as an internal or external command,[0K[?25l
-operable program or batch file.[0K
-[0K
-C:\Users\Dane\Google Drive\github>[0K[?25h
