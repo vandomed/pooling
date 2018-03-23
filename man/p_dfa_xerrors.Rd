@@ -19,10 +19,9 @@ replicates) with \code{Xtilde} values.}
 \item{c}{Numeric matrix with poolwise \strong{\code{C}} values (if any), with
 one row for each pool. Can be a vector if there is only 1 covariate.}
 
-\item{errors}{Character string specifying the errors that \code{X} is
-subject to. Choices are \code{"neither"} for neither processing error nor
-measurement error, \code{"processing"} for processing error only,
-\code{"measurement"} for measurement error only, and \code{"both"}.}
+\item{errors}{Character string specifying the errors that \code{X} is subject
+to. Choices are \code{"neither"}, \code{"processing"} for processing error
+only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }

@@ -7,8 +7,8 @@
 #' \tabular{ll}{
 #' Package: \tab pooling \cr
 #' Type: \tab Package \cr
-#' Version: \tab 0.1.0 \cr
-#' Date: \tab 2018-02-20 \cr
+#' Version: \tab 1.1.1 \cr
+#' Date: \tab 2018-03-23 \cr
 #' License: \tab GPL-3 \cr
 #' }
 #'
@@ -21,7 +21,7 @@
 #'
 #'
 #' @docType package
-#' @importFrom numDeriv hessian
+#' @importFrom pracma hessian
 #' @importFrom stats nlminb
 #' @importFrom cubature adaptIntegrate
 #' @importFrom mvtnorm dmvnorm

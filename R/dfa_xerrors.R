@@ -1,15 +1,17 @@
-#' Discriminant Function Approach for Estimating Odds Ratio with Poolwise Data
-#' and Errors in Continuous Exposure
+#' Discriminant Function Approach for Estimating Odds Ratio with Continuous
+#' Exposure Subject to Measurement Error
 #'
-#' Implements method described in [1].
-#'
-#'
-#' @inheritParams p_logreg_xerrors
-#' @param y Numeric vector of poolwise \code{Y} values (number of cases in each
-#' pool).
+#' Assumes exposure measurements are subject to additive normal measurement
+#' error, and exposure given covariates and outcome is a normal-errors linear
+#' regression. Some replicates are required for identifiability.
 #'
 #'
-#' @return List containing:
+#' @inheritParams logreg_xerrors
+#' @param merror Logical value for whether there is measurement error.
+#' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
+#'
+#'
+#' #' @return List containing:
 #' \enumerate{
 #'   \item Named numeric vector with point estimates for \code{gamma_y},
 #'   \code{sigsq}, and the covariate-adjusted log-odds ratio, and the estimated
@@ -20,28 +22,15 @@
 #'  }
 #'
 #'
-#' @references
+#'  @references
 #' Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
-#' "A Discriminant Function Approach to Adjust for Processing and Measurement
-#' Error When a Biomarker is Assayed in Pooled Samples."
+#' "A discriminant function approach to adjust for processing and measurement
+#' error When a biomarker is assayed in pooled samples."
 #' \emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
-#'
-#' Acknowledgment: This material is based upon work supported by the National
-#' Science Foundation Graduate Research Fellowship under Grant No. DGE-0940903.
 #'
 #'
 #' @export
-p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
-                          errors = "both", ...) {
-
-  # Check that inputs are valid
-  if (! errors %in% c("neither", "processing", "measurement", "both")) {
-    stop("The input 'errors' should be set to 'neither', 'processing',
-         'measurement', or 'both'.")
-  }
-
-  # Sample size
-  n.pools <- length(y)
+dfa_xerrors <- function(y, xtilde, c = NULL, merror = TRUE, ...) {
 
   # Get name of y input
   y.varname <- deparse(substitute(y))
@@ -68,11 +57,11 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
   # Get number of gammas
   n.gammas <- 2 + n.cvars
 
-  # Create vector indicating which observations are pools
-  ipool <- ifelse(g > 1, 1, 0)
+  # Sample size
+  n <- length(y)
 
-  # Create matrix of (g, Y, C) values
-  gyc <- cbind(g, y, c)
+  # Construct (1, Y, C) matrix
+  oneyc <- cbind(rep(1, n), y, c)
 
   # Separate out replicate from singles
   class.xtilde <- class(xtilde)
@@ -85,9 +74,8 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
 
       # Replicates
       k.r <- k[which.r]
-      g.r <- g[which.r]
       y.r <- y[which.r]
-      gyc.r <- gyc[which.r, , drop = FALSE]
+      oneyc.r <- oneyc[which.r, , drop = FALSE]
       xtilde.r <- xtilde[which.r]
 
     }
@@ -96,10 +84,8 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     if (some.s) {
 
       # Singles
-      g <- g[-which.r]
-      ipool <- ipool[-which.r]
       y <- y[-which.r]
-      gyc <- gyc[-which.r, , drop = FALSE]
+      oneyc <- oneyc[-which.r, , drop = FALSE]
       xtilde <- unlist(xtilde[-which.r])
 
     }
@@ -113,15 +99,11 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
   gamma.labels <- paste("gamma", c("0", y.varname, c.varnames), sep = "_")
 
   loc.sigsq <- n.gammas + 1
+  loc.sigsq_m <- n.gammas + 2
 
-  if (errors == "neither") {
-    theta.labels <- c(gamma.labels, "sigsq")
-  } else if (errors == "processing") {
-    theta.labels <- c(gamma.labels, "sigsq", "sigsq_p")
-  } else if (errors == "measurement") {
-    theta.labels <- c(gamma.labels, "sigsq", "sigsq_m")
-  } else if (errors == "both") {
-    theta.labels <- c(gamma.labels, "sigsq", "sigsq_p", "sigsq_m")
+  theta.labels <- c(gamma.labels, "sigsq")
+  if (merror) {
+    theta.labels <- c(theta.labels, "sigsq_m")
   }
 
   # Log-likelihood function
@@ -131,70 +113,69 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     f.gammas <- matrix(f.theta[loc.gammas], ncol = 1)
     f.sigsq <- f.theta[loc.sigsq]
 
-    if (errors == "neither") {
-      f.sigsq_p <- 0
-      f.sigsq_m <- 0
-    } else if (errors == "measurement") {
-      f.sigsq_p <- 0
-      f.sigsq_m <- f.theta[loc.sigsq + 1]
-    } else if (errors == "processing") {
-      f.sigsq_p <- f.theta[loc.sigsq + 1]
-      f.sigsq_m <- 0
-    } else if (errors == "both") {
-      f.sigsq_p <- f.theta[loc.sigsq + 1]
-      f.sigsq_m <- f.theta[loc.sigsq + 2]
-    }
+    if (merror) {
 
-    # Likelihood:
-    # L_i = f(Xtilde_i^*|Y_i^*,C_i^*)
+      # Likelihood:
+      # L_i = f(Xtilde|Y,C)
 
-    if (some.r) {
+      f.sigsq_m <- f.theta[loc.sigsq_m]
 
-      ll.vals <- c()
-      for (ii in 1: length(xtilde.r)) {
+      if (some.r) {
 
-        # Values for ith subject
-        g_i <- g.r[ii]
-        ipool_i <- ipool.r[ii]
-        k_i <- k.r[ii]
-        gyc_i <- gyc.r[ii, ]
-        xtilde_i <- xtilde.r[[ii]]
+        ll.vals <- c()
+        for (ii in 1: length(xtilde.r)) {
 
-        # E(Xtilde|Y,C) and V(Xtilde|Y,C)
-        Mu_xtilde.yc <- matrix(gyc_i %*% f.gammas, ncol = k_i)
-        Sigma_xtilde.yc <-
-          matrix(g_i * f.sigsq + g_i^2 * f.sigsq_p * ipool_i,
-                 ncol = k_i, nrow = k_i) +
-          diag(x = g_i^2 * f.sigsq_m, ncol = k_i, nrow = k_i)
+          # Values for ith subject
+          k_i <- k.r[ii]
+          oneyc_i <- oneyc.r[ii, ]
+          xtilde_i <- xtilde.r[[ii]]
+
+          # E(Xtilde|Y,C) and V(Xtilde|Y,C)
+          Mu_xtilde.yc <- matrix(oneyc_i %*% f.gammas, ncol = k_i)
+          Sigma_xtilde.yc <- f.sigsq + diag(x = f.sigsq_m, ncol = k_i, nrow = k_i)
+
+          # Log-likelihood
+          ll.vals[ii] <- dmvnorm(x = xtilde_i, log = TRUE,
+                                 mean = Mu_xtilde.yc,
+                                 sigma = Sigma_xtilde.yc)
+
+        }
+        ll.r <- sum(ll.vals)
+
+      } else {
+        ll.r <- 0
+      }
+
+      if (some.s) {
+
+        # E(Xtilde|Y,C)
+        mu_xtilde.yc <- oneyc %*% f.gammas
 
         # Log-likelihood
-        ll.vals[ii] <- mvtnorm::dmvnorm(x = xtilde_i, log = TRUE,
-                                        mean = Mu_xtilde.yc,
-                                        sigma = Sigma_xtilde.yc)
+        ll.s <- sum(dnorm(x = xtilde, log = TRUE,
+                          mean = mu_xtilde.yc,
+                          sd = sqrt(f.sigsq + f.sigsq_m)))
 
+      } else {
+        ll.s <- 0
       }
-      ll.r <- sum(ll.vals)
+
+      ll <- ll.r + ll.s
 
     } else {
-      ll.r <- 0
-    }
 
-    if (some.s) {
+      # Likelihood:
+      # L = f(X|Y,C)
 
-      # E(Xtilde|Y,C) and V(Xtilde|Y,C)
-      mu_xtilde.yc <- gyc %*% f.gammas
-      sigsq_xtilde.yc <- g * f.sigsq + g^2 * f.sigsq_p * ipool + g^2 * f.sigsq_m
+      # E(X|Y,C)
+      mu_x.yc <- oneyc %*% f.gammas
 
       # Log-likelihood
-      ll.s <- sum(dnorm(x = xtilde, log = TRUE,
-                        mean = mu_xtilde.yc, sd = sqrt(sigsq_xtilde.yc)))
+      ll <- sum(dnorm(x = x, log = TRUE, mean = mu_x.yc, sd = sqrt(f.sigsq)))
 
-    } else {
-      ll.s <- 0
     }
 
     # Return negative log-likelihood
-    ll <- ll.r + ll.s
     return(-ll)
 
   }
@@ -203,21 +184,17 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
   # lower values if not specified by user
   extra.args <- list(...)
   if (is.null(extra.args$start)) {
-    if (errors == "neither") {
+    if (! merror) {
       extra.args$start <- c(rep(0, n.gammas), 1)
-    } else if (errors %in% c("measurement", "processing")) {
+    } else {
       extra.args$start <- c(rep(0, n.gammas), 1, 1)
-    } else if (errors == "both") {
-      extra.args$start <- c(rep(0, n.gammas), 1, 1, 1)
     }
   }
   if (is.null(extra.args$lower)) {
-    if (errors == "neither") {
+    if (! merror) {
       extra.args$lower <- c(rep(-Inf, n.gammas), 1e-3)
-    } else if (errors %in% c("measurement", "processing")) {
+    } else {
       extra.args$lower <- c(rep(-Inf, n.gammas), rep(1e-3, 2))
-    } else if (errors == "both") {
-      extra.args$lower <- c(rep(-Inf, n.gammas), rep(1e-3, 3))
     }
   }
   if (is.null(extra.args$control$rel.tol)) {

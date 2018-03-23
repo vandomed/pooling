@@ -1,10 +1,10 @@
-#' Poolwise Logistic Regression with Errors in Continuous Exposure Variable
+#' Poolwise Logistic Regression with Normal Exposure Subject to Errors
 #'
 #' Assumes normal linear model for exposure given covariates, and additive
 #' normal processing errors and measurement errors acting on the poolwise mean
 #' exposure. Borrows ideas from Weinberg \& Umbach (1999), Schisterman et al.
 #' (2015), and Lyles et al. (2015). Manuscript fully describing the approach
-#' is being prepared.
+#' is in preparation.
 #'
 #'
 #' @inheritParams p_logreg
@@ -15,33 +15,34 @@
 #' @param c Numeric matrix with poolwise \strong{\code{C}} values (if any), with
 #' one row for each pool. Can be a vector if there is only 1 covariate.
 #'
-#' @param errors Character string specifying the errors that \code{X} is
-#' subject to. Choices are \code{"neither"} for neither processing error nor
-#' measurement error, \code{"processing"} for processing error only,
-#' \code{"measurement"} for measurement error only, and \code{"both"}.
+#' @param errors Character string specifying the errors that \code{X} is subject
+#' to. Choices are \code{"neither"}, \code{"processing"} for processing error
+#' only, \code{"measurement"} for measurement error only, and \code{"both"}.
 #'
-#' @param diff.pe,diff.me Logical value for whether the processing (measurement)
-#' error variance is differential, i.e. different in case pools vs. control
-#' pools.
+#' @param nondiff_pe Logical value for whether to assume the processing error
+#' variance is non-differential, i.e. the same in case pools and control pools.
 #'
-#' @param constant.pe Logical value for whether the processing error variance is
-#' assumed to be constant with pool size. If \code{FALSE}, it is assumed to
-#' increase with pool size such that, for example, the processing error
-#' affecting a pool twice as large as another has twice the variance.
+#' @param nondiff_me Logical value for whether to assume the measurement error
+#' variance is non-differential, i.e. the same in case pools and control pools.
 #'
-#' @param approx.integral Logical value for whether to use the probit
+#' @param constant_pe Logical value for whether to assume the processing error
+#' variance is constant with pool size. If \code{FALSE}, assumption is that
+#' processing error variance increase with pool size such that, for example, the
+#' processing error affecting a pool 2x as large as another has 2x the variance.
+#'
+#' @param approx_integral Logical value for whether to use the probit
 #' approximation for the logistic-normal integral, to avoid numerically
 #' integrating \code{X}'s out of the likelihood function.
 #'
-#' @param integrate.tol Numeric value specifying the \code{tol} input to
-#' \code{\link{adaptIntegrate}}.  Only used if \code{approx.integral = FALSE}.
+#' @param integrate_tol Numeric value specifying the \code{tol} input to
+#' \code{\link{adaptIntegrate}}. Only used if \code{approx_integral = FALSE}.
 #'
-#' @param integrate.tol.start Same as \code{integrate.tol}, but applies only to
+#' @param integrate_tol_start Same as \code{integrate_tol}, but applies only to
 #' the very first iteration of ML maximization. The first iteration tends to
 #' take much longer than subsequent ones, so less precise integration at the
 #' start can speed things up.
 #'
-#' @param integrate.tol.hessian Same as \code{integrate.tol}, but for use when
+#' @param integrate_tol_hessian Same as \code{integrate_tol}, but for use when
 #' estimating the Hessian matrix only. Sometimes more precise integration
 #' (i.e. smaller tolerance) than used for maximizing the likelihood helps
 #' prevent cases where the inverse Hessian is not positive definite.
@@ -78,14 +79,14 @@
 #' @export
 p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
                              errors = "both",
-                             diff.pe = FALSE, diff.me = FALSE,
-                             constant.pe = TRUE,
-                             p_y1 = NULL, p_sample.y1y0 = NULL,
-                             approx.integral = TRUE,
-                             integrate.tol = 1e-8,
-                             integrate.tol.start = integrate.tol,
-                             integrate.tol.hessian = integrate.tol,
-                             estimate.var = FALSE,
+                             nondiff_pe = TRUE, nondiff_me = TRUE,
+                             constant_pe = TRUE,
+                             prev = NULL, samp_y1y0 = NULL,
+                             approx_integral = TRUE,
+                             integrate_tol = 1e-8,
+                             integrate_tol_start = integrate_tol,
+                             integrate_tol_hessian = integrate_tol,
+                             estimate_var = FALSE,
                              ...) {
 
   # Check that inputs are valid
@@ -93,40 +94,40 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
     stop("The input 'errors' should be set to 'neither', 'processing',
          'measurement', or 'both'.")
   }
-  if (! is.logical(diff.pe)) {
-    stop("The input 'diff.pe' should be TRUE for differential processing error or FALSE for non-differential processing error.")
+  if (! is.logical(nondiff_pe)) {
+    stop("The input 'nondiff_pe' should be TRUE if you want to assume non-differential processing error and FALSE otherwise.")
   }
-  if (! is.logical(diff.me)) {
-    stop("The input 'diff.me' should be TRUE for differential measurement error or FALSE for non-differential measurement error.")
+  if (! is.logical(nondiff_me)) {
+    stop("The input 'nondiff_me' should be TRUE if you want to assume non-differential measurement error and FALSE otherwise.")
   }
-  if (! is.logical(constant.pe)) {
-    stop("The input 'constant.pe' sholud be TRUE or FALSE.")
+  if (! is.logical(constant_pe)) {
+    stop("The input 'constant_pe' should be TRUE if you want to assume that processing error variance is constant with pool size and FALSE otherwise.")
   }
-  if (! is.null(p_y1)) {
-    if (p_y1 < 0 | p_y1 > 1) {
-      stop("The input 'p_y1' is the disease prevalence, and must be between 0 and 1.")
+  if (! is.null(prev)) {
+    if (prev < 0 | prev > 1) {
+      stop("The input 'prev' is the disease prevalence, and must be between 0 and 1.")
     }
   }
-  if (! is.null(p_sample.y1y0)) {
+  if (! is.null(samp_y1y0)) {
     if (! (length(p_sample.y1y0) == 2 &
-           min(p_sample.y1y0) > 0 & max(p_sample.y1y0) < 1)) {
-      stop("The input 'p_sample.y1y0' is the sampling probabilities for cases and controls, and should be a numeric vector of two probabilities.")
+           min(samp_y1y0) > 0 & max(samp_y1y0) < 1)) {
+      stop("The input 'samp_y1y0' is the sampling probabilities for cases and controls, and should be a numeric vector of two probabilities.")
     }
   }
-  if (! is.logical(approx.integral)) {
-    stop("The input 'approx.integral' should be TRUE or FALSE.")
+  if (! is.logical(approx_integral)) {
+    stop("The input 'approx_integral' should be TRUE or FALSE.")
   }
-  if (! (is.numeric(integrate.tol) & inside(integrate.tol, c(1e-32, Inf)))) {
-    stop("The input 'integrate.tol' must be a numeric value greater than 1e-32.")
+  if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
+    stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate.tol.start) & inside(integrate.tol.start, c(1e-32, Inf)))) {
-    stop("The input 'integrate.tol.start' must be a numeric value greater than 1e-32.")
+  if (! (is.numeric(integrate_tol_start) & inside(integrate_tol_start, c(1e-32, Inf)))) {
+    stop("The input 'integrate_tol_start' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate.tol.hessian) & inside(integrate.tol.hessian, c(1e-32, Inf)))) {
-    stop("The input 'integrate.tol.hessian' must be a numeric value greater than 1e-32.")
+  if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
+    stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
   }
-  if (! is.logical(estimate.var)) {
-    stop("The input 'estimate.var' should be TRUE or FALSE.")
+  if (! is.logical(estimate_var)) {
+    stop("The input 'estimate_var' should be TRUE or FALSE.")
   }
 
   # Get name of xtilde input
@@ -170,7 +171,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   g.vals <- unique(g)
   qg <- rep(NA, n.pools)
 
-  if (! is.null(p_y1)) {
+  if (! is.null(prev)) {
 
     for (jj in 1: length(g.vals)) {
       g.jj <- g.vals[jj]
@@ -178,10 +179,10 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       n.casepools <- sum(g == g.jj & y == 1)
       n.controlpools <- sum(g == g.jj & y == 0)
       qg[locs.g] <- log(n.casepools / n.controlpools) -
-        g.jj * log(p_y1 / (1 - p_y1))
+        g.jj * log(prev / (1 - prev))
     }
 
-  } else if (! is.null(p_sample.y1y0)) {
+  } else if (! is.null(samp_y1y0)) {
 
     for (jj in 1: length(g.vals)) {
       g.jj <- g.vals[jj]
@@ -189,8 +190,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       n.casepools <- sum(g == g.jj & y == 1)
       n.controlpools <- sum(g == g.jj & y == 0)
       qg[locs.g] <- log(n.casepools / n.controlpools) -
-        g.jj * log(n_1 / n_0) - g.jj * log(p_sample.y1y0[2] /
-                                             p_sample.y1y0[1])
+        g.jj * log(n_1 / n_0) - g.jj * log(samp_y1y0[2] / samp_y1y0[1])
     }
 
   } else {
@@ -281,7 +281,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   if (errors == "neither") {
     theta.labels <- c(beta.labels, alpha.labels, "sigsq_x.c")
   } else if (errors == "processing") {
-    if (diff.pe) {
+    if (! nondiff_pe) {
       loc.sigsq_p1 <- loc.sigsq_x.c + 1
       loc.sigsq_p0 <- loc.sigsq_x.c + 2
       theta.labels <- c(beta.labels, alpha.labels,
@@ -291,7 +291,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       theta.labels <- c(beta.labels, alpha.labels, "sigsq_x.c", "sigsq_p")
     }
   } else if (errors == "measurement") {
-    if (diff.me) {
+    if (! nondiff_me) {
       loc.sigsq_m1 <- loc.sigsq_x.c + 1
       loc.sigsq_m0 <- loc.sigsq_x.c + 2
       theta.labels <- c(beta.labels, alpha.labels,
@@ -301,7 +301,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       theta.labels <- c(beta.labels, alpha.labels, "sigsq_x.c", "sigsq_m")
     }
   } else if (errors == "both") {
-    if (diff.pe & diff.me) {
+    if (! nondiff_pe & ! nondiff_me) {
       loc.sigsq_p1 <- loc.sigsq_x.c + 1
       loc.sigsq_p0 <- loc.sigsq_x.c + 2
       loc.sigsq_m1 <- loc.sigsq_x.c + 3
@@ -309,19 +309,19 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       theta.labels <- c(beta.labels, alpha.labels,
                         "sigsq_x.c", "sigsq_p1", "sigsq_p0", "sigsq_m1",
                         "sigsq_m0")
-    } else if (diff.pe & ! diff.me) {
+    } else if (! nondiff_pe & nondiff_me) {
       loc.sigsq_p1 <- loc.sigsq_x.c + 1
       loc.sigsq_p0 <- loc.sigsq_x.c + 2
       loc.sigsq_m1 <- loc.sigsq_m0 <- loc.sigsq_x.c + 3
       theta.labels <- c(beta.labels, alpha.labels,
                         "sigsq_x.c", "sigsq_p1", "sigsq_p0", "sigsq_m")
-    } else if (! diff.pe & diff.me) {
+    } else if (nondiff_pe & ! nondiff_me) {
       loc.sigsq_p1 <- loc.sigsq_p0 <- loc.sigsq_x.c + 1
       loc.sigsq_m1 <- loc.sigsq_x.c + 2
       loc.sigsq_m0 <- loc.sigsq_x.c + 3
       theta.labels <- c(beta.labels, alpha.labels,
                         "sigsq_x.c", "sigsq_p", "sigsq_m1", "sigsq_m0")
-    } else if (! diff.pe & ! diff.me) {
+    } else if (nondiff_pe & nondiff_me) {
       loc.sigsq_p1 <- loc.sigsq_p0 <- loc.sigsq_x.c + 1
       loc.sigsq_m1 <- loc.sigsq_m0 <- loc.sigsq_x.c + 2
       theta.labels <- c(beta.labels, alpha.labels,
@@ -394,12 +394,6 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       #   = int_X f(Y|X,C) f(Xtilde|X) f(X|C) dX
 
       # Create error vectors
-      #sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * ipool.r * (g.r - 1)
-      # if (constant.pe) {
-      #   sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * ipool.r
-      # } else {
-      #   sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * (g.r - 1)
-      # }
       sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * ipool.r
       sigsq_m <- ifelse(y.r, f.sigsq_m1, f.sigsq_m0)
 
@@ -407,7 +401,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       mu_x.c <- gc.r %*% f.alphas
       sigsq_x.c <- g.r * f.sigsq_x.c
 
-      if (approx.integral) {
+      if (approx_integral) {
 
         # Probit approximation for logistic-normal integral
 
@@ -431,11 +425,8 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
           Sigma_xxtilde.c_11 <- sigsq_x.c_i
           Sigma_xxtilde.c_12 <- matrix(sigsq_x.c_i, ncol = k_i)
           Sigma_xxtilde.c_21 <- t(Sigma_xxtilde.c_12)
-          # Sigma_xxtilde.c_22 <- g_i * f.sigsq_x.c +
-          #   g_i^2 * sigsq_p_i +
-          #   diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
           Sigma_xxtilde.c_22 <- g_i * f.sigsq_x.c +
-            g_i^2 * ifelse(constant.pe, 1, (g_i - 1)) * sigsq_p_i +
+            g_i^2 * ifelse(constant_pe, 1, g_i) * sigsq_p_i +
             diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
 
           mu_x.xtildec <- Mu_xxtilde.c[1] + Sigma_xxtilde.c_12 %*%
@@ -453,7 +444,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               sqrt(1 + sigsq_x.xtildec * f.beta_x^2 / 1.7^2)
           }
           p <- exp(t) / (1 + exp(t))
-          part1 <- stats::dbinom(x = y_i, size = 1, prob = p, log = TRUE)
+          part1 <- dbinom(x = y_i, size = 1, prob = p, log = TRUE)
 
           # log[f(Xtilde|C)]
           if (k_i == 2) {
@@ -469,9 +460,9 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
           } else {
 
-            part2 <- mvtnorm::dmvnorm(x = xtilde_i, log = TRUE,
-                                      mean = Mu_xxtilde.c[-1],
-                                      sigma = Sigma_xxtilde.c_22)
+            part2 <- dmvnorm(x = xtilde_i, log = TRUE,
+                             mean = Mu_xxtilde.c[-1],
+                             sigma = Sigma_xxtilde.c_22)
 
           }
 
@@ -505,9 +496,9 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
             if (g_i == 1) {
 
               # f(Y,X,Xtilde|C) = f(Y|X,C) f(Xtilde1|Xtilde2,X) f(Xtilde2|X) f(X|C)
-              stats::dbinom(x = y_i, size = 1, prob = p_y.xc) *
-                prod(stats::dnorm(x = xtilde_i, mean = s_i, sd = sqrt(sigsq_m_i))) *
-                stats::dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
+              dbinom(x = y_i, size = 1, prob = p_y.xc) *
+                prod(dnorm(x = xtilde_i, mean = s_i, sd = sqrt(sigsq_m_i))) *
+                dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
 
             } else {
 
@@ -516,7 +507,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               # Sigma_xtilde.x <- g_i^2 * sigsq_p_i +
               #   diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
               Sigma_xtilde.x <-
-                g_i^2 * ifelse(constant.pe, 1, g_i - 1) * sigsq_p_i +
+                g_i^2 * ifelse(constant_pe, 1, g_i) * sigsq_p_i +
                 diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
 
               # f(Y,X,Xtilde|C) = f(Y|X,C) f(Xtilde|X) f(X|C)
@@ -538,11 +529,11 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
         # Get integration tolerance
         if (estimating.hessian) {
-          int.tol <- integrate.tol.hessian
+          int.tol <- integrate_tol_hessian
         } else if (all(f.theta == extra.args$start)) {
-          int.tol <- integrate.tol.start
+          int.tol <- integrate_tol_start
         } else {
-          int.tol <- integrate.tol
+          int.tol <- integrate_tol
         }
 
         int.vals <- c()
@@ -659,7 +650,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       mu_x.c <- gc.i %*% f.alphas
       sigsq_x.c <- g.i * f.sigsq_x.c
 
-      if (approx.integral) {
+      if (approx_integral) {
 
         # Probit approximation for logistic-normal integral
 
@@ -668,12 +659,12 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
         Mu_xxtilde.c_2 <- mu_x.c
         Sigma_xxtilde.c_11 <- sigsq_x.c
         Sigma_xxtilde.c_12 <- sigsq_x.c
-        if (constant.pe) {
+        if (constant_pe) {
           Sigma_xxtilde.c_22 <-
             g.i * f.sigsq_x.c + g.i^2 * sigsq_p + g.i^2 * sigsq_m
         } else {
           Sigma_xxtilde.c_22 <-
-            g.i * f.sigsq_x.c + g.i^2 * (g.i - 1) * sigsq_p + g.i^2 * sigsq_m
+            g.i * f.sigsq_x.c + g.i^2 * g.i * sigsq_p + g.i^2 * sigsq_m
         }
 
         # E(X|Xtilde,C) and V(X|Xtilde,C)
@@ -739,11 +730,11 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
         # Get integration tolerance
         if (estimating.hessian) {
-          int.tol <- integrate.tol.hessian
+          int.tol <- integrate_tol_hessian
         } else if (all(f.theta == extra.args$start)) {
-          int.tol <- integrate.tol.start
+          int.tol <- integrate_tol_start
         } else {
-          int.tol <- integrate.tol
+          int.tol <- integrate_tol
         }
 
         int.vals <- c()

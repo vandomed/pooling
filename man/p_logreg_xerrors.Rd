@@ -2,13 +2,13 @@
 % Please edit documentation in R/p_logreg_xerrors.R
 \name{p_logreg_xerrors}
 \alias{p_logreg_xerrors}
-\title{Poolwise Logistic Regression with Errors in Continuous Exposure Variable}
+\title{Poolwise Logistic Regression with Normal Exposure Subject to Errors}
 \usage{
-p_logreg_xerrors(g, y, xtilde, c = NULL, errors = "both", diff.pe = FALSE,
-  diff.me = FALSE, constant.pe = TRUE, p_y1 = NULL,
-  p_sample.y1y0 = NULL, approx.integral = TRUE, integrate.tol = 1e-08,
-  integrate.tol.start = integrate.tol,
-  integrate.tol.hessian = integrate.tol, estimate.var = FALSE, ...)
+p_logreg_xerrors(g, y, xtilde, c = NULL, errors = "both",
+  nondiff_pe = TRUE, nondiff_me = TRUE, constant_pe = TRUE, prev = NULL,
+  samp_y1y0 = NULL, approx_integral = TRUE, integrate_tol = 1e-08,
+  integrate_tol_start = integrate_tol,
+  integrate_tol_hessian = integrate_tol, estimate_var = FALSE, ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes (number of members in each pool).}
@@ -22,48 +22,37 @@ replicates) with \code{Xtilde} values.}
 \item{c}{Numeric matrix with poolwise \strong{\code{C}} values (if any), with
 one row for each pool. Can be a vector if there is only 1 covariate.}
 
-\item{errors}{Character string specifying the errors that \code{X} is
-subject to. Choices are \code{"neither"} for neither processing error nor
-measurement error, \code{"processing"} for processing error only,
-\code{"measurement"} for measurement error only, and \code{"both"}.}
+\item{errors}{Character string specifying the errors that \code{X} is subject
+to. Choices are \code{"neither"}, \code{"processing"} for processing error
+only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 
-\item{diff.pe, diff.me}{Logical value for whether the processing (measurement)
-error variance is differential, i.e. different in case pools vs. control
-pools.}
+\item{nondiff_pe}{Logical value for whether to assume the processing error
+variance is non-differential, i.e. the same in case pools and control pools.}
 
-\item{constant.pe}{Logical value for whether the processing error variance is
-assumed to be constant with pool size. If \code{FALSE}, it is assumed to
-increase with pool size such that, for example, the processing error
-affecting a pool twice as large as another has twice the variance.}
+\item{nondiff_me}{Logical value for whether to assume the measurement error
+variance is non-differential, i.e. the same in case pools and control pools.}
 
-\item{p_y1}{Numeric value specifying disease prevalence, allowing
-for valid estimation of the intercept with case-control sampling. Can specify
-\code{p_sample.y1y0} instead if sampling rates are known.}
+\item{constant_pe}{Logical value for whether to assume the processing error
+variance is constant with pool size. If \code{FALSE}, assumption is that
+processing error variance increase with pool size such that, for example, the
+processing error affecting a pool 2x as large as another has 2x the variance.}
 
-\item{p_sample.y1y0}{Numeric vector of length 2 specifying sampling
-probabilities for cases and controls, allowing for valid estimation of the
-intercept with case-control sampling. Can specify \code{p_y1} instead if it's
-easier.}
-
-\item{approx.integral}{Logical value for whether to use the probit
+\item{approx_integral}{Logical value for whether to use the probit
 approximation for the logistic-normal integral, to avoid numerically
 integrating \code{X}'s out of the likelihood function.}
 
-\item{integrate.tol}{Numeric value specifying the \code{tol} input to
-\code{\link{adaptIntegrate}}.  Only used if \code{approx.integral = FALSE}.}
+\item{integrate_tol}{Numeric value specifying the \code{tol} input to
+\code{\link{adaptIntegrate}}. Only used if \code{approx_integral = FALSE}.}
 
-\item{integrate.tol.start}{Same as \code{integrate.tol}, but applies only to
+\item{integrate_tol_start}{Same as \code{integrate_tol}, but applies only to
 the very first iteration of ML maximization. The first iteration tends to
 take much longer than subsequent ones, so less precise integration at the
 start can speed things up.}
 
-\item{integrate.tol.hessian}{Same as \code{integrate.tol}, but for use when
+\item{integrate_tol_hessian}{Same as \code{integrate_tol}, but for use when
 estimating the Hessian matrix only. Sometimes more precise integration
 (i.e. smaller tolerance) than used for maximizing the likelihood helps
 prevent cases where the inverse Hessian is not positive definite.}
-
-\item{estimate.var}{Logical value for whether to return variance-covariance
-matrix for parameter estimates.}
 
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }
@@ -80,8 +69,9 @@ log-likelihood function.
 \description{
 Assumes normal linear model for exposure given covariates, and additive
 normal processing errors and measurement errors acting on the poolwise mean
-exposure. Borrows ideas from [1-3]. Manuscript fully describing the approach
-is currently under review.
+exposure. Borrows ideas from Weinberg \& Umbach (1999), Schisterman et al.
+(2015), and Lyles et al. (2015). Manuscript fully describing the approach
+is in preparation.
 }
 \references{
 Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)

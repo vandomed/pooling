@@ -1,54 +1,25 @@
-#' Poolwise Logistic Regression with Gamma-Distributed Exposure Subject to
-#' Errors
+#' Poolwise Logistic Regression with Gamma Exposure Subject to Errors
 #'
-#' Similar to \code{\link{p.logreg.xerrors}}, but for skewed exposure that takes
-#' on only positive values. Assumes a constant-scale Gamma model for exposure
-#' given covariates, and multiplicative lognormal processing errors and
-#' measurement errors acting on the poolwise mean exposure. Borrows ideas from
-#' [1-3]. Manuscript fully describing the approach is in preparation.
+#' Assumes constant-scale Gamma model for exposure given covariates, and
+#' multiplicative lognormal processing errors and measurement errors acting on
+#' the poolwise mean exposure. Borrows ideas from Weinberg \& Umbach (1999),
+#' Schisterman et al. (2015), and Lyles et al. (2015). Manuscript fully
+#' describing the approach is in preparation.
+#'
+#'
+#' @inheritParams p_logreg_xerrors
 #'
 #'
 #' @param g Numeric vector of pool sizes (number of individuals in each pool).
-#' Do not have to specify if \code{c} is specified (function can figure it out).
+#' Can leave as \code{NULL} if \code{c} is specified (function can figure it
+#' out).
 #'
-#' @param y Numeric vector with poolwise \code{Y} values, coded 0 if all members
-#' are controls and 1 if all members are cases.
-#'
-#' @param xtilde Numeric vector (or list of numeric vectors, if some pools have
-#' replicate measurements) with poolwise \code{Xtilde} values.
-#'
-#' @param c List where each element is a matrix containing the \code{\bold{C}}
-#' values for individual members of a particular pool. Each row of the matrix
-#' should contain the \code{\bold{C}} values for one individual. Can leave as
-#' \code{NULL} if there are no \code{\bold{C}} variables.
-#'
-#' @param error.type Character string specifying the errors that \code{X} is
-#' subject to.  Possible values are \code{"neither"} for neither processing
-#' error nor measurement error, \code{"processing"} for processing error only,
-#' \code{"measurement"} for measurement error only, and \code{"both"} for both.
-#'
-#' @param p_y1 Optional numeric value specifying disease prevalence, allowing
-#' for valid estimation of the intercept with case-control sampling.  If it's
-#' easier, you can specify \code{p_sample_y1y0} instead.  Only used if
-#' \code{offset.formula = 1}.
-#'
-#' @param p_sample.y1y0 Optional numeric vector if length 2 specifying sampling
-#' probabilities for cases and controls, allowing for valid estimation of the
-#' intercept with case-control sampling.  If it's easier, you can specify
-#' \code{p_y1} instead.
+#' @param c List where each element is a numeric matrix containing the
+#' \code{\bold{C}} values for members of a particular pool (1 row for each
+#' member).
 #'
 #' @param integrate.tol Numeric value specifying the \code{tol} input to
-#' \code{\link{adaptIntegrate}}.  Only used if \code{approx.integral = FALSE}.
-#'
-#' @param integrate.tol.start Same as \code{integrate.tol}, but applies only to
-#' the very first iteration of ML maximization.  The first iteration tends to
-#' take much longer than subsequent ones, so less precise integration at the
-#' start can speed things up.
-#'
-#' @param integrate.tol.hessian Same as \code{integrate.tol}, but for use when
-#' estimating the Hessian matrix only.  Sometimes more precise integration
-#' (i.e. smaller tolerance) than used for maximizing the likelihood helps
-#' prevent cases where the inverse Hessian is not positive definite.
+#' \code{\link{adaptIntegrate}}.
 #'
 #' @param estimate.var If \code{TRUE}, function returns variance-covariance
 #' matrix for parameter estimates, calculated as the inverse of the estimated
@@ -67,7 +38,8 @@
 #' @export
 p_logreg_xerrors_gamma <- function(g = NULL, y, xtilde, c = NULL,
                                    errors = "both",
-                                   diff.pe = FALSE, diff.me = FALSE,
+                                   nondiff.pe = TRUE, nondiff.me = TRUE,
+                                   constant.pe = TRUE,
                                    p_y1 = NULL, p_sample.y1y0 = NULL,
                                    integrate.tol = 1e-8,
                                    integrate.tol.start = integrate.tol,
@@ -75,9 +47,18 @@ p_logreg_xerrors_gamma <- function(g = NULL, y, xtilde, c = NULL,
                                    estimate.var = FALSE, ...) {
 
   # Check that inputs are valid
-  if (! error.type %in% c("neither", "processing", "measurement", "both")) {
+  if (! errors %in% c("neither", "processing", "measurement", "both")) {
     stop("The input 'error.type' should be set to 'neither', 'processing',
          'measurement', or 'both'.")
+  }
+  if (! is.logical(nondiff.pe)) {
+    stop("The input 'nondiff.pe' should be TRUE if you want to assume non-differential processing error and FALSE otherwise.")
+  }
+  if (! is.logical(nondiff.me)) {
+    stop("The input 'nondiff.me' should be TRUE if you want to assume non-differential measurement error and FALSE otherwise.")
+  }
+  if (! is.logical(constant.pe)) {
+    stop("The input 'constant.pe' should be TRUE if you want to assume that processing error variance is constant with pool size and FALSE otherwise.")
   }
   if (! is.null(p_y1)) {
     if (p_y1 < 0 | p_y1 > 1) {
@@ -271,7 +252,7 @@ p_logreg_xerrors_gamma <- function(g = NULL, y, xtilde, c = NULL,
   if (error.type == "neither") {
     theta.labels <- c(beta.labels, lambda.labels, "b")
   } else if (error.type == "processing") {
-    if (diff.pe) {
+    if (! nondiff.pe) {
       loc.sigsq_p1 <- loc.b + 1
       loc.sigsq_p0 <- loc.b + 2
       theta.labels <- c(beta.labels, lambda.labels,
@@ -281,7 +262,7 @@ p_logreg_xerrors_gamma <- function(g = NULL, y, xtilde, c = NULL,
       theta.labels <- c(beta.labels, lambda.labels, "b", "sigsq_p")
     }
   } else if (error.type == "measurement") {
-    if (diff.me) {
+    if (! nondiff.me) {
       loc.sigsq_m1 <- loc.b + 1
       loc.sigsq_m0 <- loc.b + 2
       theta.labels <- c(beta.labels, lambda.labels,
@@ -291,7 +272,7 @@ p_logreg_xerrors_gamma <- function(g = NULL, y, xtilde, c = NULL,
       theta.labels <- c(beta.labels, lambda.labels, "b", "sigsq_m")
     }
   } else if (error.type == "both") {
-    if (diff.pe & diff.me) {
+    if (! nondiff.pe & ! nondiff.me) {
       loc.sigsq_p1 <- loc.b + 1
       loc.sigsq_p0 <- loc.b + 2
       loc.sigsq_m1 <- loc.b + 3
@@ -299,19 +280,19 @@ p_logreg_xerrors_gamma <- function(g = NULL, y, xtilde, c = NULL,
       theta.labels <- c(beta.labels, lambda.labels,
                         "b", "sigsq_p1", "sigsq_p0", "sigsq_m1",
                         "sigsq_m0")
-    } else if (diff.pe & ! diff.me) {
+    } else if (! nondiff.pe & nondiff.me) {
       loc.sigsq_p1 <- loc.b + 1
       loc.sigsq_p0 <- loc.b + 2
       loc.sigsq_m1 <- loc.sigsq_m0 <- loc.b + 3
       theta.labels <- c(beta.labels, lambda.labels,
                         "b", "sigsq_p1", "sigsq_p0", "sigsq_m")
-    } else if (! diff.pe & diff.me) {
+    } else if (nondiff.pe & ! nondiff.me) {
       loc.sigsq_p1 <- loc.sigsq_p0 <- loc.b + 1
       loc.sigsq_m1 <- loc.b + 2
       loc.sigsq_m0 <- loc.b + 3
       theta.labels <- c(beta.labels, lambda.labels,
                         "b", "sigsq_p", "sigsq_m1", "sigsq_m0")
-    } else if (! diff.pe & ! diff.me) {
+    } else if (nondiff.pe & nondiff.me) {
       loc.sigsq_p1 <- loc.sigsq_p0 <- loc.b + 1
       loc.sigsq_m1 <- loc.sigsq_m0 <- loc.b + 2
       theta.labels <- c(beta.labels, lambda.labels,
