@@ -624,12 +624,12 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
   extra.args <- list(...)
   if (is.null(extra.args$start)) {
     if (errors == "neither") {
-      extra.args$start <- c(rep(0, n.betas + n.alphas), 1)
+      extra.args$start <- c(rep(0.01, n.betas + n.alphas), 1)
     } else if (errors == "processing") {
-      extra.args$start <- c(rep(0, n.betas + n.alphas),
+      extra.args$start <- c(rep(0.01, n.betas + n.alphas),
                             rep(1, loc.sigsq_p0 - loc.b + 1))
     } else if (errors %in% c("measurement", "both")) {
-      extra.args$start <- c(rep(0, n.betas + n.alphas),
+      extra.args$start <- c(rep(0.01, n.betas + n.alphas),
                             rep(1, loc.sigsq_m0 - loc.b + 1))
     }
   }

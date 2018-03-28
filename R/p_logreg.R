@@ -195,7 +195,7 @@ p_logreg <- function(g, y, x,
     # lower values if not specified by user
     extra.args <- list(...)
     if (is.null(extra.args$start)) {
-      extra.args$start <- rep(0, n.betas)
+      extra.args$start <- rep(0.01, n.betas)
     }
     if (is.null(extra.args$lower)) {
       extra.args$lower <- rep(-Inf, n.betas)

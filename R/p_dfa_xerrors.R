@@ -204,11 +204,11 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
   extra.args <- list(...)
   if (is.null(extra.args$start)) {
     if (errors == "neither") {
-      extra.args$start <- c(rep(0, n.gammas), 1)
+      extra.args$start <- c(rep(0.01, n.gammas), 1)
     } else if (errors %in% c("measurement", "processing")) {
-      extra.args$start <- c(rep(0, n.gammas), 1, 1)
+      extra.args$start <- c(rep(0.01, n.gammas), 1, 1)
     } else if (errors == "both") {
-      extra.args$start <- c(rep(0, n.gammas), 1, 1, 1)
+      extra.args$start <- c(rep(0.01, n.gammas), 1, 1, 1)
     }
   }
   if (is.null(extra.args$lower)) {
