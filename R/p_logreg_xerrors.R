@@ -49,7 +49,7 @@
 #' @return List containing:
 #' \enumerate{
 #' \item Numeric vector of parameter estimates.
-#' \item Variance-covariance matrix (if \code{estimate.var = TRUE}).
+#' \item Variance-covariance matrix (if \code{estimate_var = TRUE}).
 #' \item Returned \code{\link[stats]{nlminb}} object from maximizing the
 #' log-likelihood function.
 #' \item Akaike information criterion (AIC).
@@ -880,7 +880,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   ret.list <- list(theta.hat = theta.hat)
 
   # If requested, add variance-covariance matrix to ret.list
-  if (estimate.var) {
+  if (estimate_var) {
     hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
                                    x0 = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)

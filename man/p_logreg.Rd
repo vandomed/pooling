@@ -4,7 +4,7 @@
 \alias{p_logreg}
 \title{Poolwise Logistic Regression}
 \usage{
-p_logreg(g, y, x, method = "glm", p_y1 = NULL, samp_y1y0 = NULL,
+p_logreg(g, y, x, method = "glm", prev = NULL, samp_y1y0 = NULL,
   estimate.var = TRUE, ...)
 }
 \arguments{
@@ -20,13 +20,13 @@ for each pool. Can be a vector if there is only 1 predictor.}
 Choices are "glm" for \code{\link[stats]{glm}} function and \code{"ml"} for
 maximum likelihood.}
 
-\item{p_y1}{Numeric value specifying disease prevalence, allowing
+\item{prev}{Numeric value specifying disease prevalence, allowing
 for valid estimation of the intercept with case-control sampling. Can specify
 \code{samp_y1y0} instead if sampling rates are known.}
 
 \item{samp_y1y0}{Numeric vector of length 2 specifying sampling probabilities
 for cases and controls, allowing for valid estimation of the intercept with
-case-control sampling. Can specify \code{p_y1} instead if it's easier.}
+case-control sampling. Can specify \code{prev} instead if it's easier.}
 
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 

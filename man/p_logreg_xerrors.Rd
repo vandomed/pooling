@@ -37,9 +37,13 @@ variance is constant with pool size. If \code{FALSE}, assumption is that
 processing error variance increase with pool size such that, for example, the
 processing error affecting a pool 2x as large as another has 2x the variance.}
 
+\item{prev}{Numeric value specifying disease prevalence, allowing
+for valid estimation of the intercept with case-control sampling. Can specify
+\code{samp_y1y0} instead if sampling rates are known.}
+
 \item{samp_y1y0}{Numeric vector of length 2 specifying sampling probabilities
 for cases and controls, allowing for valid estimation of the intercept with
-case-control sampling. Can specify \code{p_y1} instead if it's easier.}
+case-control sampling. Can specify \code{prev} instead if it's easier.}
 
 \item{approx_integral}{Logical value for whether to use the probit
 approximation for the logistic-normal integral, to avoid numerically
@@ -67,7 +71,7 @@ matrix for parameter estimates.}
 List containing:
 \enumerate{
 \item Numeric vector of parameter estimates.
-\item Variance-covariance matrix (if \code{estimate.var = TRUE}).
+\item Variance-covariance matrix (if \code{estimate_var = TRUE}).
 \item Returned \code{\link[stats]{nlminb}} object from maximizing the
 log-likelihood function.
 \item Akaike information criterion (AIC).
