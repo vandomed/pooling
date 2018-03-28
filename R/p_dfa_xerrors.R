@@ -69,7 +69,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
   n.gammas <- 2 + n.cvars
 
   # Create vector indicating which observations are pools
-  ipool <- ifelse(g > 1, 1, 0)
+  Ig <- ifelse(g > 1, 1, 0)
 
   # Create matrix of (g, Y, C) values
   gyc <- cbind(g, y, c)
@@ -97,7 +97,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
 
       # Singles
       g <- g[-which.r]
-      ipool <- ipool[-which.r]
+      Ig <- Ig[-which.r]
       y <- y[-which.r]
       gyc <- gyc[-which.r, , drop = FALSE]
       xtilde <- unlist(xtilde[-which.r])
@@ -146,7 +146,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     }
 
     # Likelihood:
-    # L_i = f(Xtilde_i^*|Y_i^*,C_i^*)
+    # L = f(Xtilde|Y,C)
 
     if (some.r) {
 
@@ -155,7 +155,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
 
         # Values for ith subject
         g_i <- g.r[ii]
-        ipool_i <- ipool.r[ii]
+        Ig_i <- Ig.r[ii]
         k_i <- k.r[ii]
         gyc_i <- gyc.r[ii, ]
         xtilde_i <- xtilde.r[[ii]]
@@ -163,7 +163,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
         # E(Xtilde|Y,C) and V(Xtilde|Y,C)
         Mu_xtilde.yc <- matrix(gyc_i %*% f.gammas, ncol = k_i)
         Sigma_xtilde.yc <-
-          matrix(g_i * f.sigsq + g_i^2 * f.sigsq_p * ipool_i,
+          matrix(g_i * f.sigsq + g_i^2 * f.sigsq_p * Ig_i,
                  ncol = k_i, nrow = k_i) +
           diag(x = g_i^2 * f.sigsq_m, ncol = k_i, nrow = k_i)
 
@@ -183,7 +183,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
 
       # E(Xtilde|Y,C) and V(Xtilde|Y,C)
       mu_xtilde.yc <- gyc %*% f.gammas
-      sigsq_xtilde.yc <- g * f.sigsq + g^2 * f.sigsq_p * ipool + g^2 * f.sigsq_m
+      sigsq_xtilde.yc <- g * f.sigsq + g^2 * f.sigsq_p * Ig + g^2 * f.sigsq_m
 
       # Log-likelihood
       ll.s <- sum(dnorm(x = xtilde, log = TRUE,

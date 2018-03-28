@@ -8,7 +8,7 @@ and Errors in Continuous Exposure}
 p_dfa_xerrors(g, y, xtilde, c = NULL, errors = "both", ...)
 }
 \arguments{
-\item{g}{Numeric vector with pool sizes (number of members in each pool).}
+\item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
 
 \item{y}{Numeric vector of poolwise \code{Y} values (number of cases in each
 pool).}

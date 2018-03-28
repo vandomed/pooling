@@ -1,57 +1,10 @@
 #' Poolwise Logistic Regression
 #'
-#' Fit logistic regression model with variables measured in pools rather than
-#' individual participants. Requires that each pool is comprised of all cases or
-#' all controls.
-#'
-#' \emph{Statistical setup:}
-#'
-#' The goal is to estimate coefficients in an individual-level logistic
-#' regression model relating a continuous outcome \code{Y} to covariates
-#' \code{\strong{X}}:
-#'
-#' \code{logit[P(Y_ij = 1)] = beta_0 + \bold{beta_x}^T \bold{X_ij}}
-#'
-#' But we observe poolwise values rather than individual values. In the
-#' \code{i}th pool, which has \code{g_i} members that are either all cases or
-#' all controls, we observe the following variables:
-#'
-#' \code{Y_i = 1} if all \code{Y_ij = 1} and \code{0} if all \code{Y_ij = 0,
-#' j = 1, ..., g_i} \cr
-#' \code{\bold{X_i} = sum_{j=1}^{g_i} \bold{X_ij}}
-#'
-#' A corresponding poolwise model has been described by Weinberg \& Umbach
-#' (1999, 2014) and Lyles et al. (2016):
-#'
-#' \code{logit[P(Y_i = 1)] = g_i beta_0 + \bold{beta_x}^T \bold{X_i} + qg_i}
-#'
-#' Here \code{qg_i} is an offset defined as:
-#'
-#' \code{qg_i = ln(\# case pools of size g_i) / \# control pools of size g_i) +
-#' g_i ln(n_0 / n_1) + ln[P(A|Y=1) / P(A|Y=0)]}
-#'
-#' where \code{n_0 (n_1)} represent the number of individual controls (cases) in
-#' the study, across all pools, and \code{P(A|Y=1)} and \code{P(A|Y=0)} are
-#' accrual probabilities for cases and controls. With prospective sampling,
-#' these latter probabilities are equal and so the third term in the offset
-#' drops out. With case-control sampling, these probabilities can be specified
-#' through the \code{p_sample.y1y0} input, or alternatively (and equivalently)
-#' the disease prevalence can be specified through the \code{p_y1} input. If
-#' neither input is specified, the \code{beta_0} estimate will not be valid.
-#'
-#' Thus, with poolwise data, one can fit a no-intercept logistic regression
-#' model with \code{g_i} included as a covariate and with an offset of
-#' \code{qg_i}. If \code{method = "glm"}, this approach is taken.
-#'
-#' If \code{method = "ml"}, maximum likelihood is used instead. The likelihood
-#' contribution for each observed poolwise \code{(Y_i, \bold{X_i})} is
-#' \code{f(Y_i, \bold{X_i})}, which is proportional to \code{f(Y_i|\bold{X_i})},
-#' which is the Bernoulli probability mass function corresponding to
-#' \code{Y_i|\bold{X_i} ~ Bern(p_i = [g_i beta_0* + \bold{beta_x}^T \bold{X_i} +
-#' ln(qg_i)]^(-1))}.
+#' Fit homogeneous-pools logistic regression model described by Weinberg &
+#' Umbach (1999).
 #'
 #'
-#' @param g Numeric vector with pool sizes (number of members in each pool).
+#' @param g Numeric vector with pool sizes, i.e. number of members in each pool.
 #'
 #' @param y Numeric vector with poolwise \code{Y} values, coded 0 if all members
 #' are controls and 1 if all members are cases.
@@ -63,16 +16,15 @@
 #' Choices are "glm" for \code{\link[stats]{glm}} function and \code{"ml"} for
 #' maximum likelihood.
 #'
-#' @param p_y1 Numeric value specifying disease prevalence, allowing
+#' @param prev Numeric value specifying disease prevalence, allowing
 #' for valid estimation of the intercept with case-control sampling. Can specify
-#' \code{p_sample.y1y0} instead if sampling rates are known.
+#' \code{samp_y1y0} instead if sampling rates are known.
 #'
-#' @param p_sample.y1y0 Numeric vector of length 2 specifying sampling
-#' probabilities for cases and controls, allowing for valid estimation of the
-#' intercept with case-control sampling. Can specify \code{p_y1} instead if it's
-#' easier.
+#' @param samp_y1y0 Numeric vector of length 2 specifying sampling probabilities
+#' for cases and controls, allowing for valid estimation of the intercept with
+#' case-control sampling. Can specify \code{prev} instead if it's easier.
 #'
-#' @param estimate.var Logical value for whether to return variance-covariance
+#' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
 #'
 #' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
@@ -110,22 +62,22 @@
 #'
 #' @export
 p_logreg <- function(g, y, x,
-                     method = "glm", p_y1 = NULL, p_sample.y1y0 = NULL,
+                     method = "glm", prev = NULL, samp_y1y0 = NULL,
                      estimate.var = TRUE, ...) {
 
   # Check that inputs are valid
   if (! method %in% c("glm", "ml")) {
     stop("The input 'method' should be set to 'glm' for glm function or 'ml' for maximum likelihood.")
   }
-  if (! is.null(p_y1)) {
-    if (p_y1 < 0 | p_y1 > 1) {
-      stop("The input 'p_y1' is the disease prevalence, and must be between 0 and 1.")
+  if (! is.null(prev)) {
+    if (prev < 0 | prev > 1) {
+      stop("The input 'prev' is the disease prevalence, and must be between 0 and 1.")
     }
   }
-  if (! is.null(p_sample.y1y0)) {
-    if (! (length(p_sample.y1y0) == 2 & sum(p_sample.y1y0) == 1 &
-           min(p.sample.y1y0) > 0 & max(p.sample.y1y0) < 1)) {
-      stop("The input 'p_sample_y1y0' is the sampling probabilities for cases and controls, and should be a numeric vector of two probabilities adding to 1.")
+  if (! is.null(samp_y1y0)) {
+    if (! (length(samp_y1y0) == 2 & sum(samp_y1y0) == 1 &
+           min(samp_y1y0) > 0 & max(samp_y1y0) < 1)) {
+      stop("The input 'samp_y1y0' is the sampling probabilities for cases and controls, and should be a numeric vector of two probabilities adding to 1.")
     }
   }
   if (! is.logical(estimate.var)) {
@@ -152,8 +104,8 @@ p_logreg <- function(g, y, x,
   # Create matrix of (g, X) values
   gx <- cbind(g, x)
 
-  # Calculate offsets according to Weinberg and Umbach (Biometrics 1999, 2010)
-  # formula, incorporating disease prevalence or sampling probabilities if known
+  # Calculate offsets according to Weinberg and Umbach formula, incorporating
+  # disease prevalence or sampling probabilities if known
   n.pools <- length(y)
   locs.cases <- which(y == 1)
   n_1 <- sum(g[locs.cases])
@@ -161,7 +113,7 @@ p_logreg <- function(g, y, x,
   g.vals <- unique(g)
   qg <- rep(NA, n.pools)
 
-  if (! is.null(p_y1)) {
+  if (! is.null(prev)) {
 
     for (jj in 1: length(g.vals)) {
       g.jj <- g.vals[jj]
@@ -169,10 +121,10 @@ p_logreg <- function(g, y, x,
       n.casepools <- sum(g == g.jj & y == 1)
       n.controlpools <- sum(g == g.jj & y == 0)
       qg[locs.g] <- log(n.casepools / n.controlpools) -
-        g.jj * log(p_y1 / (1 - p_y1))
+        g.jj * log(prev / (1 - prev))
     }
 
-  } else if (! is.null(p_sample.y1y0)) {
+  } else if (! is.null(samp_y1y0)) {
 
     for (jj in 1: length(g.vals)) {
       g.jj <- g.vals[jj]
@@ -180,8 +132,7 @@ p_logreg <- function(g, y, x,
       n.casepools <- sum(g == g.jj & y == 1)
       n.controlpools <- sum(g == g.jj & y == 0)
       qg[locs.g] <- log(n.casepools / n.controlpools) -
-        g.jj * log(n_1 / n_0) - g.jj * log(p_sample.y1y0[2] /
-                                             p_sample.y1y0[1])
+        g.jj * log(n_1 / n_0) - g.jj * log(samp_y1y0[2] / samp_y1y0[1])
     }
 
   } else {

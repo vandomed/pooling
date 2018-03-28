@@ -171,7 +171,7 @@ dfa_xerrors <- function(y, xtilde, c = NULL, merror = TRUE, ...) {
       mu_x.yc <- oneyc %*% f.gammas
 
       # Log-likelihood
-      ll <- sum(dnorm(x = x, log = TRUE, mean = mu_x.yc, sd = sqrt(f.sigsq)))
+      ll <- sum(dnorm(x = xtilde, log = TRUE, mean = mu_x.yc, sd = sqrt(f.sigsq)))
 
     }
 
@@ -185,9 +185,9 @@ dfa_xerrors <- function(y, xtilde, c = NULL, merror = TRUE, ...) {
   extra.args <- list(...)
   if (is.null(extra.args$start)) {
     if (! merror) {
-      extra.args$start <- c(rep(0, n.gammas), 1)
+      extra.args$start <- c(rep(0.01, n.gammas), 1)
     } else {
-      extra.args$start <- c(rep(0, n.gammas), 1, 1)
+      extra.args$start <- c(rep(0.01, n.gammas), 1, 1)
     }
   }
   if (is.null(extra.args$lower)) {

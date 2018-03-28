@@ -2,9 +2,7 @@
 #'
 #' Assumes normal linear model for exposure given covariates, and additive
 #' normal processing errors and measurement errors acting on the poolwise mean
-#' exposure. Borrows ideas from Weinberg \& Umbach (1999), Schisterman et al.
-#' (2015), and Lyles et al. (2015). Manuscript fully describing the approach
-#' is in preparation.
+#' exposure. Manuscript fully describing the approach is under review.
 #'
 #'
 #' @inheritParams p_logreg
@@ -72,9 +70,6 @@
 #' Improve Efficiency in Case-Control Studies." \emph{Biometrics} \strong{55}:
 #' 718--726.
 #'
-#' Acknowledgment: This material is based upon work supported by the National
-#' Science Foundation Graduate Research Fellowship under Grant No. DGE-0940903.
-#'
 #'
 #' @export
 p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
@@ -109,7 +104,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
     }
   }
   if (! is.null(samp_y1y0)) {
-    if (! (length(p_sample.y1y0) == 2 &
+    if (! (length(samp_y1y0) == 2 &
            min(samp_y1y0) > 0 & max(samp_y1y0) < 1)) {
       stop("The input 'samp_y1y0' is the sampling probabilities for cases and controls, and should be a numeric vector of two probabilities.")
     }
@@ -159,11 +154,11 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   n.betas <- 2 + n.cvars
   n.alphas <- 1 + n.cvars
 
-  # Create indicator vectors for pool and case status
-  ipool <- ifelse(g > 1, 1, 0)
+  # Create indicator vector I(g > 1)
+  Ig <- ifelse(g > 1, 1, 0)
 
-  # Calculate offsets according to Weinberg and Umbach (Biometrics 1999, 2010)
-  # formula, incorporating disease prevalence or sampling probabilities if known
+  # Calculate offsets according to Weinberg and Umbach formula, incorporating
+  # disease prevalence or sampling probabilities if known
   n.pools <- length(y)
   locs.cases <- which(y == 1)
   n_1 <- sum(g[locs.cases])
@@ -209,7 +204,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   if (errors == "neither") {
     which.p <- 1: n.pools
   } else if (errors == "processing") {
-    which.p <- which(ipool == 0)
+    which.p <- which(Ig == 0)
   } else {
     which.p <- NULL
   }
@@ -235,7 +230,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
     if (some.r) {
       k.r <- k[which.r]
       g.r <- g[which.r]
-      ipool.r <- ipool[which.r]
+      Ig.r <- Ig[which.r]
       y.r <- y[which.r]
       c.r <- c[which.r, , drop = FALSE]
       qg.r <- qg[which.r]
@@ -251,7 +246,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   if (errors == "neither") {
     which.i <- NULL
   } else if (errors == "processing") {
-    which.i <- which(ipool == 1 & k == 1)
+    which.i <- which(Ig == 1 & k == 1)
   } else if (errors %in% c("measurement", "both")) {
     which.i <- which(k == 1)
   }
@@ -259,7 +254,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   some.i <- n.i > 0
   if (some.i) {
     g.i <- g[which.i]
-    ipool.i <- ipool[which.i]
+    Ig.i <- Ig[which.i]
     y.i <- y[which.i]
     c.i <- c[which.i, , drop = FALSE]
     qg.i <- qg[which.i]
@@ -269,7 +264,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
   # Estimate (alpha, sigsq_x.c, sigsq_p, sigsq_m) if pseudo-lik...
 
-  # Get indices for parameters being estimated, and create labels as well
+  # Get indices for parameters being estimated and create labels
   loc.betas <- 1: n.betas
   beta.labels <- paste("beta", c("0", x.varname, c.varnames), sep = "_")
 
@@ -374,9 +369,8 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       sigsq_x.c <- g.p * f.sigsq_x.c
 
       # Log-likelihood
-      ll.p <- sum(stats::dbinom(x = y.p, log = TRUE,
-                         size = 1, prob = p_y.xc) +
-                    stats::dnorm(x = x.p, log = TRUE,
+      ll.p <- sum(dbinom(x = y.p, log = TRUE, size = 1, prob = p_y.xc) +
+                    dnorm(x = x.p, log = TRUE,
                           mean = mu_x.c, sd = sqrt(sigsq_x.c)))
 
     } else {
@@ -388,13 +382,13 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
     if (some.r) {
 
-      # Likelihood for pools with replicate Xtilde measurements
+      # Likelihood for pools with replicates
       # L = f(Y, Xtilde|C)
       #   = [\int_X f(Y|X,C) f(X|Xtilde,C) dX] f(Xtilde|C)
       #   = int_X f(Y|X,C) f(Xtilde|X) f(X|C) dX
 
       # Create error vectors
-      sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * ipool.r
+      sigsq_p <- ifelse(y.r, f.sigsq_p1, f.sigsq_p0) * Ig.r
       sigsq_m <- ifelse(y.r, f.sigsq_m1, f.sigsq_m0)
 
       # Calculate E(X|C) and V(X|C)
@@ -529,11 +523,11 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
         # Get integration tolerance
         if (estimating.hessian) {
-          int.tol <- integrate_tol_hessian
+          int_tol <- integrate_tol_hessian
         } else if (all(f.theta == extra.args$start)) {
-          int.tol <- integrate_tol_start
+          int_tol <- integrate_tol_start
         } else {
-          int.tol <- integrate_tol
+          int_tol <- integrate_tol
         }
 
         int.vals <- c()
@@ -553,14 +547,14 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
           # Try integrating out X with default settings
           int.ii <-
-            cubature::adaptIntegrate(f = int.f_i1, tol = int.tol,
-                                     lowerLimit = -1, upperLimit = 1,
-                                     vectorInterface = TRUE,
-                                     k_i = k_i, g_i = g_i,
-                                     y_i = y_i, gc_i = gc_i, qg_i = qg_i,
-                                     mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
-                                     xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
-                                     sigsq_m_i = sigsq_m_i)
+            adaptIntegrate(f = int.f_i1, tol = int_tol,
+                           lowerLimit = -1, upperLimit = 1,
+                           vectorInterface = TRUE,
+                           k_i = k_i, g_i = g_i,
+                           y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                           mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                           xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                           sigsq_m_i = sigsq_m_i)
 
           # If integral 0 and sigsq_m_i small, look at region around Xtilde
           if (int.ii$integral == 0 & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
@@ -573,7 +567,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                cubature::adaptIntegrate(f = int.f_i1, tol = int.tol,
+                cubature::adaptIntegrate(f = int.f_i1, tol = int_tol,
                                          lowerLimit = lowupp.x[1],
                                          upperLimit = lowupp.x[2],
                                          vectorInterface = TRUE,
@@ -600,7 +594,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                cubature::adaptIntegrate(f = int.f_i1, tol = int.tol,
+                cubature::adaptIntegrate(f = int.f_i1, tol = int_tol,
                                          lowerLimit = lowupp.x[1],
                                          upperLimit = lowupp.x[2],
                                          vectorInterface = TRUE,
@@ -638,12 +632,12 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
     if (some.i & ! skip.rest) {
 
-      # Likelihood for pools with single imprecisely measured Xtilde_i^*:
+      # Likelihood for pools with single Xtilde:
       # L = f(Y,Xtilde|C) = [\int_X f(Y|X,C) f(X|Xtilde,C) dX] f(Xtilde|C)
-      #                    = int_X f(Y|X,C) f(Xtilde|X) f(X|C) dX
+      #                    = \int_X f(Y|X,C) f(Xtilde|X) f(X|C) dX
 
       # Create error vectors
-      sigsq_p <- ifelse(y.i, f.sigsq_p1, f.sigsq_p0) * ipool.i
+      sigsq_p <- ifelse(y.i, f.sigsq_p1, f.sigsq_p0) * Ig.i
       sigsq_m <- ifelse(y.i, f.sigsq_m1, f.sigsq_m0)
 
       # Calculate E(X|C) and V(X|C)
@@ -730,11 +724,11 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
         # Get integration tolerance
         if (estimating.hessian) {
-          int.tol <- integrate_tol_hessian
+          int_tol <- integrate_tol_hessian
         } else if (all(f.theta == extra.args$start)) {
-          int.tol <- integrate_tol_start
+          int_tol <- integrate_tol_start
         } else {
-          int.tol <- integrate_tol
+          int_tol <- integrate_tol
         }
 
         int.vals <- c()
@@ -753,7 +747,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
           # Try integrating out X_i with default settings
           int.ii <-
-            cubature::adaptIntegrate(f = int.f_i2, tol = int.tol,
+            cubature::adaptIntegrate(f = int.f_i2, tol = int_tol,
                                      lowerLimit = -1, upperLimit = 1,
                                      vectorInterface = TRUE,
                                      g_i = g_i,
@@ -773,7 +767,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                cubature::adaptIntegrate(f = int.f_i2, tol = int.tol,
+                cubature::adaptIntegrate(f = int.f_i2, tol = int_tol,
                                          lowerLimit = lowupp.x[1],
                                          upperLimit = lowupp.x[2],
                                          vectorInterface = TRUE,
@@ -800,7 +794,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                cubature::adaptIntegrate(f = int.f_i2, tol = int.tol,
+                cubature::adaptIntegrate(f = int.f_i2, tol = int_tol,
                                          lowerLimit = lowupp.x[1],
                                          upperLimit = lowupp.x[2],
                                          vectorInterface = TRUE,

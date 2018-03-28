@@ -148,7 +148,7 @@ logreg_xerrors <- function(y, xtilde, c = NULL,
     some.s <- TRUE
   }
 
-  # Construct (1, X, C) matrix if merror is FALSE
+  # Create (1, X, C) matrix if merror is FALSE
   if (! merror) {
     onexc <- cbind(rep(1, n), xtilde, c)
   }
@@ -566,7 +566,7 @@ logreg_xerrors <- function(y, xtilde, c = NULL,
       # Log-likelihood
       ll <- sum(dbinom(x = y, log = TRUE,
                        size = 1, prob = p_y.xc) +
-                  dnorm(x = x, log = TRUE, mean = mu_x.c, sd = sqrt(f.sigsq_x.c)))
+                  dnorm(x = xtilde, log = TRUE, mean = mu_x.c, sd = sqrt(f.sigsq_x.c)))
 
     }
 
@@ -580,9 +580,9 @@ logreg_xerrors <- function(y, xtilde, c = NULL,
   extra.args <- list(...)
   if (is.null(extra.args$start)) {
     if (! merror) {
-      extra.args$start <- c(rep(0, n.betas + n.alphas), 1)
+      extra.args$start <- c(rep(0.01, n.betas + n.alphas), 1)
     } else {
-      extra.args$start <- c(rep(0, n.betas + n.alphas), 1, 1)
+      extra.args$start <- c(rep(0.01, n.betas + n.alphas), 1, 1)
     }
   }
   if (is.null(extra.args$lower)) {
