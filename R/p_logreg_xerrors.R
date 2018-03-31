@@ -46,7 +46,8 @@
 #' prevent cases where the inverse Hessian is not positive definite.
 #'
 #'
-#' @return List containing:
+#' @return
+#' List containing:
 #' \enumerate{
 #' \item Numeric vector of parameter estimates.
 #' \item Variance-covariance matrix (if \code{estimate_var = TRUE}).
@@ -56,19 +57,21 @@
 #' }
 #'
 #'
+#' @inherit p_logreg references
+#'
 #' @references
-#' Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
-#' "A Discriminant Function Approach to Adjust for Processing and Measurement
-#' Error When a Biomarker is Assayed in Pooled Samples."
-#' \emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
-#'
 #' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
-#' Pooled-Unpooled Design for Cost-Efficient Measurement of Biomarkers."
-#' \emph{Stat. Med.} \strong{29}(5): 597--613.
+#' pooled-unpooled design for cost-efficient measurement of biomarkers."
+#' \emph{Stat. Med.} \strong{29}(5): 597–613.
 #'
-#' Weinberg, C.R. and Umbach, D.M. (1999) "Using Pooled Exposure Assessment to
-#' Improve Efficiency in Case-Control Studies." \emph{Biometrics} \strong{55}:
+#' Weinberg, C.R. and Umbach, D.M. (1999) "Using pooled exposure assessment to
+#' improve efficiency in case-control studies." \emph{Biometrics} \strong{55}:
 #' 718--726.
+#'
+#' Weinberg, C.R. and Umbach, D.M. (2014) "Correction to 'Using pooled exposure
+#' assessment to improve efficiency in case-control studies' by Clarice R.
+#' Weinberg and David M. Umbach; 55, 718--726, September 1999."
+#' \emph{Biometrics} \strong{70}: 1061.
 #'
 #'
 #' @export
@@ -159,12 +162,12 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
   # Calculate offsets according to Weinberg and Umbach formula, incorporating
   # disease prevalence or sampling probabilities if known
-  n.pools <- length(y)
+  n <- length(y)
   locs.cases <- which(y == 1)
   n_1 <- sum(g[locs.cases])
   n_0 <- sum(g[-locs.cases])
   g.vals <- unique(g)
-  qg <- rep(NA, n.pools)
+  qg <- rep(NA, n)
 
   if (! is.null(prev)) {
 
@@ -202,7 +205,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
   # Separate out pools with precisely measured X
   if (errors == "neither") {
-    which.p <- 1: n.pools
+    which.p <- 1: n
   } else if (errors == "processing") {
     which.p <- which(Ig == 0)
   } else {
@@ -220,7 +223,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
     gc.p <- gxc.p[, -2, drop = FALSE]
   }
 
-  # Separate out pools with replicate Xtilde measurements
+  # Separate out pools with replicates
   class.xtilde <- class(xtilde)
   if (class.xtilde == "list") {
     k <- sapply(xtilde, length)
@@ -238,11 +241,11 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       xtilde.r <- xtilde[which.r]
     }
   } else {
-    k <- rep(1, n.pools)
+    k <- rep(1, n)
     some.r <- FALSE
   }
 
-  # Separate out pools with single Xtilde measurement
+  # Separate out pools with single Xtilde
   if (errors == "neither") {
     which.i <- NULL
   } else if (errors == "processing") {
@@ -567,15 +570,14 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                cubature::adaptIntegrate(f = int.f_i1, tol = int_tol,
-                                         lowerLimit = lowupp.x[1],
-                                         upperLimit = lowupp.x[2],
-                                         vectorInterface = TRUE,
-                                         k_i = k_i, g_i = g_i,
-                                         y_i = y_i, gc_i = gc_i, qg_i = qg_i,
-                                         mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
-                                         xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
-                                         sigsq_m_i = sigsq_m_i)
+                adaptIntegrate(f = int.f_i1, tol = int_tol,
+                               lowerLimit = lowupp.x[1],
+                               upperLimit = lowupp.x[2],
+                               vectorInterface = TRUE,
+                               k_i = k_i, g_i = g_i, y_i = y_i, gc_i = gc_i,
+                               qg_i = qg_i, mu_x.c_i = mu_x.c_i,
+                               sigsq_x.c_i = sigsq_x.c_i, xtilde_i = xtilde_i,
+                               sigsq_p_i = sigsq_p_i, sigsq_m_i = sigsq_m_i)
               if (int.ii$integral > 0) {
                 break
               }
@@ -594,15 +596,14 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                cubature::adaptIntegrate(f = int.f_i1, tol = int_tol,
-                                         lowerLimit = lowupp.x[1],
-                                         upperLimit = lowupp.x[2],
-                                         vectorInterface = TRUE,
-                                         k_i = k_i, g_i = g_i,
-                                         y_i = y_i, gc_i = gc_i, qg_i = qg_i,
-                                         mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
-                                         xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
-                                         sigsq_m_i = sigsq_m_i)
+                adaptIntegrate(f = int.f_i1, tol = int_tol,
+                               lowerLimit = lowupp.x[1],
+                               upperLimit = lowupp.x[2],
+                               vectorInterface = TRUE,
+                               k_i = k_i, g_i = g_i, y_i = y_i, gc_i = gc_i,
+                               qg_i = qg_i, mu_x.c_i = mu_x.c_i,
+                               sigsq_x.c_i = sigsq_x.c_i, xtilde_i = xtilde_i,
+                               sigsq_p_i = sigsq_p_i, sigsq_m_i = sigsq_m_i)
               if (int.ii$integral > 0) {
                 break
               }
@@ -747,14 +748,13 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
           # Try integrating out X_i with default settings
           int.ii <-
-            cubature::adaptIntegrate(f = int.f_i2, tol = int_tol,
-                                     lowerLimit = -1, upperLimit = 1,
-                                     vectorInterface = TRUE,
-                                     g_i = g_i,
-                                     y_i = y_i, gc_i = gc_i, qg_i = qg_i,
-                                     mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
-                                     xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
-                                     sigsq_m_i = sigsq_m_i)
+            adaptIntegrate(f = int.f_i2, tol = int_tol,
+                           lowerLimit = -1, upperLimit = 1,
+                           vectorInterface = TRUE,
+                           g_i = g_i, y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                           mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                           xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                           sigsq_m_i = sigsq_m_i)
 
           # If integral 0 and f.sigsq_m small, look at region around Xtilde
           if (int.ii$integral == 0 & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
@@ -767,15 +767,14 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                cubature::adaptIntegrate(f = int.f_i2, tol = int_tol,
-                                         lowerLimit = lowupp.x[1],
-                                         upperLimit = lowupp.x[2],
-                                         vectorInterface = TRUE,
-                                         g_i = g_i,
-                                         y_i = y_i, gc_i = gc_i, qg_i = qg_i,
-                                         mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
-                                         xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
-                                         sigsq_m_i = sigsq_m_i)
+                adaptIntegrate(f = int.f_i2, tol = int_tol,
+                               lowerLimit = lowupp.x[1],
+                               upperLimit = lowupp.x[2],
+                               vectorInterface = TRUE,
+                               g_i = g_i, y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                               mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                               xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                               sigsq_m_i = sigsq_m_i)
               if (int.ii$integral > 0) {
                 break
               }
@@ -794,15 +793,14 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                cubature::adaptIntegrate(f = int.f_i2, tol = int_tol,
-                                         lowerLimit = lowupp.x[1],
-                                         upperLimit = lowupp.x[2],
-                                         vectorInterface = TRUE,
-                                         g_i = g_i,
-                                         y_i = y_i, gc_i = gc_i, qg_i = qg_i,
-                                         mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
-                                         xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
-                                         sigsq_m_i = sigsq_m_i)
+                adaptIntegrate(f = int.f_i2, tol = int_tol,
+                               lowerLimit = lowupp.x[1],
+                               upperLimit = lowupp.x[2],
+                               vectorInterface = TRUE,
+                               g_i = g_i, y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                               mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                               xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                               sigsq_m_i = sigsq_m_i)
               if (int.ii$integral > 0) {
                 break
               }

@@ -1,33 +1,29 @@
-#' Discriminant Function Approach for Estimating Odds Ratio with Poolwise Data
-#' and Errors in Continuous Exposure
+#' Discriminant Function Approach for Estimating Odds Ratio with Normal Exposure
+#' Measured in Pools and Subject to Errors
 #'
-#' Implements method described in [1].
+#' Assumes exposure measurements are subject to additive normal processing error
+#' and measurement error, and exposure given covariates and outcome is a
+#' normal-errors linear regression.
 #'
 #'
 #' @inheritParams p_logreg_xerrors
+#'
 #' @param y Numeric vector of poolwise \code{Y} values (number of cases in each
 #' pool).
 #'
 #'
-#' @return List containing:
-#' \enumerate{
-#'   \item Named numeric vector with point estimates for \code{gamma_y},
-#'   \code{sigsq}, and the covariate-adjusted log-odds ratio, and the estimated
-#'  variance for the log-odds ratio estimate if \code{estimate.var = TRUE}.
-#'   \item Object returned by \code{\link[stats]{nlminb}} containing information
-#'   about likelihood maximization.
-#'   \item Akaike information criterion (AIC).
-#'  }
+#' @inherit dfa_xerrors return
 #'
 #'
 #' @references
 #' Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
-#' "A Discriminant Function Approach to Adjust for Processing and Measurement
-#' Error When a Biomarker is Assayed in Pooled Samples."
+#' "A discriminant function approach to adjust for processing and measurement
+#' error When a biomarker is assayed in pooled samples."
 #' \emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
 #'
-#' Acknowledgment: This material is based upon work supported by the National
-#' Science Foundation Graduate Research Fellowship under Grant No. DGE-0940903.
+#' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
+#' pooled-unpooled design for cost-efficient measurement of biomarkers."
+#' \emph{Stat. Med.} \strong{29}(5): 597–613.
 #'
 #'
 #' @export
@@ -41,7 +37,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
   }
 
   # Sample size
-  n.pools <- length(y)
+  n <- length(y)
 
   # Get name of y input
   y.varname <- deparse(substitute(y))
@@ -74,7 +70,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
   # Create matrix of (g, Y, C) values
   gyc <- cbind(g, y, c)
 
-  # Separate out replicate from singles
+  # Separate into replicate and singles
   class.xtilde <- class(xtilde)
   if (class.xtilde == "list") {
     k <- sapply(xtilde, length)
@@ -92,8 +88,8 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
 
     }
     n <- n - n.r
-    some.s <- n > 0
-    if (some.s) {
+    some.i <- n > 0
+    if (some.i) {
 
       # Singles
       g <- g[-which.r]
@@ -105,7 +101,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     }
   } else {
     some.r <- FALSE
-    some.s <- TRUE
+    some.i <- TRUE
   }
 
   # Get indices for parameters being estimated and create labels
@@ -168,9 +164,9 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
           diag(x = g_i^2 * f.sigsq_m, ncol = k_i, nrow = k_i)
 
         # Log-likelihood
-        ll.vals[ii] <- mvtnorm::dmvnorm(x = xtilde_i, log = TRUE,
-                                        mean = Mu_xtilde.yc,
-                                        sigma = Sigma_xtilde.yc)
+        ll.vals[ii] <- dmvnorm(x = xtilde_i, log = TRUE,
+                               mean = Mu_xtilde.yc,
+                               sigma = Sigma_xtilde.yc)
 
       }
       ll.r <- sum(ll.vals)
@@ -179,22 +175,22 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
       ll.r <- 0
     }
 
-    if (some.s) {
+    if (some.i) {
 
       # E(Xtilde|Y,C) and V(Xtilde|Y,C)
       mu_xtilde.yc <- gyc %*% f.gammas
       sigsq_xtilde.yc <- g * f.sigsq + g^2 * f.sigsq_p * Ig + g^2 * f.sigsq_m
 
       # Log-likelihood
-      ll.s <- sum(dnorm(x = xtilde, log = TRUE,
+      ll.i <- sum(dnorm(x = xtilde, log = TRUE,
                         mean = mu_xtilde.yc, sd = sqrt(sigsq_xtilde.yc)))
 
     } else {
-      ll.s <- 0
+      ll.i <- 0
     }
 
     # Return negative log-likelihood
-    ll <- ll.r + ll.s
+    ll <- ll.r + ll.i
     return(-ll)
 
   }

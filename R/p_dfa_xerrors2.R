@@ -1,0 +1,721 @@
+#' Discriminant Function Approach for Estimating Odds Ratio with Gamma Exposure
+#' Measured in Pools and Subject to Errors
+#'
+#' Assumes exposure measurements are subject to multiplicative lognormal
+#' processing error and measurement error, and exposure given covariates and
+#' outcome is a Gamma regression.
+#'
+#'
+#' @inheritParams p_dfa_xerrors
+#' @inheritParams p_logreg_xerrors
+#'
+#' @param constant_or Logical value for whether to assume a constant OR for
+#' \code{X}, which means that \code{gamma_y = 0}.
+#'
+#' @param integrate_tol Numeric value specifying the \code{tol} input to
+#' \code{\link{adaptIntegrate}}.
+#'
+#'
+#' @return
+#' List of point estimates, objects returned by \code{\link[stats]{nlminb}},
+#' and AICs, for one or two models depending on \code{constant_or}.
+#'
+#'
+#' @references
+#' Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
+#' "A discriminant function approach to adjust for processing and measurement
+#' error When a biomarker is assayed in pooled samples."
+#' \emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
+#'
+#' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
+#' pooled-unpooled design for cost-efficient measurement of biomarkers."
+#' \emph{Stat. Med.} \strong{29}(5): 597–613.
+#'
+#' Whitcomb, B.W., Perkins, N.J., Zhang, Z., Ye, A., and Lyles, R. H. (2012)
+#' "Assessment of skewed exposure in case-control studies with pooling."
+#' \emph{Stat. Med.} \strong{31}: 2461–2472.
+#'
+#'
+#' @export
+p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
+                           constant_or = "test",
+                           errors = "both",
+                           integrate_tol = 1e-8,
+                           ...) {
+
+  # Check that inputs are valid
+  if (! is.logical(constant_or) && constant_or != "test") {
+    stop("The input 'contant_or' should be set to TRUE, FALSE, or 'test'.")
+  }
+  if (! errors %in% c("neither", "processing", "measurement", "both")) {
+    stop("The input 'errors' should be set to 'neither', 'processing',
+         'measurement', or 'both'.")
+  }
+
+  # Sample size
+  n <- length(y)
+
+  # Get name of y input
+  y.varname <- deparse(substitute(y))
+
+  # Get information about covariates C
+  if (is.null(c)) {
+    c.varnames <- NULL
+    n.cvars <- 0
+    some.cs <- FALSE
+  } else {
+    n.cvars <- ncol(c[[1]])
+    some.cs <- TRUE
+    c.varnames <- colnames(c[[1]])
+    if (is.null(c.varnames)) {
+      if (n.cvars == 1) {
+        c.varnames <- deparse(substitute(c))
+      } else {
+        c.varnames <- paste("c", 1: n.cvars, sep = "")
+      }
+    }
+  }
+
+  # Get number of gammas
+  n.gammas1 <- 2 + n.cvars
+  n.gammas2 <- 1 + n.cvars
+
+  # Figure out pool sizes if not specified
+  if (is.null(g)) {
+    g <- sapply(c, nrow)
+  }
+
+  # Create vector indicating which observations are pools
+  Ig <- ifelse(g > 1, 1, 0)
+
+  # Construct list of (1, C) matrices
+  if (some.cs) {
+    onec <- lapply(c, function(x) cbind(1, x))
+  } else {
+    onec <- NULL
+  }
+
+  # Separate out pools with precisely measured X
+  if (errors == "neither") {
+    which.p <- 1: n
+  } else if (errors == "processing") {
+    which.p <- which(Ig == 0)
+  } else {
+    which.p <- NULL
+  }
+  n.p <- length(which.p)
+  some.p <- n.p > 0
+  if (some.p) {
+    g.p <- g[which.p]
+    Ig.p <- Ig[which.p]
+    y.p <- y[which.p]
+    onec.p <- onec[which.p]
+    x.p <- unlist(xtilde[which.p])
+  }
+
+  # Separate out pools with replicates
+  class.xtilde <- class(xtilde)
+  if (class.xtilde == "list") {
+    k <- sapply(xtilde, length)
+    which.r <- which(k > 1)
+    n.r <- length(which.r)
+    some.r <- n.r > 0
+    if (some.r) {
+      k.r <- k[which.r]
+      g.r <- g[which.r]
+      Ig.r <- Ig[which.r]
+      y.r <- y[which.r]
+      onec.r <- onec[which.r]
+      xtilde.r <- xtilde[which.r]
+    }
+  }
+
+  # Separate out pools with single Xtilde
+  if (errors == "neither") {
+    which.i <- NULL
+  } else if (errors == "processing") {
+    which.i <- which(Ig == 1 & k == 1)
+  } else if (errors %in% c("measurement", "both")) {
+    which.i <- which(k == 1)
+  }
+  n.i <- length(which.i)
+  some.i <- n.i > 0
+  if (some.i) {
+    g.i <- g[which.i]
+    Ig.i <- Ig[which.i]
+    y.i <- y[which.i]
+    onec.i <- onec[which.i]
+    xtilde.i <- xtilde[which.i]
+  }
+
+  # Get indices for parameters being estimated and create labels
+  loc.gammas1 <- 1: n.gammas1
+  loc.gammas2 <- 1: n.gammas2
+  gamma.labels1 <- paste("gamma", c("0", y.varname, c.varnames), sep = "_")
+  gamma.labels2 <- paste("gamma", c("0", c.varnames), sep = "_")
+
+  loc.bs1 <- (n.gammas1 + 1): (n.gammas1 + 2)
+  loc.bs2 <- (n.gammas2 + 1): (n.gammas2 + 2)
+
+  if (errors == "neither") {
+    theta.labels1 <- c(gamma.labels1, "b1", "b0")
+    theta.labels2 <- c(gamma.labels2, "b1", "b0")
+  } else if (errors == "processing") {
+    theta.labels1 <- c(gamma.labels1, "b1", "b0", "sigsq_p")
+    theta.labels2 <- c(gamma.labels2, "b1", "b0", "sigsq_p")
+  } else if (errors == "measurement") {
+    theta.labels1 <- c(gamma.labels1, "b1", "b0", "sigsq_m")
+    theta.labels2 <- c(gamma.labels2, "b1", "b0", "sigsq_m")
+  } else if (errors == "both") {
+    theta.labels1 <- c(gamma.labels1, "b1", "b0", "sigsq_p", "sigsq_m")
+    theta.labels2 <- c(gamma.labels2, "b1", "b0", "sigsq_p", "sigsq_m")
+  }
+
+  # Fit model with gamma_y, unless contant_pe = TRUE
+  if (constant_or != TRUE) {
+
+    # Log-likelihood function
+    ll.f1 <- function(f.theta) {
+
+      # Extract parameters
+      f.gammas <- matrix(f.theta[loc.gammas1], ncol = 1)
+      f.b1 <- f.theta[loc.bs1[1]]
+      f.b0 <- f.theta[loc.bs1[2]]
+
+      if (errors == "neither") {
+        f.sigsq_p <- 0
+        f.sigsq_m <- 0
+      } else if (errors == "measurement") {
+        f.sigsq_p <- 0
+        f.sigsq_m <- f.theta[loc.bs1[2] + 1]
+      } else if (errors == "processing") {
+        f.sigsq_p <- f.theta[loc.bs1[2] + 1]
+        f.sigsq_m <- 0
+      } else if (errors == "both") {
+        f.sigsq_p <- f.theta[loc.bs1[2] + 1]
+        f.sigsq_m <- f.theta[loc.bs1[2] + 2]
+      }
+
+      if (some.p) {
+
+        # Likelihood for pools with precisely measured X:
+        # L = f(X|Y,C_1,...,C_g)
+
+        # a_i's in X|Y,C_1, ..., C_g ~ Gamma(a_i, b)
+        if (some.cs) {
+          alphas <- sapply(onec.p, function(x) sum(exp(x %*% f.gammas[-2, , drop = FALSE]))) *
+            g.p * exp(f.gammas[2] * y.p)
+        } else {
+          alphas <- g.p * exp(f.gammas[1] + f.gammas[2] * y.p)
+        }
+
+        # Log-likelihood
+        ll.p <- sum(dgamma(x = xtilde.p,
+                           shape = alphas,
+                           scale = ifelse(y.p == 1, f.b1, f.b0)), log = TRUE)
+
+      } else {
+        ll.p <- 0
+      }
+
+      # Set skip.rest flag to FALSE
+      skip.rest <- FALSE
+
+      if (some.r) {
+
+        # Likelihood for pools with replicates
+        # L = \int_X f(Xtilde|X) f(X|Y,C_1,...,C_g) dX
+
+        # a_i's to feed to integral
+        if (some.cs) {
+          alphas <- sapply(onec.r, function(x) sum(exp(x %*% f.gammas[-2, , drop = FALSE]))) *
+            g.r * exp(f.gammas[2] * y.r)
+        } else {
+          alphas <- g.r * exp(f.gammas[1] + f.gammas[2] * y.r)
+        }
+
+        # Function for integrating out X's
+        int.f_i1a <- function(k_i, g_i, Ig_i, y_i, x_i, onec_i, xtilde_i, a_i) {
+
+          # f(XtildeX|Y,C_1,...,C_g)
+          x_i <- matrix(x_i, nrow = 1)
+          f_xtildex.yc <- apply(x_i, 2, function(z) {
+
+            # Transformation
+            s_i <- z / (1 - z)
+
+            # E[log(Xtilde)|X] and V[log(Xtilde|X)]
+            Mu_logxtilde.x <-
+              matrix(log(s_i) - 1/2 * (f.sigsq_p * Ig_i + f.sigsq_m), nrow = k_i)
+            Sigma_logxtilde.x <- matrix(f.sigsq_p * Ig_i, ncol = k_i, nrow = k_i) +
+              diag(rep(f.sigsq_m, k_i))
+
+            # Density
+            1 / prod(xtilde_i) * dmvnorm(x = log(xtilde_i),
+                                         mean = Mu_logxtilde.x,
+                                         sigma = Sigma_logxtilde.x) *
+              dgamma(x = s_i, shape = a_i, scale = ifelse(y_i, f.b1, f.b0))
+
+          })
+
+          # Back-transformation
+          out <- matrix(f_xtildex.yc / (1 - x_i)^2, ncol = ncol(x_i))
+
+        }
+
+        int.vals <- c()
+        for (ii in 1: length(xtilde.r)) {
+
+          # Values for ith subject
+          g_i <- g.r[ii]
+          Ig_i <- Ig.r[ii]
+          k_i <- k.r[ii]
+          y_i <- y.r[ii]
+          onec_i <- onec.r[[ii]]
+          xtilde_i <- xtilde.r[[ii]]
+          a_i <- alphas[ii]
+
+          int.ii <-
+            adaptIntegrate(f = int.f_i1a, tol = integrate_tol,
+                           lowerLimit = 0, upperLimit = 1,
+                           vectorInterface = TRUE,
+                           g_i = g_i, Ig_i = Ig_i, k_i = k_i, y_i = y_i,
+                           onec_i = onec_i, xtilde_i = xtilde_i, a_i = a_i)
+          int.vals[ii] <- int.ii$integral
+
+          # If integral 0, set skip.rest to TRUE to skip further LL calculations
+          if (int.ii$integral == 0) {
+            print(paste("Integral is 0 for ii = ", ii, sep = ""))
+            print(f.theta)
+            print(int.ii)
+            skip.rest <- TRUE
+            break
+          }
+
+        }
+        ll.r <- sum(log(int.vals))
+
+      } else {
+        ll.r <- 0
+      }
+
+      if (some.i & ! skip.rest) {
+
+        # Likelihood for pools with single Xtilde:
+        # L = \int_X f(Xtilde|X) f(X|Y,C_1,...,C_g)Y|X,C) dX
+
+        # a_i's to feed to integral
+        if (some.cs) {
+          alphas <- sapply(onec.i, function(x) sum(exp(x %*% f.gammas[-2, , drop = FALSE]))) *
+            g.i * exp(f.gammas[2] * y.i)
+        } else {
+          alphas <- g.i * exp(f.gammas[1] + f.gammas[2] * y.i)
+        }
+
+        # Function for integrating out X's
+        int.f_i2a <- function(g_i, Ig_i, y_i, x_i, onec_i, xtilde_i, a_i) {
+
+          # f(XtildeX|Y,C_1,...,C_g)
+          x_i <- matrix(x_i, nrow = 1)
+          f_xtildex.yc <- apply(x_i, 2, function(z) {
+
+            # Transformation
+            s_i <- z / (1 - z)
+
+            # E[log(Xtilde)|X] and V[log(Xtilde|X)]
+            mu_logxtilde.x <- log(s_i) - 1/2 * (f.sigsq_p * Ig_i + f.sigsq_m)
+            sigsq_logxtilde.x <- f.sigsq_p * Ig_i + f.sigsq_m
+
+            # Density
+            1 / xtilde_i * dnorm(x = log(xtilde_i),
+                                 mean = mu_logxtilde.x,
+                                 sd = sqrt(sigsq_logxtilde.x)) *
+              dgamma(x = s_i, shape = a_i, scale = ifelse(y_i, f.b1, f.b0))
+
+          })
+
+          # Back-transformation
+          out <- matrix(f_xtildex.yc / (1 - x_i)^2, ncol = ncol(x_i))
+
+        }
+
+        int.vals <- c()
+        for (ii in 1: length(xtilde.i)) {
+
+          # Values for ith subject
+          g_i <- g.i[ii]
+          Ig_i <- Ig.i[ii]
+          y_i <- y.i[ii]
+          onec_i <- onec.i[[ii]]
+          xtilde_i <- xtilde.i[[ii]]
+          a_i <- alphas[ii]
+
+          int.ii <-
+            adaptIntegrate(f = int.f_i2a, tol = integrate_tol,
+                           lowerLimit = 0, upperLimit = 1,
+                           vectorInterface = TRUE,
+                           g_i = g_i, Ig_i = Ig_i, y_i = y_i, onec_i = onec_i,
+                           xtilde_i = xtilde_i, a_i = a_i)
+          int.vals[ii] <- int.ii$integral
+
+          # If integral 0, set skip.rest to TRUE to skip further LL calculations
+          if (int.ii$integral == 0) {
+            print(paste("Integral is 0 for ii = ", ii, sep = ""))
+            print(f.theta)
+            print(int.ii)
+            skip.rest <- TRUE
+            break
+          }
+
+        }
+        ll.i <- sum(log(int.vals))
+
+      } else {
+        ll.i <- 0
+      }
+
+      # Return negative log-likelihood
+      ll <- ll.p + ll.r + ll.i
+      return(-ll)
+
+    }
+
+    # Create list of extra arguments, and assign default starting values and lower
+    # values if not specified by user
+    extra.args <- list(...)
+    if (is.null(extra.args$start)) {
+      if (errors == "neither") {
+        extra.args$start <- c(rep(0.01, n.gammas1), rep(1, 2))
+      } else if (errors %in% c("processing", "measurement")) {
+        extra.args$start <- c(rep(0.01, n.gammas1), rep(1, 3))
+      } else if (errors == "both") {
+        extra.args$start <- c(rep(0.01, n.gammas1), rep(1, 4))
+      }
+    }
+    if (is.null(extra.args$lower)) {
+      if (errors == "neither") {
+        extra.args$lower <- c(rep(-Inf, n.gammas1), rep(1e-3, 2))
+      } else if (errors %in% c("processing", "measurement")) {
+        extra.args$lower <- c(rep(-Inf, n.gammas1), rep(1e-3, 3))
+      } else if (errors == "both") {
+        extra.args$lower <- c(rep(-Inf, n.gammas1), rep(1e-3, 4))
+      }
+    }
+    if (is.null(extra.args$control$rel.tol)) {
+      extra.args$control$rel.tol <- 1e-6
+    }
+    if (is.null(extra.args$control$eval.max)) {
+      extra.args$control$eval.max <- 1000
+    }
+    if (is.null(extra.args$control$iter.max)) {
+      extra.args$control$iter.max <- 750
+    }
+
+    # Obtain ML estimates
+    ml.max1 <- do.call(nlminb, c(list(objective = ll.f1), extra.args))
+    ml.estimates1 <- ml.max1$par
+
+    # Variance estimates
+    hessian.mat1 <- pracma::hessian(f = ll.f1, x0 = ml.estimates1)
+    theta.variance1 <- try(solve(hessian.mat1), silent = TRUE)
+    if (class(theta.variance) == "try-error") {
+      message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
+      theta.variance <- NULL
+      logOR.var <- NA
+    } else {
+      colnames(theta.variance1) <- rownames(theta.variance1) <- theta.labels1
+    }
+
+    # Create vector of estimates to return
+    estimates1 <- ml.estimates1
+    names(estimates1) <- theta.labels1
+    theta.var1 <- theta.variance1
+    aic1 <- 2 * (length(estimates1) + ml.max1$objective)
+
+  }
+
+  # Fit model without gamma_y, unless constant_or = FALSE
+  if (constant_or != FALSE) {
+
+    # Log-likelihood function
+    ll.f2 <- function(f.theta) {
+
+      # Extract parameters
+      f.gammas <- matrix(f.theta[loc.gammas2], ncol = 1)
+      f.b1 <- f.theta[loc.bs2[1]]
+      f.b0 <- f.theta[loc.bs2[2]]
+
+      if (errors == "neither") {
+        f.sigsq_p <- 0
+        f.sigsq_m <- 0
+      } else if (errors == "measurement") {
+        f.sigsq_p <- 0
+        f.sigsq_m <- f.theta[loc.bs2[2] + 1]
+      } else if (errors == "processing") {
+        f.sigsq_p <- f.theta[loc.bs2[2] + 1]
+        f.sigsq_m <- 0
+      } else if (errors == "both") {
+        f.sigsq_p <- f.theta[loc.bs2[2] + 1]
+        f.sigsq_m <- f.theta[loc.bs2[2] + 2]
+      }
+
+      if (some.p) {
+
+        # Likelihood for pools with precisely measured X:
+        # L = f(X|Y,C_1,...,C_g)
+
+        # a_i's in X|Y,C_1, ..., C_g ~ Gamma(a_i, b)
+        if (some.cs) {
+          alphas <- sapply(onec.p, function(x) sum(exp(x %*% f.gammas)))
+        } else {
+          alphas <- g.p * exp(f.gammas[1])
+        }
+
+        # Log-likelihood
+        ll.p <- sum(dgamma(x = xtilde.p,
+                           shape = alphas,
+                           scale = ifelse(y.p == 1, f.b1, f.b0)), log = TRUE)
+
+      } else {
+        ll.p <- 0
+      }
+
+      # Set skip.rest flag to FALSE
+      skip.rest <- FALSE
+
+      if (some.r) {
+
+        # Likelihood for pools with replicates
+        # L = \int_X f(Xtilde|X) f(X|Y,C_1,...,C_g) dX
+
+        # a_i's to feed to integral
+        if (some.cs) {
+          alphas <- sapply(onec.r, function(x) sum(exp(x %*% f.gammas)))
+        } else {
+          alphas <- g.r * exp(f.gammas[1])
+        }
+
+        # Function for integrating out X's
+        int.f_i2a <- function(k_i, g_i, Ig_i, y_i, x_i, onec_i, xtilde_i, a_i) {
+
+          # f(XtildeX|Y,C_1,...,C_g)
+          x_i <- matrix(x_i, nrow = 1)
+          f_xtildex.yc <- apply(x_i, 2, function(z) {
+
+            # Transformation
+            s_i <- z / (1 - z)
+
+            # E[log(Xtilde)|X] and V[log(Xtilde|X)]
+            Mu_logxtilde.x <-
+              matrix(log(s_i) - 1/2 * (f.sigsq_p * Ig_i + f.sigsq_m), nrow = k_i)
+            Sigma_logxtilde.x <- matrix(f.sigsq_p * Ig_i, ncol = k_i, nrow = k_i) +
+              diag(rep(f.sigsq_m, k_i))
+
+            # Density
+            1 / prod(xtilde_i) * dmvnorm(x = log(xtilde_i),
+                                         mean = Mu_logxtilde.x,
+                                         sigma = Sigma_logxtilde.x) *
+              dgamma(x = s_i, shape = a_i, scale = ifelse(y_i, f.b1, f.b0))
+
+          })
+
+          # Back-transformation
+          out <- matrix(f_xtildex.yc / (1 - x_i)^2, ncol = ncol(x_i))
+
+        }
+
+        int.vals <- c()
+        for (ii in 1: length(xtilde.r)) {
+
+          # Values for ith subject
+          g_i <- g.r[ii]
+          Ig_i <- Ig.r[ii]
+          k_i <- k.r[ii]
+          y_i <- y.r[ii]
+          onec_i <- onec.r[[ii]]
+          xtilde_i <- xtilde.r[[ii]]
+          a_i <- alphas[ii]
+
+          int.ii <-
+            adaptIntegrate(f = int.f_i2a, tol = integrate_tol,
+                           lowerLimit = 0, upperLimit = 1,
+                           vectorInterface = TRUE,
+                           g_i = g_i, Ig_i = Ig_i, k_i = k_i, y_i = y_i,
+                           onec_i = onec_i, xtilde_i = xtilde_i, a_i = a_i)
+          int.vals[ii] <- int.ii$integral
+
+          # If integral 0, set skip.rest to TRUE to skip further LL calculations
+          if (int.ii$integral == 0) {
+            print(paste("Integral is 0 for ii = ", ii, sep = ""))
+            print(f.theta)
+            print(int.ii)
+            skip.rest <- TRUE
+            break
+          }
+
+        }
+        ll.r <- sum(log(int.vals))
+
+      } else {
+        ll.r <- 0
+      }
+
+      if (some.i & ! skip.rest) {
+
+        # Likelihood for pools with single Xtilde:
+        # L = \int_X f(Xtilde|X) f(X|Y,C_1,...,C_g)Y|X,C) dX
+
+        # a_i's to feed to integral
+        if (some.cs) {
+          alphas <- sapply(onec.i, function(x) sum(exp(x %*% f.gammas)))
+        } else {
+          alphas <- g.i * exp(f.gammas[1])
+        }
+
+        # Function for integrating out X's
+        int.f_i2b <- function(g_i, Ig_i, y_i, x_i, onec_i, xtilde_i, a_i) {
+
+          # f(XtildeX|Y,C_1,...,C_g)
+          x_i <- matrix(x_i, nrow = 1)
+          f_xtildex.yc <- apply(x_i, 2, function(z) {
+
+            # Transformation
+            s_i <- z / (1 - z)
+
+            # E[log(Xtilde)|X] and V[log(Xtilde|X)]
+            mu_logxtilde.x <- log(s_i) - 1/2 * (f.sigsq_p * Ig_i + f.sigsq_m)
+            sigsq_logxtilde.x <- f.sigsq_p * Ig_i + f.sigsq_m
+
+            # Density
+            1 / xtilde_i * dnorm(x = log(xtilde_i),
+                                 mean = mu_logxtilde.x,
+                                 sd = sqrt(sigsq_logxtilde.x)) *
+              dgamma(x = s_i, shape = a_i, scale = ifelse(y_i, f.b1, f.b0))
+
+          })
+
+          # Back-transformation
+          out <- matrix(f_xtildex.yc / (1 - x_i)^2, ncol = ncol(x_i))
+
+        }
+
+        int.vals <- c()
+        for (ii in 1: length(xtilde.i)) {
+
+          # Values for ith subject
+          g_i <- g.i[ii]
+          Ig_i <- Ig.i[ii]
+          y_i <- y.i[ii]
+          onec_i <- onec.i[[ii]]
+          xtilde_i <- xtilde.i[[ii]]
+          a_i <- alphas[ii]
+
+          int.ii <-
+            adaptIntegrate(f = int.f_i2b, tol = integrate_tol,
+                           lowerLimit = 0, upperLimit = 1,
+                           vectorInterface = TRUE,
+                           g_i = g_i, Ig_i = Ig_i, y_i = y_i, onec_i = onec_i,
+                           xtilde_i = xtilde_i, a_i = a_i)
+          int.vals[ii] <- int.ii$integral
+
+          # If integral 0, set skip.rest to TRUE to skip further LL calculations
+          if (int.ii$integral == 0) {
+            print(paste("Integral is 0 for ii = ", ii, sep = ""))
+            print(f.theta)
+            print(int.ii)
+            skip.rest <- TRUE
+            break
+          }
+
+        }
+        ll.i <- sum(log(int.vals))
+
+      } else {
+        ll.i <- 0
+      }
+
+      # Return negative log-likelihood
+      ll <- ll.p + ll.r + ll.i
+      return(-ll)
+
+    }
+
+    # Create list of extra arguments, and assign default starting values and lower
+    # values if not specified by user
+    extra.args <- list(...)
+    if (is.null(extra.args$start)) {
+      if (errors == "neither") {
+        extra.args$start <- c(rep(0.01, n.gammas2), rep(1, 2))
+      } else if (errors %in% c("processing", "measurement")) {
+        extra.args$start <- c(rep(0.01, n.gammas2), rep(1, 3))
+      } else if (errors == "both") {
+        extra.args$start <- c(rep(0.01, n.gammas2), rep(1, 4))
+      }
+    }
+    if (is.null(extra.args$lower)) {
+      if (errors == "neither") {
+        extra.args$lower <- c(rep(-Inf, n.gammas2), rep(1e-3, 2))
+      } else if (errors %in% c("processing", "measurement")) {
+        extra.args$lower <- c(rep(-Inf, n.gammas2), rep(1e-3, 3))
+      } else if (errors == "both") {
+        extra.args$lower <- c(rep(-Inf, n.gammas2), rep(1e-3, 4))
+      }
+    }
+    if (is.null(extra.args$control$rel.tol)) {
+      extra.args$control$rel.tol <- 1e-6
+    }
+    if (is.null(extra.args$control$eval.max)) {
+      extra.args$control$eval.max <- 1000
+    }
+    if (is.null(extra.args$control$iter.max)) {
+      extra.args$control$iter.max <- 750
+    }
+
+    # Obtain ML estimates
+    ml.max2 <- do.call(nlminb, c(list(objective = ll.f2), extra.args))
+    ml.estimates2 <- ml.max2$par
+
+    # Obtain point estimate for log-odds ratio
+    b1.hat2 <- ml.estimates2[loc.bs2[1]]
+    b0.hat2 <- ml.estimates2[loc.bs2[2]]
+    logOR.hat2 <- 1 / b0.hat2 - 1 / b1.hat2
+
+    # Estimate variance of logOR.hat
+    hessian.mat2 <- pracma::hessian(f = ll.f2, x0 = ml.estimates2)
+    theta.variance2 <- try(solve(hessian.mat2), silent = TRUE)
+    if (class(theta.variance2) == "try-error") {
+      message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
+      theta.variance2 <- NULL
+      logOR.var2 <- NA
+    } else {
+      fprime <- matrix(c(1 / b1.hat^2, -1 / b0.hat^2), nrow = 1)
+      colnames(theta.variance2) <- rownames(theta.variance2) <- theta.labels2
+      logOR.var2 <- fprime %*% theta.variance[loc.bs2, loc.bs2] %*% t(fprime)
+    }
+
+    # Create vector of estimates to return
+    estimates2 <- c(ml.estimates2, logOR.hat2, logOR.var2)
+    names(estimates2) <- c(theta.labels2, "logOR.hat", "logOR.var")
+    theta.var2 <- theta.variance2
+    aic2 <- 2 * (length(ml.estimates2) + ml.max2$objective)
+
+  }
+
+  # Create object to return
+  if (constant_or == TRUE) {
+    return(list(estimates = estimates2,
+                theta.var = theta.var2,
+                aic = aic2))
+  } else if (constant_or == FALSE) {
+    return(list(estimates = estimates1,
+                theta.var = theta.var1,
+                aic = aic1))
+  } else {
+    return(list(estimates1 = estimates1,
+                estimates2 = estimates2,
+                theta.var1 = theta.var1,
+                theta.var2 = theta.var2,
+                aic1 = aic1,
+                aic2 = aic2))
+  }
+}

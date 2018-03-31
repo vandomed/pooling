@@ -1,5 +1,5 @@
-#' Discriminant Function Approach for Estimating Odds Ratio with Continuous
-#' Exposure Subject to Measurement Error
+#' Discriminant Function Approach for Estimating Odds Ratio with Normal Exposure
+#' Subject to Measurement Error
 #'
 #' Assumes exposure measurements are subject to additive normal measurement
 #' error, and exposure given covariates and outcome is a normal-errors linear
@@ -11,15 +11,16 @@
 #' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
 #'
 #'
-#' #' @return List containing:
+#' @return
+#' List containing:
 #' \enumerate{
-#'   \item Named numeric vector with point estimates for \code{gamma_y},
-#'   \code{sigsq}, and the covariate-adjusted log-odds ratio, and the estimated
-#'  variance for the log-odds ratio estimate if \code{estimate.var = TRUE}.
-#'   \item Object returned by \code{\link[stats]{nlminb}} containing information
-#'   about likelihood maximization.
-#'   \item Akaike information criterion (AIC).
-#'  }
+#'  \item Numeric vector with point estimates for \code{gamma_y}, \code{sigsq},
+#'  and the covariate-adjusted log-odds ratio, and the estimated variance for
+#'  the log-odds ratio estimate if \code{estimate_var = TRUE}.
+#'  \item Object returned by \code{\link[stats]{nlminb}} containing information
+#'  about likelihood maximization.
+#'  \item Akaike information criterion (AIC).
+#' }
 #'
 #'
 #'  @references
@@ -63,7 +64,7 @@ dfa_xerrors <- function(y, xtilde, c = NULL, merror = TRUE, ...) {
   # Construct (1, Y, C) matrix
   oneyc <- cbind(rep(1, n), y, c)
 
-  # Separate out replicate from singles
+  # Separate out replicates
   class.xtilde <- class(xtilde)
   if (class.xtilde == "list") {
     k <- sapply(xtilde, length)

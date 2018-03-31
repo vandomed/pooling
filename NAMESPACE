@@ -3,6 +3,7 @@
 export(dfa_xerrors)
 export(logreg_xerrors)
 export(p_dfa_xerrors)
+export(p_dfa_xerrors2)
 export(p_logreg)
 export(p_logreg_xerrors)
 export(p_logreg_xerrors2)

@@ -6,9 +6,7 @@
 \usage{
 p_logreg_xerrors2(g = NULL, y, xtilde, c = NULL, errors = "both",
   nondiff_pe = TRUE, nondiff_me = TRUE, constant_pe = TRUE, prev = NULL,
-  samp_y1y0 = NULL, integrate_tol = 1e-08,
-  integrate_tol_start = integrate_tol,
-  integrate_tol_hessian = integrate_tol, estimate_var = FALSE, ...)
+  samp_y1y0 = NULL, integrate_tol = 1e-08, estimate_var = FALSE, ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -49,16 +47,6 @@ case-control sampling. Can specify \code{prev} instead if it's easier.}
 \item{integrate_tol}{Numeric value specifying the \code{tol} input to
 \code{\link{adaptIntegrate}}.}
 
-\item{integrate_tol_start}{Same as \code{integrate_tol}, but applies only to
-the very first iteration of ML maximization. The first iteration tends to
-take much longer than subsequent ones, so less precise integration at the
-start can speed things up.}
-
-\item{integrate_tol_hessian}{Same as \code{integrate_tol}, but for use when
-estimating the Hessian matrix only. Sometimes more precise integration
-(i.e. smaller tolerance) than used for maximizing the likelihood helps
-prevent cases where the inverse Hessian is not positive definite.}
-
 \item{estimate_var}{Logical value for whether to return variance-covariance
 matrix for parameter estimates.}
 
@@ -79,4 +67,20 @@ Assumes constant-scale Gamma model for exposure given covariates, and
 multiplicative lognormal processing errors and measurement errors acting on
 the poolwise mean exposure. Manuscript fully describing the approach is
 under review.
+}
+\references{
+Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
+pooled-unpooled design for cost-efficient measurement of biomarkers."
+\emph{Stat. Med.} \strong{29}(5): 597–613.
+
+Weinberg, C.R. and Umbach, D.M. (1999) "Using pooled exposure assessment to
+improve efficiency in case-control studies." \emph{Biometrics} \strong{55}:
+718--726.
+
+Weinberg, C.R. and Umbach, D.M. (2014) "Correction to 'Using pooled exposure
+assessment to improve efficiency in case-control studies' by Clarice R.
+Weinberg and David M. Umbach; 55, 718--726, September 1999."
+\emph{Biometrics} \strong{70}: 1061.
+
+ADD WHITCOMB
 }

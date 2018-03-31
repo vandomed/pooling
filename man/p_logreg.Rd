@@ -48,20 +48,12 @@ Fit homogeneous-pools logistic regression model described by Weinberg &
 Umbach (1999).
 }
 \references{
-Lyles, R.H., Mitchell, E.M., Weinberg, C.R., Umbach, D.M. and Schisterman,
-E.F. (2016) "An Efficient Design Strategy for Logistic Regression Using
-Outcome-Dependent Pooling of Biospecimens Prior to Assay." \emph{Biometrics}
-\strong{72}: 965--975.
-
-Weinberg, C.R. and Umbach, D.M. (1999) "Using Pooled Exposure Assessment to
-Improve Efficiency in Case-Control Studies." \emph{Biometrics} \strong{55}:
+Weinberg, C.R. and Umbach, D.M. (1999) "Using pooled exposure assessment to
+improve efficiency in case-control studies." \emph{Biometrics} \strong{55}:
 718--726.
 
-Weinberg, C.R. and Umbach, D.M. (2014) "Correction to 'Using Pooled Exposure
-Assessment to Improve Efficiency in Case-Control Studies' by Clarice R.
+Weinberg, C.R. and Umbach, D.M. (2014) "Correction to 'Using pooled exposure
+assessment to improve efficiency in case-control studies' by Clarice R.
 Weinberg and David M. Umbach; 55, 718--726, September 1999."
 \emph{Biometrics} \strong{70}: 1061.
-
-Acknowledgment: This material is based upon work supported by the National
-Science Foundation Graduate Research Fellowship under Grant No. DGE-0940903.
 }

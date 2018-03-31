@@ -2,8 +2,8 @@
 % Please edit documentation in R/dfa_xerrors.R
 \name{dfa_xerrors}
 \alias{dfa_xerrors}
-\title{Discriminant Function Approach for Estimating Odds Ratio with Continuous
-Exposure Subject to Measurement Error}
+\title{Discriminant Function Approach for Estimating Odds Ratio with Normal Exposure
+Subject to Measurement Error}
 \usage{
 dfa_xerrors(y, xtilde, c = NULL, merror = TRUE, ...)
 }
@@ -15,25 +15,25 @@ one row for each pool. Can be a vector if there is only 1 covariate.}
 
 \item{merror}{Logical value for whether there is measurement error.}
 
-\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.
-
-
-#' @return List containing:
+\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
+}
+\value{
+List containing:
 \enumerate{
-  \item Named numeric vector with point estimates for \code{gamma_y},
-  \code{sigsq}, and the covariate-adjusted log-odds ratio, and the estimated
- variance for the log-odds ratio estimate if \code{estimate.var = TRUE}.
-  \item Object returned by \code{\link[stats]{nlminb}} containing information
-  about likelihood maximization.
-  \item Akaike information criterion (AIC).
- }
+ \item Numeric vector with point estimates for \code{gamma_y}, \code{sigsq},
+ and the covariate-adjusted log-odds ratio, and the estimated variance for
+ the log-odds ratio estimate if \code{estimate_var = TRUE}.
+ \item Object returned by \code{\link[stats]{nlminb}} containing information
+ about likelihood maximization.
+ \item Akaike information criterion (AIC).
+}
 
 
  @references
 Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
 "A discriminant function approach to adjust for processing and measurement
 error When a biomarker is assayed in pooled samples."
-\emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.}
+\emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
 }
 \description{
 Assumes exposure measurements are subject to additive normal measurement

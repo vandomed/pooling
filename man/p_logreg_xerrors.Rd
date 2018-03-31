@@ -83,16 +83,16 @@ normal processing errors and measurement errors acting on the poolwise mean
 exposure. Manuscript fully describing the approach is under review.
 }
 \references{
-Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
-"A Discriminant Function Approach to Adjust for Processing and Measurement
-Error When a Biomarker is Assayed in Pooled Samples."
-\emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
-
 Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
-Pooled-Unpooled Design for Cost-Efficient Measurement of Biomarkers."
-\emph{Stat. Med.} \strong{29}(5): 597--613.
+pooled-unpooled design for cost-efficient measurement of biomarkers."
+\emph{Stat. Med.} \strong{29}(5): 597–613.
 
-Weinberg, C.R. and Umbach, D.M. (1999) "Using Pooled Exposure Assessment to
-Improve Efficiency in Case-Control Studies." \emph{Biometrics} \strong{55}:
+Weinberg, C.R. and Umbach, D.M. (1999) "Using pooled exposure assessment to
+improve efficiency in case-control studies." \emph{Biometrics} \strong{55}:
 718--726.
+
+Weinberg, C.R. and Umbach, D.M. (2014) "Correction to 'Using pooled exposure
+assessment to improve efficiency in case-control studies' by Clarice R.
+Weinberg and David M. Umbach; 55, 718--726, September 1999."
+\emph{Biometrics} \strong{70}: 1061.
 }
