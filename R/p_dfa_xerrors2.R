@@ -673,31 +673,31 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
     # Obtain ML estimates
     ml.max2 <- do.call(nlminb, c(list(objective = ll.f2), extra.args))
-    ml.estimates2 <- ml.max2$par
+    ml.estimates <- ml.max2$par
 
     # Obtain point estimate for log-odds ratio
-    b1.hat2 <- ml.estimates2[loc.bs2[1]]
-    b0.hat2 <- ml.estimates2[loc.bs2[2]]
-    logOR.hat2 <- 1 / b0.hat2 - 1 / b1.hat2
+    b1.hat <- ml.estimates[loc.bs2[1]]
+    b0.hat <- ml.estimates[loc.bs2[2]]
+    logOR.hat <- 1 / b0.hat - 1 / b1.hat
 
     # Estimate variance of logOR.hat
-    hessian.mat2 <- pracma::hessian(f = ll.f2, x0 = ml.estimates2)
-    theta.variance2 <- try(solve(hessian.mat2), silent = TRUE)
-    if (class(theta.variance2) == "try-error") {
+    hessian.mat <- pracma::hessian(f = ll.f2, x0 = ml.estimates)
+    theta.variance <- try(solve(hessian.mat), silent = TRUE)
+    if (class(theta.variance) == "try-error") {
       message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
-      theta.variance2 <- NULL
-      logOR.var2 <- NA
+      theta.variance <- NULL
+      logOR.var <- NA
     } else {
       fprime <- matrix(c(1 / b1.hat^2, -1 / b0.hat^2), nrow = 1)
-      colnames(theta.variance2) <- rownames(theta.variance2) <- theta.labels2
-      logOR.var2 <- fprime %*% theta.variance[loc.bs2, loc.bs2] %*% t(fprime)
+      colnames(theta.variance) <- rownames(theta.variance) <- theta.labels2
+      logOR.var <- fprime %*% theta.variance[loc.bs2, loc.bs2] %*% t(fprime)
     }
 
     # Create vector of estimates to return
-    estimates2 <- c(ml.estimates2, logOR.hat2, logOR.var2)
+    estimates2 <- c(ml.estimates, logOR.hat, logOR.var)
     names(estimates2) <- c(theta.labels2, "logOR.hat", "logOR.var")
-    theta.var2 <- theta.variance2
-    aic2 <- 2 * (length(ml.estimates2) + ml.max2$objective)
+    theta.var2 <- theta.variance
+    aic2 <- 2 * (length(ml.estimates) + ml.max2$objective)
 
   }
 
