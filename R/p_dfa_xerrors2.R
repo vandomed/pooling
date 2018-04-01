@@ -129,6 +129,8 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
       onec.r <- onec[which.r]
       xtilde.r <- xtilde[which.r]
     }
+  } else {
+    some.r <- FALSE
   }
 
   # Separate out pools with single Xtilde
@@ -211,7 +213,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
         }
 
         # Log-likelihood
-        ll.p <- sum(dgamma(x = xtilde.p,
+        ll.p <- sum(dgamma(x = x.p,
                            shape = alphas,
                            scale = ifelse(y.p == 1, f.b1, f.b0)), log = TRUE)
 
@@ -472,7 +474,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
         }
 
         # Log-likelihood
-        ll.p <- sum(dgamma(x = xtilde.p,
+        ll.p <- sum(dgamma(x = x.p,
                            shape = alphas,
                            scale = ifelse(y.p == 1, f.b1, f.b0)), log = TRUE)
 
