@@ -172,8 +172,8 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
     theta.labels2 <- c(gamma.labels2, "b1", "b0", "sigsq_p", "sigsq_m")
   }
 
-  # Fit model with gamma_y, unless contant_or = TRUE
-  if (constant_or != TRUE) {
+  # Fit model with gamma_y
+  if (is.null(constant_or) || ! constant_or) {
 
     # Log-likelihood function
     ll.f1 <- function(f.theta) {
@@ -435,7 +435,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
   }
 
   # Fit model without gamma_y
-  if (constant_or != FALSE) {
+  if (is.null(constant_or) || constant_or) {
 
     # Log-likelihood function
     ll.f2 <- function(f.theta) {
@@ -701,21 +701,21 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
   }
 
-  # Create object to return
-  if (constant_or == TRUE) {
-    return(list(estimates = estimates2,
-                theta.var = theta.var2,
-                aic = aic2))
-  } else if (constant_or == FALSE) {
-    return(list(estimates = estimates1,
-                theta.var = theta.var1,
-                aic = aic1))
-  } else {
+  # Return objects
+  if (is.null(constant_or)) {
     return(list(estimates1 = estimates1,
                 estimates2 = estimates2,
                 theta.var1 = theta.var1,
                 theta.var2 = theta.var2,
                 aic1 = aic1,
                 aic2 = aic2))
+  } else if (constant_or) {
+    return(list(estimates = estimates2,
+                theta.var = theta.var2,
+                aic = aic2))
+  } else {
+    return(list(estimates = estimates1,
+                theta.var = theta.var1,
+                aic = aic1))
   }
 }
