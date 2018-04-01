@@ -90,6 +90,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
       # Replicates
       k.r <- k[which.r]
       g.r <- g[which.r]
+      Ig.r <- Ig[which.r]
       y.r <- y[which.r]
       gyc.r <- gyc[which.r, , drop = FALSE]
       xtilde.r <- xtilde[which.r]
