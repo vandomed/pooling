@@ -5,7 +5,8 @@
 \title{Discriminant Function Approach for Estimating Odds Ratio with Normal Exposure
 Measured in Pools and Subject to Errors}
 \usage{
-p_dfa_xerrors(g, y, xtilde, c = NULL, errors = "both", ...)
+p_dfa_xerrors(g, y, xtilde, c = NULL, constant_or = NULL, errors = "both",
+  ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -18,6 +19,10 @@ replicates) with \code{Xtilde} values.}
 
 \item{c}{Numeric matrix with poolwise \strong{\code{C}} values (if any), with
 one row for each pool. Can be a vector if there is only 1 covariate.}
+
+\item{constant_or}{Logical value for whether to assume a constant OR for
+\code{X}, which means that \code{sigsq_1 = sigsq_0}. If \code{NULL}, model is
+fit with and without this assumption.}
 
 \item{errors}{Character string specifying the errors that \code{X} is subject
 to. Choices are \code{"neither"}, \code{"processing"} for processing error

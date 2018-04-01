@@ -5,7 +5,7 @@
 \title{Discriminant Function Approach for Estimating Odds Ratio with Gamma Exposure
 Measured in Pools and Subject to Errors}
 \usage{
-p_dfa_xerrors2(g, y, xtilde, c = NULL, constant_or = "test",
+p_dfa_xerrors2(g, y, xtilde, c = NULL, constant_or = NULL,
   errors = "both", integrate_tol = 1e-08, ...)
 }
 \arguments{
@@ -21,7 +21,8 @@ replicates) with \code{Xtilde} values.}
 one row for each pool. Can be a vector if there is only 1 covariate.}
 
 \item{constant_or}{Logical value for whether to assume a constant OR for
-\code{X}, which means that \code{gamma_y = 0}.}
+\code{X}, which means that \code{gamma_y = 0}. If \code{NULL}, model is
+fit with and without this assumption.}
 
 \item{errors}{Character string specifying the errors that \code{X} is subject
 to. Choices are \code{"neither"}, \code{"processing"} for processing error

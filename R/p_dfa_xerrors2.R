@@ -10,7 +10,8 @@
 #' @inheritParams p_logreg_xerrors
 #'
 #' @param constant_or Logical value for whether to assume a constant OR for
-#' \code{X}, which means that \code{gamma_y = 0}.
+#' \code{X}, which means that \code{gamma_y = 0}. If \code{NULL}, model is
+#' fit with and without this assumption.
 #'
 #' @param integrate_tol Numeric value specifying the \code{tol} input to
 #' \code{\link{adaptIntegrate}}.
@@ -38,14 +39,14 @@
 #'
 #' @export
 p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
-                           constant_or = "test",
+                           constant_or = NULL,
                            errors = "both",
                            integrate_tol = 1e-8,
                            ...) {
 
   # Check that inputs are valid
-  if (! is.logical(constant_or) && constant_or != "test") {
-    stop("The input 'contant_or' should be set to TRUE, FALSE, or 'test'.")
+  if (! is.null(constant_or) && ! is.logical(constant_or)) {
+    stop("The input 'contant_or' should be set to TRUE, FALSE, or NULL.")
   }
   if (! errors %in% c("neither", "processing", "measurement", "both")) {
     stop("The input 'errors' should be set to 'neither', 'processing',
@@ -171,7 +172,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
     theta.labels2 <- c(gamma.labels2, "b1", "b0", "sigsq_p", "sigsq_m")
   }
 
-  # Fit model with gamma_y, unless contant_pe = TRUE
+  # Fit model with gamma_y, unless contant_or = TRUE
   if (constant_or != TRUE) {
 
     # Log-likelihood function
@@ -418,15 +419,14 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
     # Variance estimates
     hessian.mat1 <- pracma::hessian(f = ll.f1, x0 = ml.estimates1)
     theta.variance1 <- try(solve(hessian.mat1), silent = TRUE)
-    if (class(theta.variance) == "try-error") {
+    if (class(theta.variance1) == "try-error") {
       message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
-      theta.variance <- NULL
-      logOR.var <- NA
+      theta.variance1 <- NULL
     } else {
       colnames(theta.variance1) <- rownames(theta.variance1) <- theta.labels1
     }
 
-    # Create vector of estimates to return
+    # Create vector of estimates and calculate AIC
     estimates1 <- ml.estimates1
     names(estimates1) <- theta.labels1
     theta.var1 <- theta.variance1
@@ -434,7 +434,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
   }
 
-  # Fit model without gamma_y, unless constant_or = FALSE
+  # Fit model without gamma_y
   if (constant_or != FALSE) {
 
     # Log-likelihood function
@@ -693,7 +693,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
       logOR.var <- fprime %*% theta.variance[loc.bs2, loc.bs2] %*% t(fprime)
     }
 
-    # Create vector of estimates to return
+    # Create vector of estimates and calculate AIC
     estimates2 <- c(ml.estimates, logOR.hat, logOR.var)
     names(estimates2) <- c(theta.labels2, "logOR.hat", "logOR.var")
     theta.var2 <- theta.variance
