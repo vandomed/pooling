@@ -90,12 +90,12 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
   # Create vector indicating which observations are pools
   Ig <- ifelse(g > 1, 1, 0)
 
-  # Construct list of (1, C) matrices
-  if (some.cs) {
-    onec <- lapply(c, function(x) cbind(1, x))
-  } else {
-    onec <- NULL
-  }
+  # # Construct list of (1, C) matrices
+  # if (some.cs) {
+  #   onec <- lapply(c, function(x) cbind(1, x))
+  # } else {
+  #   onec <- NULL
+  # }
 
   # Separate out pools with precisely measured X
   if (errors == "neither") {
@@ -207,8 +207,9 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
         # a_i's in X|Y,C_1, ..., C_g ~ Gamma(a_i, b)
         if (some.cs) {
-          alphas <- sapply(onec.p, function(x) sum(exp(x %*% f.gammas[-2, , drop = FALSE]))) *
-            g.p * exp(f.gammas[2] * y.p)
+          alphas <- sapply(onec.p, function(x)
+            sum(exp(x %*% f.gammas[-2, , drop = FALSE]))) *
+            exp(f.gammas[2] * y.p)
         } else {
           alphas <- g.p * exp(f.gammas[1] + f.gammas[2] * y.p)
         }
@@ -232,8 +233,9 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
         # a_i's to feed to integral
         if (some.cs) {
-          alphas <- sapply(onec.r, function(x) sum(exp(x %*% f.gammas[-2, , drop = FALSE]))) *
-            g.r * exp(f.gammas[2] * y.r)
+          alphas <- sapply(onec.r, function(x)
+            sum(exp(x %*% f.gammas[-2, , drop = FALSE]))) *
+            exp(f.gammas[2] * y.r)
         } else {
           alphas <- g.r * exp(f.gammas[1] + f.gammas[2] * y.r)
         }
@@ -310,8 +312,9 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
         # a_i's to feed to integral
         if (some.cs) {
-          alphas <- sapply(onec.i, function(x) sum(exp(x %*% f.gammas[-2, , drop = FALSE]))) *
-            g.i * exp(f.gammas[2] * y.i)
+          alphas <- sapply(onec.i, function(x)
+            sum(exp(x %*% f.gammas[-2, , drop = FALSE]))) *
+            exp(f.gammas[2] * y.i)
         } else {
           alphas <- g.i * exp(f.gammas[1] + f.gammas[2] * y.i)
         }
