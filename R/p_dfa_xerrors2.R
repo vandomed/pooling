@@ -90,12 +90,12 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
   # Create vector indicating which observations are pools
   Ig <- ifelse(g > 1, 1, 0)
 
-  # # Construct list of (1, C) matrices
-  # if (some.cs) {
-  #   onec <- lapply(c, function(x) cbind(1, x))
-  # } else {
-  #   onec <- NULL
-  # }
+  # Construct list of (1, C) matrices
+  if (some.cs) {
+    onec <- lapply(c, function(x) cbind(1, x))
+  } else {
+    onec <- NULL
+  }
 
   # Separate out pools with precisely measured X
   if (errors == "neither") {
