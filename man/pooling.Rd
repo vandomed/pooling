@@ -15,7 +15,7 @@ individual.
 Package: \tab pooling \cr
 Type: \tab Package \cr
 Version: \tab 1.1.1 \cr
-Date: \tab 2018-03-30 \cr
+Date: \tab 2018-04-03 \cr
 License: \tab GPL-3 \cr
 }
 }

@@ -34,8 +34,9 @@ only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }
 \value{
-List of point estimates, objects returned by \code{\link[stats]{nlminb}},
-and AICs, for one or two models depending on \code{constant_or}.
+List of point estimates, variance-covariance matrix, objects returned by
+\code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
+\code{constant_or}.
 }
 \description{
 Assumes exposure measurements are subject to multiplicative lognormal

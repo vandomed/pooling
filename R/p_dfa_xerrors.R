@@ -16,7 +16,10 @@
 #' fit with and without this assumption.
 #'
 #'
-#' @inherit dfa_xerrors return
+#' @return
+#' List of point estimates, variance-covariance matrix, objects returned by
+#' \code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
+#' \code{constant_or}.
 #'
 #'
 #' @references
@@ -424,15 +427,19 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
                 estimates2 = estimates2,
                 theta.var1 = theta.var1,
                 theta.var2 = theta.var2,
+                nlminb.object1 = ml.max1,
+                nlminb.object2 = ml.max2,
                 aic1 = aic1,
                 aic2 = aic2))
   } else if (constant_or) {
     return(list(estimates = estimates2,
                 theta.var = theta.var2,
+                nlminb.object = ml.max2,
                 aic = aic2))
   } else {
     return(list(estimates = estimates1,
                 theta.var = theta.var1,
+                nlminb.object = ml.max1,
                 aic = aic1))
   }
 }

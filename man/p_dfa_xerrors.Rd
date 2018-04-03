@@ -31,22 +31,9 @@ only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }
 \value{
-List containing:
-\enumerate{
- \item Numeric vector with point estimates for \code{gamma_y}, \code{sigsq},
- and the covariate-adjusted log-odds ratio, and the estimated variance for
- the log-odds ratio estimate if \code{estimate_var = TRUE}.
- \item Object returned by \code{\link[stats]{nlminb}} containing information
- about likelihood maximization.
- \item Akaike information criterion (AIC).
-}
-
-
- @references
-Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
-"A discriminant function approach to adjust for processing and measurement
-error When a biomarker is assayed in pooled samples."
-\emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
+List of point estimates, variance-covariance matrix, objects returned by
+\code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
+\code{constant_or}.
 }
 \description{
 Assumes exposure measurements are subject to additive normal processing error
