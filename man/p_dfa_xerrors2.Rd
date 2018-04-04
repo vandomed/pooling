@@ -6,7 +6,9 @@
 Measured in Pools and Subject to Errors}
 \usage{
 p_dfa_xerrors2(g, y, xtilde, c = NULL, constant_or = NULL,
-  errors = "both", integrate_tol = 1e-08, ...)
+  errors = "both", integrate_tol = 1e-08,
+  integrate_tol_start = integrate_tol,
+  integrate_tol_hessian = integrate_tol, ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -30,6 +32,16 @@ only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 
 \item{integrate_tol}{Numeric value specifying the \code{tol} input to
 \code{\link{adaptIntegrate}}.}
+
+\item{integrate_tol_start}{Same as \code{integrate_tol}, but applies only to
+the very first iteration of ML maximization. The first iteration tends to
+take much longer than subsequent ones, so less precise integration at the
+start can speed things up.}
+
+\item{integrate_tol_hessian}{Same as \code{integrate_tol}, but for use when
+estimating the Hessian matrix only. Sometimes more precise integration
+(i.e. smaller tolerance) than used for maximizing the likelihood helps
+prevent cases where the inverse Hessian is not positive definite.}
 
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }

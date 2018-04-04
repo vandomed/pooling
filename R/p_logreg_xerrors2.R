@@ -43,6 +43,8 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
                               constant_pe = TRUE,
                               prev = NULL, samp_y1y0 = NULL,
                               integrate_tol = 1e-8,
+                              integrate_tol_start = integrate_tol,
+                              integrate_tol_hessian = integrate_tol,
                               estimate_var = FALSE, ...) {
 
   # Check that inputs are valid
@@ -73,6 +75,12 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
   if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
   }
+  if (! (is.numeric(integrate_tol_start) & inside(integrate_tol_start, c(1e-32, Inf)))) {
+    stop("The input 'integrate_tol_start' must be a numeric value greater than 1e-32.")
+  }
+  if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
+    stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
+  }
   if (! is.logical(estimate_var)) {
     stop("The input 'estimate_var' should be TRUE or FALSE.")
   }
@@ -80,16 +88,12 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
   # Get name of xtilde input
   x.varname <- deparse(substitute(xtilde))
 
-  # This seems wrong...
   # Get information about covariates C
   if (is.null(c)) {
     c.varnames <- NULL
     n.cvars <- 0
     some.cs <- FALSE
   } else {
-    # if (! is.matrix(c)) {
-    #   c <- as.matrix(c)
-    # }
     n.cvars <- ncol(c[[1]])
     some.cs <- TRUE
     c.varnames <- colnames(c[[1]])
@@ -442,6 +446,15 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
       }
 
+      # Get integration tolerance
+      if (estimating.hessian) {
+        int_tol <- integrate_tol_hessian
+      } else if (all(f.theta == extra.args$start)) {
+        int_tol <- integrate_tol_start
+      } else {
+        int_tol <- integrate_tol
+      }
+
       int.vals <- c()
       for (ii in 1: length(xtilde.r)) {
 
@@ -459,7 +472,7 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
         # Try integrating out X with default settings
         int.ii <-
-          adaptIntegrate(f = int.f_i1, tol = integrate_tol,
+          adaptIntegrate(f = int.f_i1, tol = int_tol,
                          lowerLimit = 0, upperLimit = 1,
                          vectorInterface = TRUE,
                          g_i = g_i, Ig_i = Ig_i, k_i = k_i, y_i = y_i,
@@ -564,6 +577,15 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
       }
 
+      # Get integration tolerance
+      if (estimating.hessian) {
+        int_tol <- integrate_tol_hessian
+      } else if (all(f.theta == extra.args$start)) {
+        int_tol <- integrate_tol_start
+      } else {
+        int_tol <- integrate_tol
+      }
+
       int.vals <- c()
       for (ii in 1: length(xtilde.i)) {
 
@@ -580,7 +602,7 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
         # Try integrating out X_i with default settings
         int.ii <-
-          adaptIntegrate(f = int.f_i2, tol = integrate_tol,
+          adaptIntegrate(f = int.f_i2, tol = int_tol,
                          lowerLimit = 0, upperLimit = 1,
                          vectorInterface = TRUE,
                          g_i = g_i, Ig_i = Ig_i, y_i = y_i,

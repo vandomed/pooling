@@ -450,10 +450,10 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               Sigma_xxtilde.c_22[2, 2] * (xtilde_i[2] - mu_x.c_i)
             sigsq_xtilde1.xtilde2c <- Sigma_xxtilde.c_22[1, 1] -
               Sigma_xxtilde.c_22[1, 2]^2 / Sigma_xxtilde.c_22[2, 2]
-            part2 <- sum(stats::dnorm(x = xtilde_i, log = TRUE,
-                                      mean = c(mu_xtilde1.xtilde2c, mu_x.c_i),
-                                      sd = sqrt(c(sigsq_xtilde1.xtilde2c,
-                                                  Sigma_xxtilde.c_22[2, 2]))))
+            part2 <- sum(dnorm(x = xtilde_i, log = TRUE,
+                               mean = c(mu_xtilde1.xtilde2c, mu_x.c_i),
+                               sd = sqrt(c(sigsq_xtilde1.xtilde2c,
+                                           Sigma_xxtilde.c_22[2, 2]))))
 
           } else {
 
@@ -508,10 +508,10 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
                 diag(x = g_i^2 * sigsq_m_i, ncol = k_i, nrow = k_i)
 
               # f(Y,X,Xtilde|C) = f(Y|X,C) f(Xtilde|X) f(X|C)
-              stats::dbinom(x = y_i, size = 1, prob = p_y.xc) *
-                mvtnorm::dmvnorm(x = xtilde_i,
-                                 mean = Mu_xtilde.x, sigma = Sigma_xtilde.x) *
-                stats::dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
+              dbinom(x = y_i, size = 1, prob = p_y.xc) *
+                dmvnorm(x = xtilde_i, mean = Mu_xtilde.x,
+                        sigma = Sigma_xtilde.x) *
+                dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
 
             }
 
@@ -678,11 +678,11 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
             sqrt(1 + sigsq_x.xtildec * f.beta_x^2 / 1.7^2)
         }
         p <- exp(t) / (1 + exp(t))
-        part1 <- stats::dbinom(x = y.i, size = 1, prob = p, log = TRUE)
+        part1 <- dbinom(x = y.i, size = 1, prob = p, log = TRUE)
 
         # log[f(Xtilde|C)]
-        part2 <- stats::dnorm(x = xtilde.i, log = TRUE,
-                              mean = Mu_xxtilde.c_2, sd = sqrt(Sigma_xxtilde.c_22))
+        part2 <- dnorm(x = xtilde.i, log = TRUE,
+                       mean = Mu_xxtilde.c_2, sd = sqrt(Sigma_xxtilde.c_22))
 
         # Log-likelihood
         ll.vals <- part1 + part2
@@ -712,10 +712,9 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
           # f(Y,X,Xtilde|C) = f(Y|X,C) f(Xtilde|X) f(X|C)
           f_yx.xtildec <-
-            stats::dbinom(x = y_i, size = 1, prob = p_y.xc) *
-            stats::dnorm(x = xtilde_i,
-                         mean = mu_xtilde.x, sd = sqrt(sigsq_xtilde.x)) *
-            stats::dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
+            dbinom(x = y_i, size = 1, prob = p_y.xc) *
+            dnorm(x = xtilde_i, mean = mu_xtilde.x, sd = sqrt(sigsq_xtilde.x)) *
+            dnorm(x = s_i, mean = mu_x.c_i, sd = sqrt(sigsq_x.c_i))
 
           # Back-transformation
           out <- f_yx.xtildec * (1 + x_i^2) / (1 - x_i^2)^2
@@ -870,7 +869,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   }
 
   # Obtain ML estimates
-  ml.max <- do.call(stats::nlminb, c(list(objective = ll.f), extra.args))
+  ml.max <- do.call(nlminb, c(list(objective = ll.f), extra.args))
 
   # Create list to return
   theta.hat <- ml.max$par

@@ -43,6 +43,8 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
                            constant_or = NULL,
                            errors = "both",
                            integrate_tol = 1e-8,
+                           integrate_tol_start = integrate_tol,
+                           integrate_tol_hessian = integrate_tol,
                            ...) {
 
   # Check that inputs are valid
@@ -52,6 +54,15 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
   if (! errors %in% c("neither", "processing", "measurement", "both")) {
     stop("The input 'errors' should be set to 'neither', 'processing',
          'measurement', or 'both'.")
+  }
+  if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
+    stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
+  }
+  if (! (is.numeric(integrate_tol_start) & inside(integrate_tol_start, c(1e-32, Inf)))) {
+    stop("The input 'integrate_tol_start' must be a numeric value greater than 1e-32.")
+  }
+  if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
+    stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
   }
 
   # Sample size
@@ -179,7 +190,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
   if (is.null(constant_or) || ! constant_or) {
 
     # Log-likelihood function
-    ll.f1 <- function(f.theta) {
+    ll.f1 <- function(f.theta, estimating.hessian = FALSE) {
 
       # Extract parameters
       f.gammas <- matrix(f.theta[loc.gammas1], ncol = 1)
@@ -269,6 +280,15 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
         }
 
+        # Get integration tolerance
+        if (estimating.hessian) {
+          int_tol <- integrate_tol_hessian
+        } else if (all(f.theta == extra.args$start)) {
+          int_tol <- integrate_tol_start
+        } else {
+          int_tol <- integrate_tol
+        }
+
         int.vals <- c()
         for (ii in 1: length(xtilde.r)) {
 
@@ -282,7 +302,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
           a_i <- alphas[ii]
 
           int.ii <-
-            adaptIntegrate(f = int.f_i1a, tol = integrate_tol,
+            adaptIntegrate(f = int.f_i1a, tol = int_tol,
                            lowerLimit = 0, upperLimit = 1,
                            vectorInterface = TRUE,
                            g_i = g_i, Ig_i = Ig_i, k_i = k_i, y_i = y_i,
@@ -346,6 +366,15 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
         }
 
+        # Get integration tolerance
+        if (estimating.hessian) {
+          int_tol <- integrate_tol_hessian
+        } else if (all(f.theta == extra.args$start)) {
+          int_tol <- integrate_tol_start
+        } else {
+          int_tol <- integrate_tol
+        }
+
         int.vals <- c()
         for (ii in 1: length(xtilde.i)) {
 
@@ -358,7 +387,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
           a_i <- alphas[ii]
 
           int.ii <-
-            adaptIntegrate(f = int.f_i2a, tol = integrate_tol,
+            adaptIntegrate(f = int.f_i2a, tol = int_tol,
                            lowerLimit = 0, upperLimit = 1,
                            vectorInterface = TRUE,
                            g_i = g_i, Ig_i = Ig_i, y_i = y_i, onec_i = onec_i,
