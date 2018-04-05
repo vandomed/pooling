@@ -142,6 +142,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
       xtilde.r <- xtilde[which.r]
     }
   } else {
+    k <- rep(1, n)
     some.r <- FALSE
   }
 
