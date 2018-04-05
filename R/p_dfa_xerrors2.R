@@ -45,6 +45,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
                            integrate_tol = 1e-8,
                            integrate_tol_start = integrate_tol,
                            integrate_tol_hessian = integrate_tol,
+                           estimate_var = TRUE,
                            ...) {
 
   # Check that inputs are valid
@@ -63,6 +64,9 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
   }
   if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
+  }
+  if (! is.logical(estimate_var)) {
+    stop("The input 'estimate_var' should be TRUE or FALSE.")
   }
 
   # Sample size
@@ -452,14 +456,23 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
     ml.max1 <- do.call(nlminb, c(list(objective = ll.f1), extra.args))
     ml.estimates1 <- ml.max1$par
 
+    # Create list to return
+    theta.hat <- ml.max$par
+    names(theta.hat) <- theta.labels
+    ret.list <- list(theta.hat = theta.hat)
+
     # Variance estimates
-    hessian.mat1 <- pracma::hessian(f = ll.f1, x0 = ml.estimates1)
-    theta.variance1 <- try(solve(hessian.mat1), silent = TRUE)
-    if (class(theta.variance1) == "try-error") {
-      message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
-      theta.variance1 <- NULL
+    if (estimate_var) {
+      hessian.mat1 <- pracma::hessian(f = ll.f1, x0 = ml.estimates1)
+      theta.variance1 <- try(solve(hessian.mat1), silent = TRUE)
+      if (class(theta.variance1) == "try-error") {
+        message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
+        theta.variance1 <- NULL
+      } else {
+        colnames(theta.variance1) <- rownames(theta.variance1) <- theta.labels1
+      }
     } else {
-      colnames(theta.variance1) <- rownames(theta.variance1) <- theta.labels1
+      theta.variance1 <- NULL
     }
 
     # Create vector of estimates and calculate AIC
@@ -717,16 +730,21 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
     logOR.hat <- 1 / b0.hat - 1 / b1.hat
 
     # Estimate variance of logOR.hat
-    hessian.mat <- pracma::hessian(f = ll.f2, x0 = ml.estimates)
-    theta.variance <- try(solve(hessian.mat), silent = TRUE)
-    if (class(theta.variance) == "try-error") {
-      message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
-      theta.variance <- NULL
-      logOR.var <- NA
+    if (estimate_var) {
+      hessian.mat <- pracma::hessian(f = ll.f2, x0 = ml.estimates)
+      theta.variance <- try(solve(hessian.mat), silent = TRUE)
+      if (class(theta.variance) == "try-error") {
+        message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
+        theta.variance <- NULL
+        logOR.var <- NA
+      } else {
+        fprime <- matrix(c(1 / b1.hat^2, -1 / b0.hat^2), nrow = 1)
+        colnames(theta.variance) <- rownames(theta.variance) <- theta.labels2
+        logOR.var <- fprime %*% theta.variance[loc.bs2, loc.bs2] %*% t(fprime)
+      }
     } else {
-      fprime <- matrix(c(1 / b1.hat^2, -1 / b0.hat^2), nrow = 1)
-      colnames(theta.variance) <- rownames(theta.variance) <- theta.labels2
-      logOR.var <- fprime %*% theta.variance[loc.bs2, loc.bs2] %*% t(fprime)
+      theta.variance <- NULL
+      logOR.var <- NULL
     }
 
     # Create vector of estimates and calculate AIC

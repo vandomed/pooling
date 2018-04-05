@@ -8,7 +8,7 @@ Measured in Pools and Subject to Errors}
 p_dfa_xerrors2(g, y, xtilde, c = NULL, constant_or = NULL,
   errors = "both", integrate_tol = 1e-08,
   integrate_tol_start = integrate_tol,
-  integrate_tol_hessian = integrate_tol, ...)
+  integrate_tol_hessian = integrate_tol, estimate_var = TRUE, ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -42,6 +42,9 @@ start can speed things up.}
 estimating the Hessian matrix only. Sometimes more precise integration
 (i.e. smaller tolerance) than used for maximizing the likelihood helps
 prevent cases where the inverse Hessian is not positive definite.}
+
+\item{estimate_var}{Logical value for whether to return variance-covariance
+matrix for parameter estimates.}
 
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }
