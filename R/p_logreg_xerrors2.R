@@ -22,7 +22,7 @@
 #' @references
 #' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
 #' pooled-unpooled design for cost-efficient measurement of biomarkers."
-#' \emph{Stat. Med.} \strong{29}(5): 597–613.
+#' \emph{Stat. Med.} \strong{29}(5): 597--613.
 #'
 #' Weinberg, C.R. and Umbach, D.M. (1999) "Using pooled exposure assessment to
 #' improve efficiency in case-control studies." \emph{Biometrics} \strong{55}:
@@ -345,8 +345,8 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
       }
 
       # Log-likelihood (non-positive X that generate NAs get excluded!)
-      ll.p <- sum(log(dbinom(x = y.p, size = 1, prob = p_y.xc) *
-                        dgamma(x = x.p, shape = alphas, scale = f.b)))
+      ll.p <- sum(dbinom(x = y.p, size = 1, prob = p_y.xc, log = TRUE) +
+                    dgamma(x = x.p, shape = alphas, scale = f.b, log = TRUE))
 
     } else {
       ll.p <- 0

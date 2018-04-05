@@ -62,7 +62,7 @@
 #' @references
 #' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
 #' pooled-unpooled design for cost-efficient measurement of biomarkers."
-#' \emph{Stat. Med.} \strong{29}(5): 597–613.
+#' \emph{Stat. Med.} \strong{29}(5): 597--613.
 #'
 #' Weinberg, C.R. and Umbach, D.M. (1999) "Using pooled exposure assessment to
 #' improve efficiency in case-control studies." \emph{Biometrics} \strong{55}:
@@ -372,9 +372,9 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       sigsq_x.c <- g.p * f.sigsq_x.c
 
       # Log-likelihood
-      ll.p <- sum(dbinom(x = y.p, log = TRUE, size = 1, prob = p_y.xc) +
-                    dnorm(x = x.p, log = TRUE,
-                          mean = mu_x.c, sd = sqrt(sigsq_x.c)))
+      ll.p <-
+        sum(dbinom(x = y.p, size = 1, prob = p_y.xc, log = TRUE) +
+            dnorm(x = x.p, mean = mu_x.c, sd = sqrt(sigsq_x.c), log = TRUE))
 
     } else {
       ll.p <- 0

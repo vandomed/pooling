@@ -83,7 +83,7 @@ under review.
 \references{
 Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
 pooled-unpooled design for cost-efficient measurement of biomarkers."
-\emph{Stat. Med.} \strong{29}(5): 597–613.
+\emph{Stat. Med.} \strong{29}(5): 597--613.
 
 Weinberg, C.R. and Umbach, D.M. (1999) "Using pooled exposure assessment to
 improve efficiency in case-control studies." \emph{Biometrics} \strong{55}:

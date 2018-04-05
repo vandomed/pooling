@@ -31,11 +31,11 @@
 #'
 #' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
 #' pooled-unpooled design for cost-efficient measurement of biomarkers."
-#' \emph{Stat. Med.} \strong{29}(5): 597–613.
+#' \emph{Stat. Med.} \strong{29}(5): 597--613.
 #'
 #' Whitcomb, B.W., Perkins, N.J., Zhang, Z., Ye, A., and Lyles, R. H. (2012)
 #' "Assessment of skewed exposure in case-control studies with pooling."
-#' \emph{Stat. Med.} \strong{31}: 2461–2472.
+#' \emph{Stat. Med.} \strong{31}: 2461--2472.
 #'
 #'
 #' @export
@@ -229,7 +229,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
         # Log-likelihood
         ll.p <- sum(dgamma(x = x.p,
                            shape = alphas,
-                           scale = ifelse(y.p == 1, f.b1, f.b0)), log = TRUE)
+                           scale = ifelse(y.p == 1, f.b1, f.b0), log = TRUE))
 
       } else {
         ll.p <- 0
@@ -510,7 +510,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
         # Log-likelihood
         ll.p <- sum(dgamma(x = x.p,
                            shape = alphas,
-                           scale = ifelse(y.p == 1, f.b1, f.b0)), log = TRUE)
+                           scale = ifelse(y.p == 1, f.b1, f.b0), log = TRUE))
 
       } else {
         ll.p <- 0
