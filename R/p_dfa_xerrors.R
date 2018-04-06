@@ -13,13 +13,23 @@
 #'
 #' @param constant_or Logical value for whether to assume a constant OR for
 #' \code{X}, which means that \code{sigsq_1 = sigsq_0}. If \code{NULL}, model is
-#' fit with and without this assumption.
+#' fit with and without this assumption, and likelihood ratio test is performed
+#' to test it.
 #'
 #'
 #' @return
 #' List of point estimates, variance-covariance matrix, objects returned by
 #' \code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
 #' \code{constant_or}.
+#'
+#' @return
+#' List of point estimates, variance-covariance matrix, objects returned by
+#' \code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
+#' \code{constant_or}. If \code{constant_or = NULL}, also returns result of a
+#' likelihood ratio test for \code{H0: sigsq_1 = sigsq_0}, which is equivalent
+#' to \code{H0: log-OR is constant}. If \code{constant_or = NULL}, returned
+#' objects with names ending in 1 are for model that does not assume constant
+#' log-OR, and those ending in 2 are for model that assumes constant log-OR.
 #'
 #'
 #' @references
@@ -423,7 +433,18 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
 
   # Return objects
   if (is.null(constant_or)) {
-    return(list(estimates1 = estimates1,
+
+    # Likelihood ratio test
+    d <- 2 * (-ml.max1$nlminb$objective + ml.max2$nlminb$objective)
+    p <- pchisq(q = d, df = 1, lower.tail = FALSE)
+    if (p < 0.05) {
+      message <- "H0: Constant log-OR rejected at alpha = 0.05. Recommend using estimates1, theta.var1, etc."
+    } else {
+      message <- "H0: Constant log-OR not rejected at alpha = 0.05. Recommend using estimates2, theta.var2, etc."
+    }
+    lrt <- list(d = d, p = p, message = message)
+
+    return(list(lrt = lrt, estimates1 = estimates1,
                 estimates2 = estimates2,
                 theta.var1 = theta.var1,
                 theta.var2 = theta.var2,
@@ -431,15 +452,20 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
                 nlminb.object2 = ml.max2,
                 aic1 = aic1,
                 aic2 = aic2))
+
   } else if (constant_or) {
+
     return(list(estimates = estimates2,
                 theta.var = theta.var2,
                 nlminb.object = ml.max2,
                 aic = aic2))
+
   } else {
+
     return(list(estimates = estimates1,
                 theta.var = theta.var1,
                 nlminb.object = ml.max1,
                 aic = aic1))
   }
+
 }

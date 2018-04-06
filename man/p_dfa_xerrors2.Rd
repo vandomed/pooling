@@ -24,7 +24,8 @@ one row for each pool. Can be a vector if there is only 1 covariate.}
 
 \item{constant_or}{Logical value for whether to assume a constant OR for
 \code{X}, which means that \code{gamma_y = 0}. If \code{NULL}, model is
-fit with and without this assumption.}
+fit with and without this assumption, and likelihood ratio test is performed
+to test it.}
 
 \item{errors}{Character string specifying the errors that \code{X} is subject
 to. Choices are \code{"neither"}, \code{"processing"} for processing error
@@ -49,9 +50,13 @@ matrix for parameter estimates.}
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }
 \value{
-List of point estimates, variance-covariance matrix, objects returned by
+#' List of point estimates, variance-covariance matrix, objects returned by
 \code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
-\code{constant_or}.
+\code{constant_or}. If \code{constant_or = NULL}, also returns result of a
+likelihood ratio test for \code{H0: gamma_y = 0}, which is equivalent to
+\code{H0: log-OR is constant}. If \code{constant_or = NULL}, returned objects
+with names ending in 1 are for model that does not assume constant log-OR,
+and those ending in 2 are for model that assumes constant log-OR.
 }
 \description{
 Assumes exposure measurements are subject to multiplicative lognormal
