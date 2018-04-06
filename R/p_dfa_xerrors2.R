@@ -744,7 +744,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
       }
     } else {
       theta.variance <- NULL
-      logOR.var <- NULL
+      logOR.var <- NA
     }
 
     # Create vector of estimates and calculate AIC
