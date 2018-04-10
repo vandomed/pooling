@@ -299,7 +299,7 @@ logreg_xerrors <- function(y, xtilde, c = NULL,
           # Get integration tolerance
           if (estimating.hessian) {
             int.tol <- integrate_tol_hessian
-          } else if (all(f.theta == extra.args$start)) {
+          } else if (identical(f.theta, extra.args$start, ignore.environment = TRUE)) {
             int.tol <- integrate_tol_start
           } else {
             int.tol <- integrate_tol
@@ -463,7 +463,7 @@ logreg_xerrors <- function(y, xtilde, c = NULL,
           # Get integration tolerance
           if (estimating.hessian) {
             int.tol <- integrate_tol_hessian
-          } else if (all(f.theta == extra.args$start)) {
+          } else if (identical(f.theta, extra.args$start, ignore.environment = TRUE)) {
             int.tol <- integrate_tol_start
           } else {
             int.tol <- integrate_tol
