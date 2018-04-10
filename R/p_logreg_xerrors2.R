@@ -20,6 +20,10 @@
 #'
 #'
 #' @references
+#' Mitchell, E.M, Lyles, R.H., and Schisterman, E.F. (2015) "Positing, fitting,
+#' and selecting regression models for pooled biomarker data." \emph{Stat. Med}
+#' \strong{34}(17): 2544--2558.
+#'
 #' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
 #' pooled-unpooled design for cost-efficient measurement of biomarkers."
 #' \emph{Stat. Med.} \strong{29}(5): 597--613.
@@ -33,7 +37,9 @@
 #' Weinberg and David M. Umbach; 55, 718--726, September 1999."
 #' \emph{Biometrics} \strong{70}: 1061.
 #'
-#' ADD WHITCOMB
+#' Whitcomb, B.W., Perkins, N.J., Zhang, Z., Ye, A., and Lyles, R. H. (2012)
+#' "Assessment of skewed exposure in case-control studies with pooling."
+#' \emph{Stat. Med.} \strong{31}: 2461--2472.
 #'
 #'
 #' @export

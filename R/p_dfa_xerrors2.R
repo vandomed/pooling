@@ -19,7 +19,7 @@
 #'
 #'
 #' @return
-#' #' List of point estimates, variance-covariance matrix, objects returned by
+#' List of point estimates, variance-covariance matrix, objects returned by
 #' \code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
 #' \code{constant_or}. If \code{constant_or = NULL}, also returns result of a
 #' likelihood ratio test for \code{H0: gamma_y = 0}, which is equivalent to
@@ -33,6 +33,10 @@
 #' "A discriminant function approach to adjust for processing and measurement
 #' error When a biomarker is assayed in pooled samples."
 #' \emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
+#'
+#' Mitchell, E.M, Lyles, R.H., and Schisterman, E.F. (2015) "Positing, fitting,
+#' and selecting regression models for pooled biomarker data." \emph{Stat. Med}
+#' \strong{34}(17): 2544--2558.
 #'
 #' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
 #' pooled-unpooled design for cost-efficient measurement of biomarkers."

@@ -8,7 +8,7 @@
 #' Package: \tab pooling \cr
 #' Type: \tab Package \cr
 #' Version: \tab 1.1.1 \cr
-#' Date: \tab 2018-04-06 \cr
+#' Date: \tab 2018-04-09 \cr
 #' License: \tab GPL-3 \cr
 #' }
 #'
@@ -21,10 +21,12 @@
 #'
 #'
 #' @docType package
+#'
+#' @importFrom cubature adaptIntegrate
+#' @import dvmisc
+#' @import ggplot2
+#' @importFrom mvtnorm dmvnorm
 #' @importFrom pracma hessian
 #' @importFrom stats nlminb
-#' @importFrom cubature adaptIntegrate
-#' @importFrom mvtnorm dmvnorm
-#' @import dvmisc
 #' @name pooling
 NULL
