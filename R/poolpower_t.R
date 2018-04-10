@@ -4,10 +4,13 @@
 #'
 #'
 #' @param delta Numeric value.
-#' @param sd Numeric value.
+#' @param var Numeric value specifying variance of observations.
+#' @param var_pe Numeric value specifying variance of additive processing error.
+#' @param var_me Numeric value specifying variance of additive measurement
+#' error.
 #' @param type Character string specifying type of t-test. Choices are
 #' \code{"two.sample"}, \code{"one.sample"}, and \code{"paired"}.
-#' @param assay_cost Numeric value specifying cost for each assay.
+#' @param assay_cost Numeric value specifying cost of each assay.
 #' @param other_costs Numeric value specifying other per-subject costs.
 #' @param pool_size Numeric vector specifying pool sizes.
 #' @param ... Arguments to pass to \code{\link[stats]{power.t.test}}.
@@ -18,17 +21,22 @@
 #'
 #'
 #' @examples
-#' # Power for two-sample t-test with delta = 0.5, sd = 1, and negligible
-#' # "other" costs per subject
-#' poolpower_t(delta = 0.5, sd = 1)
+#' # Power for two-sample t-test with delta = 0.5, var = 1, and no "other" costs
+#' # per subject
+#' poolpower_t(delta = 0.5, var = 1)
 #'
-#' # Repeat but for "other" costs per subject equal to 1/4 the assay cost
-#' poolpower_t(delta = 0.5, sd = 1, other_costs = 0.25)
+#' # Repeat but for other costs per subject equal to 1/4 the assay cost
+#' poolpower_t(delta = 0.5, var = 1, other_costs = 1/4)
+#'
+#' # Back to no other costs, but with processing and measurement error
+#' poolpower_t(delta = 0.5, var = 1, var_pe = 0.2, var_me = 0.1)
 #'
 #'
 #'@export
 poolpower_t <- function(delta,
-                        sd,
+                        var,
+                        var_pe = 0,
+                        var_me = 0,
                         type = "two.sample",
                         assay_cost = 1,
                         other_costs = 0,
@@ -36,7 +44,9 @@ poolpower_t <- function(delta,
                         ...) {
 
   # Create vector from 2 to sample size needed for 99.9% power
-  n.assays <- 2: ceiling(power.t.test(delta = delta, sd = sd, type = type,
+  n.assays <- 2: ceiling(power.t.test(delta = delta,
+                                      sd = sqrt(var),
+                                      type = type,
                                       power = 0.999, ...)$n)
 
   # Create data frame with variables to plot
@@ -45,7 +55,9 @@ poolpower_t <- function(delta,
 
     n.subjects <- n.assays * ii
     costs <- n.assays * assay_cost + n.subjects * other_costs
-    power <- power.t.test(n = n.assays, delta = delta, sd = sigma / sqrt(ii),
+    power <- power.t.test(n = n.assays,
+                          delta = delta,
+                          sd = sqrt(var / ii + var_me + var_pe * (ii > 1)),
                           type = type, ...)$power
     df <- bind_rows(df, data.frame(g = ii, costs = costs, power = power))
 
