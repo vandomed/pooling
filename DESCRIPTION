@@ -9,7 +9,7 @@ Description: Functions for calculating power and fitting regression models in st
 License: GPL-3
 LazyData: true
 RoxygenNote: 6.0.1
-Imports: cubature, dvmisc, ggplot2, mvtnorm, pracma, stats
+Imports: cubature, dplyr, dvmisc, ggplot2, mvtnorm, pracma, stats
 Suggests: knitr,
     rmarkdown,
     pander,

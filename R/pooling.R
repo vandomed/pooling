@@ -23,6 +23,7 @@
 #' @docType package
 #'
 #' @importFrom cubature adaptIntegrate
+#' @import dplyr
 #' @import dvmisc
 #' @import ggplot2
 #' @importFrom mvtnorm dmvnorm

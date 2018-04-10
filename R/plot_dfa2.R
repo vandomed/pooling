@@ -75,8 +75,8 @@ plot_dfa2 <- function(estimates,
     p <- ggplot(df, aes(x, logOR)) +
       geom_line() +
       geom_hline(yintercept = 0, linetype = 2) +
-      labs(title = bquote("Log-"*hat(OR) ~ "vs." ~ .(xname)),
-           y = bquote("Log-"*hat(OR)),
+      labs(title = paste("Log-OR vs.", xname),
+           y = "Log-OR",
            x = xname) +
       ylim(min(logOR), max(logOR)) +
       theme_bw()
@@ -123,8 +123,8 @@ plot_dfa2 <- function(estimates,
     p <- ggplot(df, aes(x, logOR)) +
       geom_line() +
       geom_hline(yintercept = 0, linetype = 2) +
-      labs(title = bquote("Log-"*hat(OR) ~ "vs." ~ .(xname)),
-           y = bquote("Log-"*hat(OR)),
+      labs(title = paste("Log-OR vs.", xname),
+           y = "Log-OR",
            x = xname) +
       ylim(min(logOR), max(logOR)) +
       theme_bw()
@@ -188,8 +188,8 @@ plot_dfa2 <- function(estimates,
         facet_grid(facets = . ~ Covariates) +
         geom_line() +
         geom_hline(yintercept = 0, linetype = 2) +
-        labs(title = bquote("Log-"*hat(OR) ~ "vs." ~ .(xname)),
-             y = bquote("Log-"*hat(OR)),
+        labs(title = paste("Log-OR vs.", xname),
+             y = "Log-OR",
              x = xname) +
         ylim(min(logOR), max(logOR)) +
         theme_bw()
@@ -207,8 +207,8 @@ plot_dfa2 <- function(estimates,
       p <- ggplot(df, aes(x, logOR, group = Covariates, color = Covariates)) +
         geom_line() +
         geom_hline(yintercept = 0, linetype = 2) +
-        labs(title = bquote("Log-"*hat(OR) ~ "vs." ~ .(xname)),
-             y = bquote("Log-"*hat(OR)),
+        labs(title = paste("Log-OR vs.", xname),
+             y = "Log-OR",
              x = xname) +
         ylim(min(logOR), max(logOR)) +
         theme_bw()
