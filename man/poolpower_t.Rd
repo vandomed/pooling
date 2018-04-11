@@ -4,8 +4,9 @@
 \alias{poolpower_t}
 \title{Visualize T-test Power for Traditional vs. Pooling Study Design}
 \usage{
-poolpower_t(delta, var, var_pe = 0, var_me = 0, type = "two.sample",
-  assay_cost = 1, other_costs = 0, pool_size = c(1, 2, 3, 10), ...)
+poolpower_t(delta = 0.5, var = 1, var_pe = 0, var_me = 0,
+  type = "two.sample", assay_cost = 1, other_costs = 0, pool_size = c(1,
+  2, 3, 10), labels = TRUE, ...)
 }
 \arguments{
 \item{delta}{Numeric value.}
@@ -25,6 +26,9 @@ error.}
 \item{other_costs}{Numeric value specifying other per-subject costs.}
 
 \item{pool_size}{Numeric vector specifying pool sizes.}
+
+\item{labels}{Logical value for whether to label data points corresponding to
+80\% power.}
 
 \item{...}{Arguments to pass to \code{\link[stats]{power.t.test}}.}
 }

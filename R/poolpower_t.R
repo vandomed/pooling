@@ -13,6 +13,8 @@
 #' @param assay_cost Numeric value specifying cost of each assay.
 #' @param other_costs Numeric value specifying other per-subject costs.
 #' @param pool_size Numeric vector specifying pool sizes.
+#' @param labels Logical value for whether to label data points corresponding to
+#' 80\% power.
 #' @param ... Arguments to pass to \code{\link[stats]{power.t.test}}.
 #'
 #'
@@ -33,14 +35,15 @@
 #'
 #'
 #'@export
-poolpower_t <- function(delta,
-                        var,
+poolpower_t <- function(delta = 0.5,
+                        var = 1,
                         var_pe = 0,
                         var_me = 0,
                         type = "two.sample",
                         assay_cost = 1,
                         other_costs = 0,
                         pool_size = c(1, 2, 3, 10),
+                        labels = TRUE,
                         ...) {
 
   # Create vector from 2 to sample size needed for 99.9% power
@@ -59,7 +62,13 @@ poolpower_t <- function(delta,
                           delta = delta,
                           sd = sqrt(var / ii + var_me + var_pe * (ii > 1)),
                           type = type, ...)$power
-    df <- bind_rows(df, data.frame(g = ii, costs = costs, power = power))
+    power_80 <- rep(0, length(n.assays))
+    power_80[which(power >= 0.8)[1]] <- 1
+    df <- bind_rows(df, data.frame(g = ii,
+                                   n.assays = n.assays,
+                                   costs = costs,
+                                   power = power,
+                                   power_80 = power_80))
 
   }
 
@@ -78,6 +87,16 @@ poolpower_t <- function(delta,
     theme_bw() +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
     scale_y_continuous(breaks = c(0, 0.5, 0.8, 0.9, 1))
+
+  # Label points with 80% power
+  if (labels) {
+    p <- p + geom_label_repel(
+      data = subset(df, power_80 == 1),
+      aes(costs, power, label = paste(
+        "$", costs, " (", n.assays, " assays)", sep = "")),
+      color = "black",
+      box.padding = 0.5, point.padding = 0.3)
+  }
   p
 
 }

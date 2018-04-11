@@ -26,6 +26,7 @@
 #' @import dplyr
 #' @import dvmisc
 #' @import ggplot2
+#' @import ggrepel
 #' @importFrom mvtnorm dmvnorm
 #' @importFrom pracma hessian
 #' @importFrom stats nlminb
