@@ -468,31 +468,30 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
     # Obtain ML estimates
     ml.max1 <- do.call(nlminb, c(list(objective = ll.f1), extra.args))
-    ml.estimates1 <- ml.max1$par
+    ml.estimates <- ml.max1$par
 
     # Create list to return
-    theta.hat <- ml.max$par
-    names(theta.hat) <- theta.labels
-    ret.list <- list(theta.hat = theta.hat)
+    theta.hat <- ml.max1$par
+    names(theta.hat) <- theta.labels1
 
     # Variance estimates
     if (estimate_var) {
-      hessian.mat1 <- pracma::hessian(f = ll.f1, x0 = ml.estimates1)
-      theta.variance1 <- try(solve(hessian.mat1), silent = TRUE)
-      if (class(theta.variance1) == "try-error") {
+      hessian.mat <- pracma::hessian(f = ll.f1, x0 = ml.estimates)
+      theta.variance <- try(solve(hessian.mat), silent = TRUE)
+      if (class(theta.variance) == "try-error") {
         message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
-        theta.variance1 <- NULL
+        theta.variance <- NULL
       } else {
-        colnames(theta.variance1) <- rownames(theta.variance1) <- theta.labels1
+        colnames(theta.variance) <- rownames(theta.variance) <- theta.labels1
       }
     } else {
-      theta.variance1 <- NULL
+      theta.variance <- NULL
     }
 
     # Create vector of estimates and calculate AIC
-    estimates1 <- ml.estimates1
+    estimates1 <- ml.estimates
     names(estimates1) <- theta.labels1
-    theta.var1 <- theta.variance1
+    theta.var1 <- theta.variance
     aic1 <- 2 * (length(estimates1) + ml.max1$objective)
 
   }
@@ -773,7 +772,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
   if (is.null(constant_or)) {
 
     # Likelihood ratio test
-    d <- 2 * (-ml.max1$nlminb$objective + ml.max2$nlminb$objective)
+    d <- 2 * (-ml.max1$objective + ml.max2$objective)
     p <- pchisq(q = d, df = 1, lower.tail = FALSE)
     if (p < 0.05) {
       message <- "H0: Constant log-OR rejected at alpha = 0.05. Recommend using estimates1, theta.var1, etc."
