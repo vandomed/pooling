@@ -7,7 +7,7 @@
 logreg_xerrors(y, xtilde, c = NULL, prev = NULL, samp_y1y0 = NULL,
   merror = TRUE, approx_integral = TRUE, integrate_tol = 1e-08,
   integrate_tol_start = integrate_tol,
-  integrate_tol_hessian = integrate_tol, estimate_var = FALSE, ...)
+  integrate_tol_hessian = integrate_tol, estimate_var = TRUE, ...)
 }
 \arguments{
 \item{xtilde}{List of numeric vectors with \code{Xtilde} values.}

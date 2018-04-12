@@ -51,7 +51,7 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
                               integrate_tol = 1e-8,
                               integrate_tol_start = integrate_tol,
                               integrate_tol_hessian = integrate_tol,
-                              estimate_var = FALSE, ...) {
+                              estimate_var = TRUE, ...) {
 
   # Check that inputs are valid
   if (! errors %in% c("neither", "processing", "measurement", "both")) {
@@ -93,6 +93,11 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
   # Get name of xtilde input
   x.varname <- deparse(substitute(xtilde))
+  if (grep("$", x.varname)) {
+    x.varname <- substr(x.varname,
+                        start = which(unlist(strsplit(x.varname, "")) == "$") + 1,
+                        stop = nchar(x.varname))
+  }
 
   # Get information about covariates C
   if (is.null(c)) {

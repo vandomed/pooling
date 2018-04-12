@@ -8,7 +8,7 @@ p_logreg_xerrors(g, y, xtilde, c = NULL, errors = "both",
   nondiff_pe = TRUE, nondiff_me = TRUE, constant_pe = TRUE, prev = NULL,
   samp_y1y0 = NULL, approx_integral = TRUE, integrate_tol = 1e-08,
   integrate_tol_start = integrate_tol,
-  integrate_tol_hessian = integrate_tol, estimate_var = FALSE, ...)
+  integrate_tol_hessian = integrate_tol, estimate_var = TRUE, ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}

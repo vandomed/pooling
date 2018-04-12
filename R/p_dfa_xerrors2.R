@@ -83,6 +83,11 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
   # Get name of y input
   y.varname <- deparse(substitute(y))
+  if (grep("$", y.varname)) {
+    y.varname <- substr(y.varname,
+                        start = which(unlist(strsplit(y.varname, "")) == "$") + 1,
+                        stop = nchar(y.varname))
+  }
 
   # Get information about covariates C
   if (is.null(c)) {

@@ -78,6 +78,11 @@ p_logreg <- function(g, y, x,
 
   # Get name of x input
   x.varname <- deparse(substitute(x))
+  if (grep("$", x.varname)) {
+    x.varname <- substr(x.varname,
+                        start = which(unlist(strsplit(x.varname, "")) == "$") + 1,
+                        stop = nchar(x.varname))
+  }
 
   # Get number of X variables (and assign names)
   if (class(x) != "matrix") {
