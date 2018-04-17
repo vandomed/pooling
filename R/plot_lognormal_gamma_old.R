@@ -1,45 +1,67 @@
-#' Plot Log-OR vs. X for Gamma Discriminant Function Approach
+#' Generate Data for Lognormal or Gamma Regression Model and Plot Fitted Models
 #'
-#' When \code{\link{p_dfa_xerrors2}} is fit with \code{constant_or = FALSE}, the
-#' log-odds ratio for \code{X} depends on the value of \code{X} (and covariates,
-#' if there are any). This function plots the log-odds ratio vs. \code{X} for
-#' one or several sets of covariate values.
+#' Useful for assessing whether lognormal and Gamma models are similar for
+#' various parameter values.
+#'
+#' If \code{b} is not specified, data are generated:
+#'
+#' C ~ N(0, 1)
+#' X|C ~ Lognormal(beta_0 + beta_c C, sigsq)
+#'
+#' If \code{b} is specified, data are generated:
+#'
+#' C ~ N(0, 1)
+#' X|C ~ Gamma(exp(beta_0 + beta_c C), b)
+#'
+#' Both models are fit using maximum likelihood, and a plot is generated
+#' showing E(X) vs. C for each.
+#'
+#' @param n Numeric value.
+#' @param beta_0 Numeric value.
+#' @param beta_c Numeric value.
+#' @param sigsq Numeric value.
+#' @param b Numeric value
 #'
 #'
-#' @inheritParams plot_dfa
-#'
-#' @param estimates Numeric vector of point estimates for
-#' \code{(gamma_0, gamma_1, \strong{gamma_c}, b1, b0)}.
+#' @return Plot of E(X) vs. X according to each fitted model.
 #'
 #'
-#' @inherit plot_dfa return
-#'
-#'
-#' @export
-plot_dfa2 <- function(estimates,
-                      varcov = NULL,
-                      xrange,
-                      xname = "X",
-                      cvals = NULL,
-                      set_labels = NULL,
-                      set_panels = TRUE) {
+#'@export
+plot_lognormal_gamma <- function(n = 1000,
+                                 beta_0 = 0,
+                                 beta_c = 0.5,
+                                 sigsq = 0.1,
+                                 b = NULL) {
+
+  # Generate data
+  c <- rnorm(n = n)
+  if (is.null(b)) {
+    x <- rlnorm(n = n, meanlog = beta_0 + beta_c * c, sdlog = sqrt(sigsq))
+  } else {
+    x <- rgamma(n = n, shape = exp(beta_0 + beta_c * c), scale = b)
+  }
+
+  # Fit models
+  fit.gamma1 <- glm(x ~ c, family = Gamma("identity"))
+  fit.gamma2 <- glm(x ~ c, family = Gamma(""))
+
 
   # Extract parameter estimates
   names_estimates <- names(estimates)
 
   loc.gammas <- which(substr(names_estimates, 1, 6) == "gamma_")
-  loc.b1 <- which(names_estimates == "b1")
-  loc.b0 <- which(names_estimates == "b0")
+  loc.sigsq_1 <- which(names_estimates == "sigsq_1")
+  loc.sigsq_0 <- which(names_estimates == "sigsq_0")
 
   gammas <- estimates[loc.gammas]
   gamma_0 <- gammas[1]
-  gamma_1 <- gammas[2]
+  gamma_y <- gammas[2]
   gamma_c <- gammas[-c(1, 2)]
-  b1 <- estimates[loc.b1]
-  b0 <- estimates[loc.b0]
+  sigsq_1 <- estimates[loc.sigsq_1]
+  sigsq_0 <- estimates[loc.sigsq_0]
 
   # Subset useful part of variance-covariance matrix
-  locs <- c(loc.gammas, loc.b1, loc.b0)
+  locs <- c(loc.gammas, loc.sigsq_1, loc.sigsq_0)
   varcov <- varcov[locs, locs]
 
   # Create X vector
@@ -50,19 +72,22 @@ plot_dfa2 <- function(estimates,
     # No-covariate case - plot curve and confidence bands (if possible)
 
     # Calculate log-OR's
-    logOR <- 1 / b0 - 1 / b1 + log((x + 1) / x) *
-      (exp(gamma_0 + gamma_1) - exp(gamma_0))
+    logOR <- (sigsq_1 - sigsq_0) / (sigsq_1 * sigsq_0) +
+      x * (sigsq_1 - sigsq_0) / (2 * sigsq_1 * sigsq_0) +
+      (sigsq_0 * (gamma_0 + gamma_y) - sigsq_1 * gamma_0) /
+      (sigsq_1 * sigsq_0)
     df <- data.frame(x = x, logOR = logOR)
-
 
     # Calculate confidence bands
     if (! is.null(varcov)) {
 
       ses <- sapply(x, function(x) {
-        fprime <- matrix(c(log((x + 1) / x) * exp(gamma_0) * (exp(gamma_1) - 1),
-                           log((x + 1) / x) * exp(gamma_0 + gamma_1),
-                           -1 / b0^2,
-                           1 / b1^2),
+        fprime <- matrix(c((sigsq_0 - sigsq_1) / (sigsq_1 * sigsq_0),
+                           sigsq_0 / (sigsq_1 * sigsq_0),
+                           1 / sigsq_1^2 + x / (2 * sigsq_1^2) -
+                             (gamma_0 + gamma_y) / sigsq_1^2,
+                           -1 / sigsq_0^2 - x / (2 * sigsq_0^2) +
+                             gamma_0 / sigsq_0^2),
                          nrow = 1)
         sqrt(fprime %*% varcov %*% t(fprime))
       })
@@ -95,25 +120,29 @@ plot_dfa2 <- function(estimates,
     # 1 set of covariate values - plot curve and confidence bands (if possible)
 
     # Calculate log-OR's
-    logOR <- 1 / b0 - 1 / b1 + log((x + 1) / x) *
-      (exp(gamma_0 + gamma_1 + sum(gamma_c * cvals)) -
-         exp(gamma_0 + sum(gamma_c * cvals)))
+    logOR <- (sigsq_1 - sigsq_0) / (sigsq_1 * sigsq_0) +
+      x * (sigsq_1 - sigsq_0) / (2 * sigsq_1 * sigsq_0) +
+      (sigsq_0 * (gamma_0 + sum(gamma_c * cvals) + gamma_y) -
+         sigsq_1 * (gamma_0 + sum(gamma_c * cvals))) /
+      (sigsq_1 * sigsq_0)
     df <- data.frame(x = x, logOR = logOR)
 
     # Calculate confidence bands
     if (! is.null(varcov)) {
 
       ses <- sapply(x, function(x) {
-        fprime <- matrix(c(log((x + 1) / x) * exp(gamma_0 + sum(gamma_c * cvals)) *
-                             (exp(gamma_1) - 1),
-                           log((x + 1) / x) * exp(gamma_0 + gamma_1 + sum(gamma_c * cvals)),
-                           log((x + 1) / x) * exp(gamma_0 + sum(gamma_c * cvals)) *
-                             (exp(gamma_1) - 1) * gamma_c,
-                           -1 / b0^2,
-                           1 / b1^2),
+        fprime <- matrix(c((sigsq_0 - sigsq_1) / (sigsq_1 * sigsq_0),
+                           sigsq_0 / (sigsq_1 * sigsq_0),
+                           cvals * (sigsq_0 - sigsq_1) / (sigsq_1 * sigsq_0),
+                           1 / sigsq_1^2 + x / (2 * sigsq_1^2) -
+                             (gamma_0 + sum(gamma_c * cvals) + gamma_y) / sigsq_1^2,
+                           -1 / sigsq_0^2 - x / (2 * sigsq_0^2) +
+                             (gamma_0 + sum(gamma_c * cvals)) / sigsq_0^2),
                          nrow = 1)
         sqrt(fprime %*% varcov %*% t(fprime))
+
       })
+
       df$lower <- logOR - qnorm(0.975) * ses
       df$upper <- logOR + qnorm(0.975) * ses
 
@@ -154,25 +183,29 @@ plot_dfa2 <- function(estimates,
 
       # Calculate log-OR's
       cvals.ii <- cvals[[ii]]
-      logOR <- 1 / b0 - 1 / b1 + log((x + 1) / x) *
-        (exp(gamma_0 + gamma_1 + sum(gamma_c * cvals.ii)) -
-           exp(gamma_0 + sum(gamma_c * cvals.ii)))
+      logOR <- (sigsq_1 - sigsq_0) / (sigsq_1 * sigsq_0) +
+        x * (sigsq_1 - sigsq_0) / (2 * sigsq_1 * sigsq_0) +
+        (sigsq_0 * (gamma_0 + sum(gamma_c * cvals.ii) + gamma_y) -
+           sigsq_1 * (gamma_0 + sum(gamma_c * cvals.ii))) /
+        (sigsq_1 * sigsq_0)
       df <- bind_rows(df, data.frame(Covariates = ii, x = x, logOR = logOR))
 
       # Calculate confidence bands
       if (! is.null(varcov) & set_panels) {
 
         ses <- sapply(x, function(x) {
-          fprime <- matrix(c(log((x + 1) / x) * exp(gamma_0 + sum(gamma_c * cvals.ii)) *
-                               (exp(gamma_1) - 1),
-                             log((x + 1) / x) * exp(gamma_0 + gamma_1 + sum(gamma_c * cvals.ii)),
-                             log((x + 1) / x) * exp(gamma_0 + sum(gamma_c * cvals.ii)) *
-                               (exp(gamma_1) - 1) * gamma_c,
-                             -1 / b0^2,
-                             1 / b1^2),
+          fprime <- matrix(c((sigsq_0 - sigsq_1) / (sigsq_1 * sigsq_0),
+                             sigsq_0 / (sigsq_1 * sigsq_0),
+                             cvals.ii * (sigsq_0 - sigsq_1) / (sigsq_1 * sigsq_0),
+                             1 / sigsq_1^2 + x / (2 * sigsq_1^2) -
+                               (gamma_0 + sum(gamma_c * cvals.ii) + gamma_y) / sigsq_1^2,
+                             -1 / sigsq_0^2 - x / (2 * sigsq_0^2) +
+                               (gamma_0 + sum(gamma_c * cvals.ii)) / sigsq_0^2),
                            nrow = 1)
           sqrt(fprime %*% varcov %*% t(fprime))
+
         })
+
         df$lower <- logOR - qnorm(0.975) * ses
         df$upper <- logOR + qnorm(0.975) * ses
 
@@ -185,7 +218,7 @@ plot_dfa2 <- function(estimates,
     if (set_panels) {
 
       p <- ggplot(df, aes(x, logOR)) +
-        facet_grid(facets = . ~ Covariates, labeller = set_labels) +
+        facet_grid(facets = . ~ Covariates) +
         geom_line() +
         geom_hline(yintercept = 0, linetype = 2) +
         labs(title = paste("Log-OR vs.", xname),
