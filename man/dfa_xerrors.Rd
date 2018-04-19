@@ -8,6 +8,8 @@ Subject to Measurement Error}
 dfa_xerrors(y, xtilde, c = NULL, merror = TRUE, ...)
 }
 \arguments{
+\item{y}{Numeric vector of \code{Y} values.}
+
 \item{xtilde}{List of numeric vectors with \code{Xtilde} values.}
 
 \item{c}{Numeric matrix with \strong{\code{C}} values (if any), with

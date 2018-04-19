@@ -5,10 +5,13 @@
 #'
 #'
 #' @param g Numeric vector of pool sizes to include.
-#' @param var Numeric value specifying variance of observations.
-#' @param var_pe Numeric value specifying variance of additive processing error.
-#' @param var_me Numeric value specifying variance of additive measurement
-#' error.
+#' @param sigsq Numeric value specifying variance of observations.
+#' @param sigsq_p Numeric value specifying variance of processing error.
+#' @param sigsq_m Numeric value specifying variance of measurement error.
+#' @param multiplicative Logical value for whether to assume multiplicative
+#' rather than additive errors.
+#' @param mu Numeric value specifying the larger of the two suspected means.
+#' Only used if \code{multiplicative = TRUE}.
 #' @param type Character string specifying type of t-test. Choices are
 #' \code{"two.sample"}, \code{"one.sample"}, and \code{"paired"}.
 #' @param assay_cost Numeric value specifying cost of each assay.
@@ -26,15 +29,17 @@
 #' poolcost_t()
 #'
 #' # Add processing error and other per-subject costs
-#' poolcost_t(var_pe = 0.2, other_costs = 0.1)
+#' poolcost_t(sigsq_p = 0.2, other_costs = 0.1)
 #'
 #'
 #'@export
 poolcost_t <- function(g = 1: 10,
                        d = 0.2,
-                       var = 1,
-                       var_pe = 0,
-                       var_me = 0,
+                       sigsq = 1,
+                       sigsq_p = 0,
+                       sigsq_m = 0,
+                       multiplicative = FALSE,
+                       mu = 1,
                        alpha = 0.05,
                        beta = 0.2,
                        type = "two.sample",
@@ -45,9 +50,15 @@ poolcost_t <- function(g = 1: 10,
                        ...) {
 
   # Prepare data for ggplot
-  z <- qnorm(p = 1 - beta) + qnorm(p = 1 - alpha)
-  n <- ceiling(z^2 / d^2 * (var / g + var_pe * ifelse(g > 1, 1, 0) + var_me))
-  costs <-  n * (assay_cost + g * other_costs)
+  z <- qnorm(p = 1 - beta) + qnorm(p = 1 - alpha / 2)
+  if (multiplicative) {
+    sigsq_pm <- sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m +
+      sigsq_p * ifelse(g > 1, 1, 0) * sigsq_m
+    n <- ceiling(2 * z^2 / d^2 * (sigsq_pm * (mu^2 + sigsq / g) + sigsq / g))
+  } else {
+    n <- ceiling(2 * z^2 / d^2 * (sigsq / g + sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m))
+  }
+  costs <-  2 * n * (assay_cost + g * other_costs)
   df <- data.frame(g = g, n = n, costs = costs)
   df$lab <- 0
   df$labeltext <- paste(n, " assays", sep = "")
@@ -61,7 +72,7 @@ poolcost_t <- function(g = 1: 10,
   }
 
   # Create plot
-  p <- ggplot(df, aes(g, costs, label = labeltext)) +
+  p <- ggplot(data = df, aes(g, costs, label = labeltext)) +
     geom_col() +
     labs(title = "Total Study Costs vs. Pool Size",
          y = "Total costs ($)",
@@ -72,9 +83,8 @@ poolcost_t <- function(g = 1: 10,
 
   # Label min
   if (labels) {
-   # p <- p + geom_label(nudge_y = max(costs) / 25)
     p <- p + geom_label_repel(point.padding = 0.3,
-                              box.padding = 0.5,
+                              box.padding = 1.5,
                               direction = "y",
                               nudge_y = max(costs) / 25,
                               label.padding = 0.4)
@@ -82,55 +92,3 @@ poolcost_t <- function(g = 1: 10,
   p
 
 }
-
-# poolcost_t <- function(g = 1: 10,
-#                        d = 0.2,
-#                        var = 1,
-#                        var_pe = 0,
-#                        var_me = 0,
-#                        alpha = 0.05,
-#                        beta = 0.2,
-#                        type = "two.sample",
-#                        assay_cost = 100,
-#                        other_costs = 0,
-#                        labels = TRUE,
-#                        ylim = NULL,
-#                        ...) {
-#
-#   # Prepare data for ggplot
-#   z <- qnorm(p = 1 - beta) + qnorm(p = 1 - alpha)
-#   n <- ceiling(z^2 / d^2 * (var / g + var_pe * ifelse(g > 1, 1, 0) + var_me))
-#   costs <-  n * (assay_cost + g * other_costs)
-#   df <- data.frame(g = g, n = n, costs = costs)
-#   df$lab <- 0
-#   df$labeltext <- paste(n, " assays, $", costs, sep = "")
-#   locs <- unique(c(1, which.min(df$costs)))
-#   df$labeltext[-locs] <- ""
-#   df$lab[locs] <- 1
-#
-#   df$lab <- 0
-#   df$lab[which.min(df$costs)] <- 1
-#   df$lab[1] <- 1
-#
-#   # If ylim NULL, create one
-#   if (is.null(ylim)) {
-#     ylim <- c(0, max(costs) * 1.05)
-#   }
-#
-#   # Create plot
-#   p <- ggplot(df, aes(g, costs, label = labeltext)) +
-#     geom_point() +
-#     labs(title = "Total Study Costs vs. Pool Size",
-#          y = "Total costs",
-#          x = "Pool size") +
-#     ylim(ylim) +
-#     scale_x_continuous(breaks = g) +
-#     theme_bw()
-#
-#   # Label min
-#   if (labels) {
-#     p <- p + geom_label_repel(point.padding = 0.3, box.padding = 0.5)
-#   }
-#   p
-#
-# }

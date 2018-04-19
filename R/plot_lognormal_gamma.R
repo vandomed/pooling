@@ -21,7 +21,7 @@
 #' @param y Numeric vector.
 #' @param n Numeric value.
 #' @param beta_0 Numeric value.
-#' @param beta_c Numeric value.
+#' @param beta_x Numeric value.
 #' @param sigsq Numeric value.
 #' @param b Numeric value
 #'
@@ -46,14 +46,14 @@ plot_lognormal_gamma <- function(x = NULL, y = NULL,
       y <- rgamma(n = n, shape = exp(beta_0 + beta_x * x), scale = b)
     }
   }
-  
+
   # Fit models
   fit.lognormal <- lognormal(y = y, x = x)
   fit.gamma <- gamma_constantscale(y = y, x = x)
-  
+
   # Prepare data for ggplot
-  df <- 
-  
+  df <-
+
 
   # Fit models
   return(y)

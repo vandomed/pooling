@@ -5,6 +5,8 @@
 #' Some replicates are required for identifiability.
 #'
 #'
+#' @param y Numeric vector of \code{Y} values.
+#'
 #' @param xtilde List of numeric vectors with \code{Xtilde} values.
 #'
 #' @param c Numeric matrix with \strong{\code{C}} values (if any), with

@@ -10,6 +10,8 @@ logreg_xerrors(y, xtilde, c = NULL, prev = NULL, samp_y1y0 = NULL,
   integrate_tol_hessian = integrate_tol, estimate_var = TRUE, ...)
 }
 \arguments{
+\item{y}{Numeric vector of \code{Y} values.}
+
 \item{xtilde}{List of numeric vectors with \code{Xtilde} values.}
 
 \item{c}{Numeric matrix with \strong{\code{C}} values (if any), with

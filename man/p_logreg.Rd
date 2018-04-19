@@ -5,7 +5,7 @@
 \title{Poolwise Logistic Regression}
 \usage{
 p_logreg(g, y, x, method = "glm", prev = NULL, samp_y1y0 = NULL,
-  estimate.var = TRUE, ...)
+  estimate_var = TRUE, ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -28,16 +28,16 @@ for valid estimation of the intercept with case-control sampling. Can specify
 for cases and controls, allowing for valid estimation of the intercept with
 case-control sampling. Can specify \code{prev} instead if it's easier.}
 
-\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
-
 \item{estimate_var}{Logical value for whether to return variance-covariance
 matrix for parameter estimates.}
+
+\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }
 \value{
 List containing:
 \enumerate{
 \item Numeric vector of parameter estimates.
-\item Variance-covariance matrix (if \code{estimate.var = TRUE}).
+\item Variance-covariance matrix (if \code{estimate_var = TRUE}).
 \item Fitted \code{\link[stats]{glm}} object (if \code{method = "glm"}) or
 returned \code{\link[stats]{nlminb}} object (if \code{method = "ml"}).
 \item Akaike information criterion (AIC).

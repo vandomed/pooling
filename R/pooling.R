@@ -8,7 +8,7 @@
 #' Package: \tab pooling \cr
 #' Type: \tab Package \cr
 #' Version: \tab 1.1.1 \cr
-#' Date: \tab 2018-04-16 \cr
+#' Date: \tab 2018-04-18 \cr
 #' License: \tab GPL-3 \cr
 #' }
 #'
@@ -29,6 +29,6 @@
 #' @import ggrepel
 #' @importFrom mvtnorm dmvnorm
 #' @importFrom pracma hessian
-#' @importFrom stats nlminb
+#' @import stats
 #' @name pooling
 NULL

@@ -20,7 +20,7 @@ are controls and 1 if all members are cases.}
 replicates) with \code{Xtilde} values.}
 
 \item{c}{List where each element is a numeric matrix containing the
-\code{\strong{C}} values for members of a particular pool (1 row for each
+\strong{\code{C}} values for members of a particular pool (1 row for each
 member).}
 
 \item{errors}{Character string specifying the errors that \code{X} is subject

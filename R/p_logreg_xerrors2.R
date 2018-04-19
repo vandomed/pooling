@@ -9,7 +9,7 @@
 #' @inheritParams p_logreg_xerrors
 #'
 #' @param c List where each element is a numeric matrix containing the
-#' \code{\strong{C}} values for members of a particular pool (1 row for each
+#' \strong{\code{C}} values for members of a particular pool (1 row for each
 #' member).
 #'
 #' @param integrate_tol Numeric value specifying the \code{tol} input to

@@ -4,19 +4,25 @@
 \alias{poolcost_t}
 \title{Visualize Total Costs for Pooling Design as a Function of Pool Size}
 \usage{
-poolcost_t(g = 1:10, d = 0.2, var = 1, var_pe = 0, var_me = 0,
-  alpha = 0.05, beta = 0.2, type = "two.sample", assay_cost = 100,
-  other_costs = 0, labels = TRUE, ylim = NULL, ...)
+poolcost_t(g = 1:10, d = 0.2, sigsq = 1, sigsq_p = 0, sigsq_m = 0,
+  multiplicative = FALSE, mu = 1, alpha = 0.05, beta = 0.2,
+  type = "two.sample", assay_cost = 100, other_costs = 0, labels = TRUE,
+  ylim = NULL, ...)
 }
 \arguments{
 \item{g}{Numeric vector of pool sizes to include.}
 
-\item{var}{Numeric value specifying variance of observations.}
+\item{sigsq}{Numeric value specifying variance of observations.}
 
-\item{var_pe}{Numeric value specifying variance of additive processing error.}
+\item{sigsq_p}{Numeric value specifying variance of processing error.}
 
-\item{var_me}{Numeric value specifying variance of additive measurement
-error.}
+\item{sigsq_m}{Numeric value specifying variance of measurement error.}
+
+\item{multiplicative}{Logical value for whether to assume multiplicative
+rather than additive errors.}
+
+\item{mu}{Numeric value specifying the larger of the two suspected means.
+Only used if \code{multiplicative = TRUE}.}
 
 \item{type}{Character string specifying type of t-test. Choices are
 \code{"two.sample"}, \code{"one.sample"}, and \code{"paired"}.}
@@ -42,7 +48,7 @@ minimizes costs, and how many assays are needed for a target power.
 poolcost_t()
 
 # Add processing error and other per-subject costs
-poolcost_t(var_pe = 0.2, other_costs = 0.1)
+poolcost_t(sigsq_p = 0.2, other_costs = 0.1)
 
 
 }

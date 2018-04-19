@@ -34,7 +34,7 @@
 #' List containing:
 #' \enumerate{
 #' \item Numeric vector of parameter estimates.
-#' \item Variance-covariance matrix (if \code{estimate.var = TRUE}).
+#' \item Variance-covariance matrix (if \code{estimate_var = TRUE}).
 #' \item Fitted \code{\link[stats]{glm}} object (if \code{method = "glm"}) or
 #' returned \code{\link[stats]{nlminb}} object (if \code{method = "ml"}).
 #' \item Akaike information criterion (AIC).
@@ -55,7 +55,7 @@
 #' @export
 p_logreg <- function(g, y, x,
                      method = "glm", prev = NULL, samp_y1y0 = NULL,
-                     estimate.var = TRUE, ...) {
+                     estimate_var = TRUE, ...) {
 
   # Check that inputs are valid
   if (! method %in% c("glm", "ml")) {
@@ -72,8 +72,8 @@ p_logreg <- function(g, y, x,
       stop("The input 'samp_y1y0' is the sampling probabilities for cases and controls, and should be a numeric vector of two probabilities adding to 1.")
     }
   }
-  if (! is.logical(estimate.var)) {
-    stop("The input 'estimate.var' should be TRUE or FALSE.")
+  if (! is.logical(estimate_var)) {
+    stop("The input 'estimate_var' should be TRUE or FALSE.")
   }
 
   # Get name of x input
@@ -159,7 +159,7 @@ p_logreg <- function(g, y, x,
     ret.list <- list(theta.hat = theta.hat)
 
     # If requested, add variance-covariance matrix to ret.list
-    if (estimate.var) {
+    if (estimate_var) {
       glm.variance <- vcov(glm.fit)
       colnames(glm.variance) <- rownames(glm.variance) <- beta.labels
       ret.list$glm.var <- glm.variance
@@ -210,7 +210,7 @@ p_logreg <- function(g, y, x,
     ret.list <- list(theta.hat = theta.hat)
 
     # If requested, add variance-covariance matrix to ret.list
-    if (estimate.var) {
+    if (estimate_var) {
       hessian.mat <- pracma::hessian(f = ll.f, x0 = theta.hat)
       theta.variance <- solve(hessian.mat)
       colnames(theta.variance) <- rownames(theta.variance) <- beta.labels
