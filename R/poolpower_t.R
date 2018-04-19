@@ -1,20 +1,10 @@
-#' Visualize T-test Power for Traditional vs. Pooling Study Design
+#' Visualize T-test Power for Pooling Design
 #'
-#' Useful for determining potential cost savings of a pooling study design.
+#' Useful for assessing efficiency gains that might be achieved with a pooling
+#' design.
 #'
 #'
-#' @param delta Numeric value.
-#' @param var Numeric value specifying variance of observations.
-#' @param var_pe Numeric value specifying variance of additive processing error.
-#' @param var_me Numeric value specifying variance of additive measurement
-#' error.
-#' @param type Character string specifying type of t-test. Choices are
-#' \code{"two.sample"}, \code{"one.sample"}, and \code{"paired"}.
-#' @param assay_cost Numeric value specifying cost of each assay.
-#' @param other_costs Numeric value specifying other per-subject costs.
-#' @param pool_size Numeric vector specifying pool sizes.
-#' @param labels Logical value for whether to label data points corresponding to
-#' 80\% power.
+#' @inheritParams poolcost_t
 #' @param ... Arguments to pass to \code{\link[stats]{power.t.test}}.
 #'
 #'
@@ -23,19 +13,19 @@
 #'
 #'
 #' @examples
-#' # Power for two-sample t-test with delta = 0.5, var = 1, and no "other" costs
+#' # Power for two-sample t-test with d = 0.5, var = 1, and no "other" costs
 #' # per subject
-#' poolpower_t(delta = 0.5, var = 1)
+#' poolpower_t(d = 0.5, var = 1)
 #'
 #' # Repeat but for other costs per subject equal to 1/4 the assay cost
-#' poolpower_t(delta = 0.5, var = 1, other_costs = 1/4)
+#' poolpower_t(d = 0.5, var = 1, other_costs = 1/4)
 #'
 #' # Back to no other costs, but with processing and measurement error
-#' poolpower_t(delta = 0.5, var = 1, var_pe = 0.2, var_me = 0.1)
+#' poolpower_t(d = 0.5, var = 1, var_pe = 0.2, var_me = 0.1)
 #'
 #'
 #'@export
-poolpower_t <- function(delta = 0.5,
+poolpower_t <- function(d = 0.5,
                         var = 1,
                         var_pe = 0,
                         var_me = 0,
@@ -47,7 +37,7 @@ poolpower_t <- function(delta = 0.5,
                         ...) {
 
   # Create vector from 2 to sample size needed for 99.9% power
-  n.assays <- 2: ceiling(power.t.test(delta = delta,
+  n.assays <- 2: ceiling(power.t.test(delta = d,
                                       sd = sqrt(var),
                                       type = type,
                                       power = 0.999, ...)$n)
@@ -59,7 +49,7 @@ poolpower_t <- function(delta = 0.5,
     n.subjects <- n.assays * ii
     costs <- n.assays * assay_cost + n.subjects * other_costs
     power <- power.t.test(n = n.assays,
-                          delta = delta,
+                          delta = d,
                           sd = sqrt(var / ii + var_me + var_pe * (ii > 1)),
                           type = type, ...)$power
     power_80 <- rep(0, length(n.assays))

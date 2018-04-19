@@ -328,7 +328,7 @@ logreg_xerrors <- function(y, xtilde, c = NULL,
               adaptIntegrate(f = f_yxtildex.c1, tol = int.tol,
                              lowerLimit = -1, upperLimit = 1,
                              vectorInterface = TRUE,
-                             k_i = k_i, y_i = y_i, onec_i = onec_i, q_i = qg_i,
+                             k_i = k_i, y_i = y_i, onec_i = onec_i, q_i = q_i,
                              mu_x.c_i = mu_x.c_i, xtilde_i = xtilde_i)
 
             # If integral 0 and f.sigsq_m small, look at region around Xtilde
@@ -477,14 +477,14 @@ logreg_xerrors <- function(y, xtilde, c = NULL,
           }
 
           int.vals <- c()
-          for (ii in 1: length(xtilde.i)) {
+          for (ii in 1: length(xtilde)) { # Previously referred to xtilde.i
 
             # Get values for ith participant
             y_i <- y[ii]
             onec_i <- onec[ii, ]
             q_i <- q[ii]
             mu_x.c_i <- mu_x.c[ii]
-            xtilde_i <- xtilde.i[ii]
+            xtilde_i <- xtilde[ii]
 
             # Try integrating out X_i with default settings
             int.ii <-

@@ -21,8 +21,8 @@ requested), AIC, and \code{\link[stats]{nlminb}} object.
 }
 \description{
 Uses maximum likelihood to fit
-Y|\strong{X} ~ Gamma(exp(beta_0 + \strong{beta_x}^T \strong{X}), b), with the 
-shape-scale (as opposed to shape-rate) parameterization described in 
+Y|\strong{X} ~ Gamma(exp(beta_0 + \strong{beta_x}^T \strong{X}), b), with the
+shape-scale (as opposed to shape-rate) parameterization described in
 \code{\link[GammaDist]{GammaDist}}.
 }
 \examples{
@@ -40,7 +40,7 @@ fit$aic
 # Plot E(Y) vs. X according to model fit
 plot(x, y, main = "Gamma Model for Y vs. X")
 xvals <- seq(min(x), max(x), 0.01)
-yvals <- exp(fit$theta.hat[1] + fit$theta.hat[2] * xvals) * fit$theta.hat[3])
+yvals <- exp(fit$theta.hat[1] + fit$theta.hat[2] * xvals) * fit$theta.hat[3]
 points(xvals, yvals, type = "l")
 
 
