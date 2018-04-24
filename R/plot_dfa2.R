@@ -9,7 +9,7 @@
 #' @inheritParams plot_dfa
 #'
 #' @param estimates Numeric vector of point estimates for
-#' \code{(gamma_0, gamma_1, \strong{gamma_c}, b1, b0)}.
+#' \code{(gamma_0, gamma_1, gamma_c^T, b1, b0)}.
 #'
 #'
 #' @inherit plot_dfa return
@@ -85,7 +85,8 @@ plot_dfa2 <- function(estimates,
     if (! is.null(varcov)) {
 
       p <- p +
-        geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +
+        geom_ribbon(aes_string(ymin = "lower", ymax = "upper"),
+                    alpha = 0.2) +
         ylim(min(df$lower), max(df$upper))
 
     }
@@ -133,7 +134,8 @@ plot_dfa2 <- function(estimates,
     if (! is.null(varcov)) {
 
       p <- p +
-        geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +
+        geom_ribbon(aes_string(ymin = "lower", ymax = "upper"),
+                    alpha = 0.2) +
         ylim(min(df$lower), max(df$upper))
 
     }
@@ -185,7 +187,8 @@ plot_dfa2 <- function(estimates,
     if (set_panels) {
 
       p <- ggplot(df, aes(x, logOR)) +
-        facet_grid(facets = . ~ Covariates, labeller = set_labels) +
+        facet_grid(reformulate("Covariates", "."), labeller = set_labels) +
+        #facet_grid(facets = . ~ Covariates, labeller = set_labels) +
         geom_line() +
         geom_hline(yintercept = 0, linetype = 2) +
         labs(title = paste("Log-OR vs.", xname),
@@ -197,14 +200,18 @@ plot_dfa2 <- function(estimates,
       if (! is.null(varcov)) {
 
         p <- p +
-          geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +
+          geom_ribbon(aes_string(ymin = "lower", ymax = "upper"),
+                      alpha = 0.2) +
           ylim(min(df$lower), max(df$upper))
 
       }
 
     } else {
 
-      p <- ggplot(df, aes(x, logOR, group = Covariates, color = Covariates)) +
+      p <- ggplot(df, aes_string(x = "x",
+                                 y = "logOR",
+                                 group = "Covariates",
+                                 color = "Covariates")) +
         geom_line() +
         geom_hline(yintercept = 0, linetype = 2) +
         labs(title = paste("Log-OR vs.", xname),

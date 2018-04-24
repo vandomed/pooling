@@ -6,7 +6,7 @@
 #'
 #'
 #' @param estimates Numeric vector of point estimates for
-#' \code{(gamma_0, gamma_y, \strong{gamma_c}, sigsq)}.
+#' \code{(gamma_0, gamma_y, gamma_c^T, sigsq)}.
 #'
 #' @param varcov Numeric matrix with variance-covariance matrix for
 #' \code{estimates}. If \code{NULL}, 95\% confidence bands are omitted.
@@ -39,9 +39,6 @@ plot_dfa <- function(estimates,
                      cvals = NULL,
                      set_labels = NULL,
                      set_panels = TRUE) {
-
-  # Note: Have some CRAN check NOTEs which I think can be fixed by using
-  # aes_string in places where I currently use aes. Need to address this.
 
   # Extract parameter estimates
   names_estimates <- names(estimates)
@@ -216,17 +213,6 @@ plot_dfa <- function(estimates,
     # Create plot
     if (set_panels) {
 
-      # p <- ggplot(df, aes(x, logOR)) +
-      #   facet_grid(facets = . ~ Covariates) +
-      #   geom_line() +
-      #   geom_hline(yintercept = 0, linetype = 2) +
-      #   labs(title = paste("Log-OR vs.", xname),
-      #        y = "Log-OR",
-      #        x = xname) +
-      #   ylim(min(logOR), max(logOR)) +
-      #   theme_bw()
-      # p
-
       p <- ggplot(df, aes(x, logOR)) +
         facet_grid(reformulate("Covariates", ".")) +
         geom_line() +
@@ -236,8 +222,6 @@ plot_dfa <- function(estimates,
              x = xname) +
         ylim(min(logOR), max(logOR)) +
         theme_bw()
-      p
-
 
       if (! is.null(varcov)) {
 
@@ -261,19 +245,6 @@ plot_dfa <- function(estimates,
              x = xname) +
         ylim(min(logOR), max(logOR)) +
         theme_bw()
-
-      # p <- ggplot(data = df,
-      #             mapping = aes(x = x,
-      #                           y = logOR,
-      #                           group = Covariates,
-      #                           color = Covariates)) +
-      #   geom_line() +
-      #   geom_hline(yintercept = 0, linetype = 2) +
-      #   labs(title = paste("Log-OR vs.", xname),
-      #        y = "Log-OR",
-      #        x = xname) +
-      #   ylim(min(logOR), max(logOR)) +
-      #   theme_bw()
 
     }
 

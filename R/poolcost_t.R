@@ -74,7 +74,7 @@ poolcost_t <- function(g = 1: 10,
   }
 
   # Create plot
-  p <- ggplot(data = df, aes(g, costs, label = labeltext)) +
+  p <- ggplot(df, aes_string(x = "g", y = "costs", label = "labeltext")) +
     geom_col() +
     labs(title = "Total Study Costs vs. Pool Size",
          y = "Total costs ($)",
