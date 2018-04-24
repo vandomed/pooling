@@ -3,7 +3,7 @@
 #' Uses maximum likelihood to fit
 #' Y|\strong{X} ~ Gamma(exp(beta_0 + \strong{beta_x}^T \strong{X}), b), with the
 #' shape-scale (as opposed to shape-rate) parameterization described in
-#' \code{\link[GammaDist]{GammaDist}}.
+#' \code{\link[stats]{GammaDist}}.
 #'
 #' @param y Numeric vector.
 #' @param x Numeric vector or matrix. If \code{NULL}, model reduces to marginal

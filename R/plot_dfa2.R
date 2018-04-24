@@ -157,7 +157,7 @@ plot_dfa2 <- function(estimates,
       logOR <- 1 / b0 - 1 / b1 + log((x + 1) / x) *
         (exp(gamma_0 + gamma_1 + sum(gamma_c * cvals.ii)) -
            exp(gamma_0 + sum(gamma_c * cvals.ii)))
-      df <- bind_rows(df, data.frame(Covariates = ii, x = x, logOR = logOR))
+      df <- dplyr::bind_rows(df, data.frame(Covariates = ii, x = x, logOR = logOR))
 
       # Calculate confidence bands
       if (! is.null(varcov) & set_panels) {

@@ -62,7 +62,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
 
   # Get name of y input
   y.varname <- deparse(substitute(y))
-  if (grep("$", y.varname)) {
+  if (length(grep("$", y.varname, fixed = TRUE)) > 0) {
     y.varname <- substr(y.varname,
                         start = which(unlist(strsplit(y.varname, "")) == "$") + 1,
                         stop = nchar(y.varname))
@@ -119,11 +119,11 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     if (some.s) {
 
       # Singles
-      g.s <- g[-which.r]
-      Ig.s <- Ig[-which.r]
-      y.s <- y[-which.r]
-      gyc.s <- gyc[-which.r, , drop = FALSE]
-      xtilde.s <- unlist(xtilde[-which.r])
+      g <- g[-which.r]
+      Ig <- Ig[-which.r]
+      y <- y[-which.r]
+      gyc <- gyc[-which.r, , drop = FALSE]
+      xtilde <- unlist(xtilde[-which.r])
 
     }
   } else {
@@ -216,12 +216,12 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
       if (some.s) {
 
         # E(Xtilde|Y,C) and V(Xtilde|Y,C)
-        mu_xtilde.yc <- gyc.s %*% f.gammas
-        sigsq_xtilde.yc <- g.s * ifelse(y.s, f.sigsq_1, f.sigsq_0) +
-          g.s^2 * f.sigsq_p * Ig.s + g.s^2 * f.sigsq_m
+        mu_xtilde.yc <- gyc %*% f.gammas
+        sigsq_xtilde.yc <- g * ifelse(y, f.sigsq_1, f.sigsq_0) +
+          g^2 * f.sigsq_p * Ig + g^2 * f.sigsq_m
 
         # Log-likelihood
-        ll.s <- sum(dnorm(x = xtilde.s, log = TRUE,
+        ll.s <- sum(dnorm(x = xtilde, log = TRUE,
                           mean = mu_xtilde.yc, sd = sqrt(sigsq_xtilde.yc)))
 
       } else {
@@ -349,13 +349,13 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
       if (some.s) {
 
         # E(Xtilde|Y,C) and V(Xtilde|Y,C)
-        mu_xtilde.yc <- gyc.s %*% f.gammas
-        sigsq_xtilde.yc <- g.s * f.sigsq +
-          g.s^2 * f.sigsq_p * Ig.s +
-          g.s^2 * f.sigsq_m
+        mu_xtilde.yc <- gyc %*% f.gammas
+        sigsq_xtilde.yc <- g * f.sigsq +
+          g^2 * f.sigsq_p * Ig +
+          g^2 * f.sigsq_m
 
         # Log-likelihood
-        ll.s <- sum(dnorm(x = xtilde.s, log = TRUE,
+        ll.s <- sum(dnorm(x = xtilde, log = TRUE,
                           mean = mu_xtilde.yc, sd = sqrt(sigsq_xtilde.yc)))
 
       } else {

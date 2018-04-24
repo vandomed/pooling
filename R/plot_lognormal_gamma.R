@@ -15,7 +15,7 @@
 #' Y|X ~ Gamma(exp(beta_0 + beta_x X), b)
 #'
 #' Both models are fit using maximum likelihood, and the data are plotted with
-#' the fitted E(Y|X) vs. X curves for each model.
+#' E(Y|X) vs. X curves from each fitted model.
 #'
 #' @param x Numeric vector.
 #' @param y Numeric vector.
@@ -30,7 +30,8 @@
 #'
 #'
 #'@export
-plot_lognormal_gamma <- function(x = NULL, y = NULL,
+plot_lognormal_gamma <- function(x = NULL,
+                                 y = NULL,
                                  n = 1000,
                                  beta_0 = 0,
                                  beta_x = 0.5,

@@ -42,5 +42,5 @@ X ~ N(0, 1)
 Y|X ~ Gamma(exp(beta_0 + beta_x X), b)
 
 Both models are fit using maximum likelihood, and the data are plotted with
-the fitted E(Y|X) vs. X curves for each model.
+E(Y|X) vs. X curves from each fitted model.
 }

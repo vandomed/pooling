@@ -14,11 +14,11 @@ poolcost_t(g = 1:10, d = 0.2, sigsq = 1, sigsq_p = 0, sigsq_m = 0,
 
 \item{d}{Numeric value specifying true difference in group means.}
 
-\item{sigsq}{Numeric value specifying variance of observations.}
+\item{sigsq}{Numeric value specifying the variance of observations.}
 
-\item{sigsq_p}{Numeric value specifying variance of processing error.}
+\item{sigsq_p}{Numeric value specifying the variance of processing errors.}
 
-\item{sigsq_m}{Numeric value specifying variance of measurement error.}
+\item{sigsq_m}{Numeric value specifying the variance of measurement errors.}
 
 \item{multiplicative}{Logical value for whether to assume multiplicative
 rather than additive errors.}

@@ -6,9 +6,9 @@
 #'
 #' @param g Numeric vector of pool sizes to include.
 #' @param d Numeric value specifying true difference in group means.
-#' @param sigsq Numeric value specifying variance of observations.
-#' @param sigsq_p Numeric value specifying variance of processing error.
-#' @param sigsq_m Numeric value specifying variance of measurement error.
+#' @param sigsq Numeric value specifying the variance of observations.
+#' @param sigsq_p Numeric value specifying the variance of processing errors.
+#' @param sigsq_m Numeric value specifying the variance of measurement errors.
 #' @param multiplicative Logical value for whether to assume multiplicative
 #' rather than additive errors.
 #' @param mu Numeric value specifying the larger of the two suspected means.
@@ -68,7 +68,7 @@ poolcost_t <- function(g = 1: 10,
   df$labeltext[-locs] <- ""
   df$lab[locs] <- 1
 
-  # If ylim NULL, create one
+  # Default ylim
   if (is.null(ylim)) {
     ylim <- c(0, max(costs) * 1.06)
   }

@@ -14,18 +14,18 @@ plot_dfa2(estimates, varcov = NULL, xrange, xname = "X", cvals = NULL,
 \item{varcov}{Numeric matrix with variance-covariance matrix for
 \code{estimates}. If \code{NULL}, 95\% confidence bands are omitted.}
 
-\item{xrange}{= Numeric vector specifying range of \code{X} values to plot.}
+\item{xrange}{Numeric vector specifying range of \code{X} values to plot.}
 
-\item{xname}{= Character vector specifying name of \code{X} variable, for
+\item{xname}{Character vector specifying name of \code{X} variable, for
 plot title and x-axis label.}
 
-\item{cvals}{= Numeric vector or list of numeric vectors specifying covariate
+\item{cvals}{Numeric vector or list of numeric vectors specifying covariate
 values to use in log-odds ratio calculations.}
 
-\item{set_labels}{= Character vector of labels for the sets of covariate
+\item{set_labels}{Character vector of labels for the sets of covariate
 values. Only used if \code{cvals} is a list.}
 
-\item{set_panels}{= Logical value for whether to use separate panels for each
+\item{set_panels}{Logical value for whether to use separate panels for each
 set of covariate values, as opposed to using different colors on a single
 plot.}
 }

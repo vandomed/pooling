@@ -23,7 +23,7 @@ requested), AIC, and \code{\link[stats]{nlminb}} object.
 Uses maximum likelihood to fit
 Y|\strong{X} ~ Gamma(exp(beta_0 + \strong{beta_x}^T \strong{X}), b), with the
 shape-scale (as opposed to shape-rate) parameterization described in
-\code{\link[GammaDist]{GammaDist}}.
+\code{\link[stats]{GammaDist}}.
 }
 \examples{
 # Generate data

@@ -4,12 +4,31 @@
 \alias{poolpower_t}
 \title{Visualize T-test Power for Pooling Design}
 \usage{
-poolpower_t(d = 0.5, var = 1, var_pe = 0, var_me = 0,
-  type = "two.sample", assay_cost = 1, other_costs = 0, pool_size = c(1,
-  2, 3, 10), labels = TRUE, ...)
+poolpower_t(g = c(1, 3, 10), d = 0.5, sigsq = 1, sigsq_p = 0,
+  sigsq_m = 0, multiplicative = FALSE, mu = 1, alpha = 0.05,
+  beta = 0.2, type = "two.sample", assay_cost = 100, other_costs = 0,
+  labels = TRUE, ylim = NULL, ...)
 }
 \arguments{
+\item{g}{Numeric vector of pool sizes to include.}
+
 \item{d}{Numeric value specifying true difference in group means.}
+
+\item{sigsq}{Numeric value specifying the variance of observations.}
+
+\item{sigsq_p}{Numeric value specifying the variance of processing errors.}
+
+\item{sigsq_m}{Numeric value specifying the variance of measurement errors.}
+
+\item{multiplicative}{Logical value for whether to assume multiplicative
+rather than additive errors.}
+
+\item{mu}{Numeric value specifying the larger of the two suspected means.
+Only used if \code{multiplicative = TRUE}.}
+
+\item{alpha}{Numeric value specifying significance level.}
+
+\item{beta}{Numeric value specifying beta = 1 - power.}
 
 \item{type}{Character string specifying type of t-test. Choices are
 \code{"two.sample"}, \code{"one.sample"}, and \code{"paired"}.}
@@ -19,6 +38,8 @@ poolpower_t(d = 0.5, var = 1, var_pe = 0, var_me = 0,
 \item{other_costs}{Numeric value specifying other per-subject costs.}
 
 \item{labels}{Logical value.}
+
+\item{ylim}{Numeric vector.}
 
 \item{...}{Arguments to pass to \code{\link[stats]{power.t.test}}.}
 }
@@ -33,13 +54,13 @@ design.
 \examples{
 # Power for two-sample t-test with d = 0.5, var = 1, and no "other" costs
 # per subject
-poolpower_t(d = 0.5, var = 1)
+poolpower_t(d = 0.5, sigsq = 1)
 
 # Repeat but for other costs per subject equal to 1/4 the assay cost
-poolpower_t(d = 0.5, var = 1, other_costs = 1/4)
+poolpower_t(d = 0.5, sigsq = 1, other_costs = 1/4)
 
 # Back to no other costs, but with processing and measurement error
-poolpower_t(d = 0.5, var = 1, var_pe = 0.2, var_me = 0.1)
+poolpower_t(d = 0.5, sigsq = 1, sigsq_p = 0.2, sigsq_m = 0.1)
 
 
 }

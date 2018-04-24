@@ -15,55 +15,75 @@
 #' @examples
 #' # Power for two-sample t-test with d = 0.5, var = 1, and no "other" costs
 #' # per subject
-#' poolpower_t(d = 0.5, var = 1)
+#' poolpower_t(d = 0.5, sigsq = 1)
 #'
 #' # Repeat but for other costs per subject equal to 1/4 the assay cost
-#' poolpower_t(d = 0.5, var = 1, other_costs = 1/4)
+#' poolpower_t(d = 0.5, sigsq = 1, other_costs = 1/4)
 #'
 #' # Back to no other costs, but with processing and measurement error
-#' poolpower_t(d = 0.5, var = 1, var_pe = 0.2, var_me = 0.1)
+#' poolpower_t(d = 0.5, sigsq = 1, sigsq_p = 0.2, sigsq_m = 0.1)
 #'
 #'
 #'@export
-poolpower_t <- function(d = 0.5,
-                        var = 1,
-                        var_pe = 0,
-                        var_me = 0,
+poolpower_t <- function(g = c(1, 3, 10),
+                        d = 0.5,
+                        sigsq = 1,
+                        sigsq_p = 0,
+                        sigsq_m = 0,
+                        multiplicative = FALSE,
+                        mu = 1,
+                        alpha = 0.05,
+                        beta = 0.2,
                         type = "two.sample",
-                        assay_cost = 1,
+                        assay_cost = 100,
                         other_costs = 0,
-                        pool_size = c(1, 2, 3, 10),
                         labels = TRUE,
+                        ylim = NULL,
                         ...) {
 
   # Create vector from 2 to sample size needed for 99.9% power
   n.assays <- 2: ceiling(power.t.test(delta = d,
-                                      sd = sqrt(var),
+                                      sd = sqrt(sigsq + sigsq_m),
                                       type = type,
                                       power = 0.999, ...)$n)
 
-  # Create data frame with variables to plot
+  # Prepare data for ggplot
   df <- NULL
-  for (ii in pool_size) {
+  for (ii in g) {
+
+    if (multiplicative) {
+      sigsq_pm <- sigsq_p * (ii > 1) + sigsq_m + sigsq_p * (ii > 1) * sigsq_m
+      sigsq_xtilde <- sigsq_pm * (mu^2 + sigsq / ii) + sigsq / ii
+    } else {
+      sigsq_xtilde <- sigsq / ii + sigsq_p * (ii > 1) + sigsq_m
+    }
 
     n.subjects <- n.assays * ii
     costs <- n.assays * assay_cost + n.subjects * other_costs
     power <- power.t.test(n = n.assays,
                           delta = d,
-                          sd = sqrt(var / ii + var_me + var_pe * (ii > 1)),
-                          type = type, ...)$power
-    power_80 <- rep(0, length(n.assays))
-    power_80[which(power >= 0.8)[1]] <- 1
-    df <- bind_rows(df, data.frame(g = ii,
-                                   n.assays = n.assays,
-                                   costs = costs,
-                                   power = power,
-                                   power_80 = power_80))
+                          sd = sqrt(sigsq_xtilde),
+                          type = type)$power
+    power.lab <- rep(0, length(n.assays))
+    power.lab[which(power >= (1 - beta))[1]] <- 1
+    df <- dplyr::bind_rows(df, data.frame(g = ii,
+                                          n.assays = n.assays,
+                                          costs = costs,
+                                          power = power,
+                                          power.lab = power.lab))
 
   }
 
   # Exclude values with power > 99.9
   df <- subset(df, power <= 0.999)
+
+  # Create labels
+  if (all(df$costs[df$power.lab == 1] > 1000)) {
+    df$costs <- df$costs / 1000
+    df$costlabel <- paste("$", df$costs, "k (", n.assays, " assays)", sep = "")
+  } else {
+    df$costlabel <- paste("$", df$costs, " (", n.assays, " assays)", sep = "")
+  }
 
   # Create plot
   p <- ggplot(df, aes(costs, power, group = g, color = as.factor(g))) +
@@ -73,17 +93,16 @@ poolpower_t <- function(d = 0.5,
          y = "Power",
          x = "Study costs",
          color = "Pool size") +
-    geom_hline(yintercept = c(0, 0.5, 0.8, 0.9, 1), linetype = 2) +
+    geom_hline(yintercept = unique(c(0, 0.5, 1 - beta, 1)), linetype = 2) +
     theme_bw() +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-    scale_y_continuous(breaks = c(0, 0.5, 0.8, 0.9, 1))
+    scale_y_continuous(breaks = unique(c(0, 0.5, 1 - beta, 1)))
 
-  # Label points with 80% power
+  # Label points with sufficient power
   if (labels) {
     p <- p + geom_label_repel(
-      data = subset(df, power_80 == 1),
-      aes(costs, power, label = paste(
-        "$", costs, " (", n.assays, " assays)", sep = "")),
+      data = subset(df, power.lab == 1),
+      aes(costs, power, label = costlabel),
       color = "black",
       box.padding = 0.5, point.padding = 0.3)
   }

@@ -83,7 +83,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
 
   # Get name of y input
   y.varname <- deparse(substitute(y))
-  if (grep("$", y.varname)) {
+  if (length(grep("$", y.varname, fixed = TRUE)) > 0) {
     y.varname <- substr(y.varname,
                         start = which(unlist(strsplit(y.varname, "")) == "$") + 1,
                         stop = nchar(y.varname))
