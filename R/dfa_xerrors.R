@@ -23,11 +23,26 @@
 #' }
 #'
 #'
-#'  @references
+#' @references
 #' Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
 #' "A discriminant function approach to adjust for processing and measurement
 #' error When a biomarker is assayed in pooled samples."
 #' \emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
+#'
+#'
+#' @examples
+#' # Load dataset - dat1 has (Y, C) values and dat1.xtilde is list with 1 or 2
+#' # Xtilde measurements for each subject.
+#' data(dat1)
+#' data(dat1_xtilde)
+#'
+#' # Estimate log-OR for X and Y adjusted for C, ignoring measurement error
+#' fit1 <- dfa_xerrors(y = dat1$y, xtilde = dat1_xtilde, c = dat1$c, merror = FALSE)
+#' fit1$estimates
+#'
+#' # Repeat, but accounting for measurement error. Closer to true log-OR of 0.5.
+#' fit2 <- dfa_xerrors(y = dat1$y, xtilde = dat1_xtilde, c = dat1$c, merror = TRUE)
+#' fit2$estimates
 #'
 #'
 #' @export
@@ -35,7 +50,7 @@ dfa_xerrors <- function(y, xtilde, c = NULL, merror = TRUE, ...) {
 
   # Get name of y input
   y.varname <- deparse(substitute(y))
-  if (grep("$", y.varname)) {
+  if (length(grep("$", y.varname, fixed = TRUE)) > 0) {
     y.varname <- substr(y.varname,
                         start = which(unlist(strsplit(y.varname, "")) == "$") + 1,
                         stop = nchar(y.varname))
@@ -46,6 +61,7 @@ dfa_xerrors <- function(y, xtilde, c = NULL, merror = TRUE, ...) {
     c.varnames <- NULL
     n.cvars <- 0
   } else {
+    c.varname <- deparse(substitute(c))
     if (class(c) != "matrix") {
       c <- as.matrix(c)
     }
@@ -53,7 +69,12 @@ dfa_xerrors <- function(y, xtilde, c = NULL, merror = TRUE, ...) {
     c.varnames <- colnames(c)
     if (is.null(c.varnames)) {
       if (n.cvars == 1) {
-        c.varnames <- deparse(substitute(c))
+        if (length(grep("$", c.varname, fixed = TRUE)) > 0) {
+          c.varname <- substr(c.varname,
+                              start = which(unlist(strsplit(c.varname, "")) == "$") + 1,
+                              stop = nchar(c.varname))
+        }
+        c.varnames <- c.varname
       } else {
         c.varnames <- paste("c", 1: n.cvars, sep = "")
       }
@@ -68,6 +89,11 @@ dfa_xerrors <- function(y, xtilde, c = NULL, merror = TRUE, ...) {
 
   # Construct (1, Y, C) matrix
   oneyc <- cbind(rep(1, n), y, c)
+
+  # If no measurement error and xtilde is a list, just use first measurements
+  if (! merror & class(xtilde) == "list") {
+    xtilde <- sapply(xtilde, function(x) x[1])
+  }
 
   # Separate out replicates
   class.xtilde <- class(xtilde)

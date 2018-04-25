@@ -74,6 +74,24 @@
 #' \emph{Biometrics} \strong{70}: 1061.
 #'
 #'
+#' @examples
+#' # Load dataset containing poolwise (Y, Xtilde, C) values for pools of size
+#' # 1, 2, and 3. Xtilde measurements are affected by processing error.
+#' data(pdat1)
+#'
+#' # Estimate log-OR for X and Y adjusted for C, ignoring processing error
+#' fit1 <- p_logreg_xerrors(g = pdat1$g, y = pdat1$allcases,
+#'                          xtilde = pdat1$xtilde, c = pdat1$c,
+#'                          errors = "neither")
+#' fit1$theta.hat
+#'
+#' # Repeat, but accounting for processing error. Closer to true log-OR of 0.5.
+#' fit2 <- p_logreg_xerrors(g = pdat1$g, y = pdat1$allcases,
+#'                          xtilde = pdat1$xtilde, c = pdat1$c,
+#'                          errors = "processing")
+#' fit2$theta.hat
+#'
+#'
 #' @export
 p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
                              errors = "both",
@@ -151,6 +169,11 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
     c.varnames <- colnames(c)
     if (is.null(c.varnames)) {
       if (n.cvars == 1) {
+        if (length(grep("$", c.varname, fixed = TRUE)) > 0) {
+          c.varname <- substr(c.varname,
+                              start = which(unlist(strsplit(c.varname, "")) == "$") + 1,
+                              stop = nchar(c.varname))
+        }
         c.varnames <- c.varname
       } else {
         c.varnames <- paste("c", 1: n.cvars, sep = "")

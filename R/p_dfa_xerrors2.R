@@ -49,7 +49,7 @@
 #'
 #' @export
 p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
-                           constant_or = NULL,
+                           constant_or = TRUE,
                            errors = "both",
                            integrate_tol = 1e-8,
                            integrate_tol_start = integrate_tol,

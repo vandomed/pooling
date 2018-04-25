@@ -5,7 +5,7 @@
 \title{Discriminant Function Approach for Estimating Odds Ratio with Gamma Exposure
 Measured in Pools and Subject to Errors}
 \usage{
-p_dfa_xerrors2(g, y, xtilde, c = NULL, constant_or = NULL,
+p_dfa_xerrors2(g, y, xtilde, c = NULL, constant_or = TRUE,
   errors = "both", integrate_tol = 1e-08,
   integrate_tol_start = integrate_tol,
   integrate_tol_hessian = integrate_tol, estimate_var = TRUE, ...)

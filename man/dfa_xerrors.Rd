@@ -29,16 +29,31 @@ List containing:
  about likelihood maximization.
  \item Akaike information criterion (AIC).
 }
-
-
- @references
-Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
-"A discriminant function approach to adjust for processing and measurement
-error When a biomarker is assayed in pooled samples."
-\emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
 }
 \description{
 Assumes exposure measurements are subject to additive normal measurement
 error, and exposure given covariates and outcome is a normal-errors linear
 regression. Some replicates are required for identifiability.
+}
+\examples{
+# Load dataset - dat1 has (Y, C) values and dat1.xtilde is list with 1 or 2
+# Xtilde measurements for each subject.
+data(dat1)
+data(dat1_xtilde)
+
+# Estimate log-OR for X and Y adjusted for C, ignoring measurement error
+fit1 <- dfa_xerrors(y = dat1$y, xtilde = dat1_xtilde, c = dat1$c, merror = FALSE)
+fit1$estimates
+
+# Repeat, but accounting for measurement error. Closer to true log-OR of 0.5.
+fit2 <- dfa_xerrors(y = dat1$y, xtilde = dat1_xtilde, c = dat1$c, merror = TRUE)
+fit2$estimates
+
+
+}
+\references{
+Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)
+"A discriminant function approach to adjust for processing and measurement
+error When a biomarker is assayed in pooled samples."
+\emph{Int. J. Environ. Res. Public Health} \strong{12}(11): 14723--14740.
 }

@@ -55,6 +55,23 @@
 #' }
 #'
 #'
+#' @examples
+#' # Load dataset - dat1 has (Y, C) values and dat1.xtilde is list with 1 or 2
+#' # Xtilde measurements for each subject.
+#' data(dat1)
+#' data(dat1_xtilde)
+#'
+#' # Estimate log-OR for X and Y adjusted for C, ignoring measurement error
+#' fit1 <- logreg_xerrors(y = dat1$y, xtilde = dat1_xtilde, c = dat1$c,
+#'                        merror = FALSE)
+#' fit1$theta.hat
+#'
+#' # Repeat, but accounting for measurement error. Closer to true log-OR of 0.5.
+#' fit2 <- logreg_xerrors(y = dat1$y, xtilde = dat1_xtilde, c = dat1$c,
+#'                        merror = TRUE)
+#' fit2$theta.hat
+#'
+#'
 #' @export
 logreg_xerrors <- function(y, xtilde, c = NULL,
                            prev = NULL, samp_y1y0 = NULL,
@@ -68,7 +85,7 @@ logreg_xerrors <- function(y, xtilde, c = NULL,
 
   # Get name of xtilde input
   x.varname <- deparse(substitute(xtilde))
-  if (grep("$", x.varname)) {
+  if (length(grep("$", x.varname, fixed = TRUE)) > 0) {
     x.varname <- substr(x.varname,
                         start = which(unlist(strsplit(x.varname, "")) == "$") + 1,
                         stop = nchar(x.varname))
@@ -89,6 +106,11 @@ logreg_xerrors <- function(y, xtilde, c = NULL,
     c.varnames <- colnames(c)
     if (is.null(c.varnames)) {
       if (n.cvars == 1) {
+        if (length(grep("$", c.varname, fixed = TRUE)) > 0) {
+          c.varname <- substr(c.varname,
+                              start = which(unlist(strsplit(c.varname, "")) == "$") + 1,
+                              stop = nchar(c.varname))
+        }
         c.varnames <- c.varname
       } else {
         c.varnames <- paste("c", 1: n.cvars, sep = "")
@@ -117,6 +139,11 @@ logreg_xerrors <- function(y, xtilde, c = NULL,
     q <- rep(log(samp_y1y0[1] / samp_y1y0[2]), n)
   } else {
     q <- rep(0, n)
+  }
+
+  # If no measurement error and xtilde is a list, just use first measurements
+  if (! merror & class(xtilde) == "list") {
+    xtilde <- sapply(xtilde, function(x) x[1])
   }
 
   # Separate out replicate from singles

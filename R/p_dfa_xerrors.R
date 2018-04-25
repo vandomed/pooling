@@ -43,9 +43,25 @@
 #' \emph{Stat. Med.} \strong{29}(5): 597--613.
 #'
 #'
+#' @examples
+#' # Load dataset containing poolwise (Y, Xtilde, C) values for pools of size
+#' # 1, 2, and 3. Xtilde measurements are affected by processing error.
+#' data(pdat1)
+#'
+#' # Estimate log-OR for X and Y adjusted for C, ignoring processing error
+#' fit1 <- p_dfa_xerrors(g = pdat1$g, y = pdat1$numcases, xtilde = pdat1$xtilde,
+#'                       c = pdat1$c, errors = "neither")
+#' fit1$estimates
+#'
+#' # Repeat, but accounting for processing error. Closer to true log-OR of 0.5.
+#' fit2 <- p_dfa_xerrors(g = pdat1$g, y = pdat1$numcases, xtilde = pdat1$xtilde,
+#'                       c = pdat1$c, errors = "processing")
+#' fit2$estimates
+#'
+#'
 #' @export
 p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
-                          constant_or = NULL,
+                          constant_or = TRUE,
                           errors = "both", ...) {
 
   # Check that inputs are valid
@@ -73,6 +89,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     c.varnames <- NULL
     n.cvars <- 0
   } else {
+    c.varname <- deparse(substitute(c))
     if (class(c) != "matrix") {
       c <- as.matrix(c)
     }
@@ -80,7 +97,12 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     c.varnames <- colnames(c)
     if (is.null(c.varnames)) {
       if (n.cvars == 1) {
-        c.varnames <- deparse(substitute(c))
+        if (length(grep("$", c.varname, fixed = TRUE)) > 0) {
+          c.varname <- substr(c.varname,
+                              start = which(unlist(strsplit(c.varname, "")) == "$") + 1,
+                              stop = nchar(c.varname))
+        }
+        c.varnames <- c.varname
       } else {
         c.varnames <- paste("c", 1: n.cvars, sep = "")
       }

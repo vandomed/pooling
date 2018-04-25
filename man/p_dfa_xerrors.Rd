@@ -5,7 +5,7 @@
 \title{Discriminant Function Approach for Estimating Odds Ratio with Normal Exposure
 Measured in Pools and Subject to Errors}
 \usage{
-p_dfa_xerrors(g, y, xtilde, c = NULL, constant_or = NULL, errors = "both",
+p_dfa_xerrors(g, y, xtilde, c = NULL, constant_or = TRUE, errors = "both",
   ...)
 }
 \arguments{
@@ -48,6 +48,23 @@ log-OR, and those ending in 2 are for model that assumes constant log-OR.
 Assumes exposure measurements are subject to additive normal processing error
 and measurement error, and exposure given covariates and outcome is a
 normal-errors linear regression.
+}
+\examples{
+# Load dataset containing poolwise (Y, Xtilde, C) values for pools of size
+# 1, 2, and 3. Xtilde measurements are affected by processing error.
+data(pdat1)
+
+# Estimate log-OR for X and Y adjusted for C, ignoring processing error
+fit1 <- p_dfa_xerrors(g = pdat1$g, y = pdat1$numcases, xtilde = pdat1$xtilde,
+                      c = pdat1$c, errors = "neither")
+fit1$estimates
+
+# Repeat, but accounting for processing error. Closer to true log-OR of 0.5.
+fit2 <- p_dfa_xerrors(g = pdat1$g, y = pdat1$numcases, xtilde = pdat1$xtilde,
+                      c = pdat1$c, errors = "processing")
+fit2$estimates
+
+
 }
 \references{
 Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)

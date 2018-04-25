@@ -82,6 +82,25 @@ Assumes normal linear model for exposure given covariates, and additive
 normal processing errors and measurement errors acting on the poolwise mean
 exposure. Manuscript fully describing the approach is under review.
 }
+\examples{
+# Load dataset containing poolwise (Y, Xtilde, C) values for pools of size
+# 1, 2, and 3. Xtilde measurements are affected by processing error.
+data(pdat1)
+
+# Estimate log-OR for X and Y adjusted for C, ignoring processing error
+fit1 <- p_logreg_xerrors(g = pdat1$g, y = pdat1$allcases,
+                         xtilde = pdat1$xtilde, c = pdat1$c,
+                         errors = "neither")
+fit1$theta.hat
+
+# Repeat, but accounting for processing error. Closer to true log-OR of 0.5.
+fit2 <- p_logreg_xerrors(g = pdat1$g, y = pdat1$allcases,
+                         xtilde = pdat1$xtilde, c = pdat1$c,
+                         errors = "processing")
+fit2$theta.hat
+
+
+}
 \references{
 Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
 pooled-unpooled design for cost-efficient measurement of biomarkers."
