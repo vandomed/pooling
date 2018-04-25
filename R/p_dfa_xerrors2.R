@@ -9,6 +9,9 @@
 #' @inheritParams p_dfa_xerrors
 #' @inheritParams p_logreg_xerrors
 #'
+#' @param y Numeric vector with poolwise \code{Y} values, coded 0 if all members
+#' are controls and 1 if all members are cases.
+#'
 #' @param constant_or Logical value for whether to assume a constant OR for
 #' \code{X}, which means that \code{gamma_y = 0}. If \code{NULL}, model is
 #' fit with and without this assumption, and likelihood ratio test is performed
@@ -45,6 +48,25 @@
 #' Whitcomb, B.W., Perkins, N.J., Zhang, Z., Ye, A., and Lyles, R. H. (2012)
 #' "Assessment of skewed exposure in case-control studies with pooling."
 #' \emph{Stat. Med.} \strong{31}: 2461--2472.
+#'
+#'
+#' @examples
+#' # Load datasets - pdat2 has poolwise (Y, Xtilde) values and pdat2_c has
+#' # individual-level C values. Xtilde values are affected by processing error.
+#' data(pdat2)
+#' data(pdat2_c)
+#'
+#' # Estimate log-OR for X and Y adjusted for C, ignoring processing error
+#' fit1 <- p_dfa_xerrors2(g = pdat2$g, y = pdat2$y, xtilde = pdat2$xtilde,
+#'                        c = pdat2_c, errors = "neither")
+#' fit1$estimates
+#'
+#' # Repeat, but accounting for processing error. Takes about 5 minutes to run
+#' # due to numerical integration. Gives log-OR closer to true value of 0.5.
+#' # fit2 <- p_dfa_xerrors2(g = pdat2$g, y = pdat2$y, xtilde = pdat2$xtilde,
+#' #                        c = pdat2_c, errors = "processing",
+#' #                        control = list(trace = 1))
+#' # fit2$estimates
 #'
 #'
 #' @export

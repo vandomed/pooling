@@ -105,7 +105,6 @@ poolpower_t <- function(g = c(1, 3, 10),
     p <- p + geom_label_repel(
       data = subset(df, power.lab == 1),
       aes_string(x = "costs", y = "power", label = "costlabel"),
-      #color = "black",
       box.padding = 0.5, point.padding = 0.3,
       show.legend = FALSE)
   }

@@ -56,7 +56,7 @@
 #'
 #'
 #' @examples
-#' # Load dataset - dat1 has (Y, C) values and dat1.xtilde is list with 1 or 2
+#' # Load dataset - dat1 has (Y, C) values and dat1_xtilde is list with 1 or 2
 #' # Xtilde measurements for each subject.
 #' data(dat1)
 #' data(dat1_xtilde)

@@ -80,6 +80,26 @@ multiplicative lognormal processing errors and measurement errors acting on
 the poolwise mean exposure. Manuscript fully describing the approach is
 under review.
 }
+\examples{
+# Load datasets - pdat2 has poolwise (Y, Xtilde) values and pdat2_c has
+# individual-level C values. Xtilde values are affected by processing error.
+data(pdat2)
+data(pdat2_c)
+
+# Estimate log-OR for X and Y adjusted for C, ignoring processing error
+fit1 <- p_logreg_xerrors2(g = pdat2$g, y = pdat2$y, xtilde = pdat2$xtilde,
+                          c = pdat2_c, errors = "neither")
+fit1$theta.hat
+
+# Repeat, but accounting for processing error. Takes about 1 minute to run
+# due to numerical integration. Gives log-OR closer to true value of 0.5.
+# fit2 <- p_logreg_xerrors2(g = pdat2$g, y = pdat2$y, xtilde = pdat2$xtilde,
+#                           c = pdat2_c, errors = "processing",
+#                           control = list(trace = 1))
+# fit2$theta.hat
+
+
+}
 \references{
 Mitchell, E.M, Lyles, R.H., and Schisterman, E.F. (2015) "Positing, fitting,
 and selecting regression models for pooled biomarker data." \emph{Stat. Med}

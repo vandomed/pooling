@@ -83,8 +83,8 @@ normal processing errors and measurement errors acting on the poolwise mean
 exposure. Manuscript fully describing the approach is under review.
 }
 \examples{
-# Load dataset containing poolwise (Y, Xtilde, C) values for pools of size
-# 1, 2, and 3. Xtilde measurements are affected by processing error.
+# Load dataset containing (Y, Xtilde, C) values for pools of size 1, 2, and
+# 3. Xtilde values are affected by processing error.
 data(pdat1)
 
 # Estimate log-OR for X and Y adjusted for C, ignoring processing error

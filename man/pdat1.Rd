@@ -3,12 +3,14 @@
 \docType{data}
 \name{pdat1}
 \alias{pdat1}
-\title{Dataset with Simulated (Y, Xtilde, C) Values for Examples in p_dfa_xerrors 
+\title{Dataset with Simulated (Y, Xtilde, C) Values for Examples in p_dfa_xerrors
 and p_logreg_xerrors}
 \source{
 Simulated data in R.
 }
 \description{
-Dataset with Simulated (Y, Xtilde, C) Values for Examples in p_dfa_xerrors 
-and p_logreg_xerrors
+Includes 4,999 pooled observations, with a roughly equal number of pools of
+size 1, 2, and 3. The data were generated with a true log-odds ratio of 0.5
+for \code{X} and \code{Y}, adjusted for \code{C}. The \code{Xtilde}
+measurements are subject to processing error.
 }

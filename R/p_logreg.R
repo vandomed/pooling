@@ -52,6 +52,15 @@
 #' \emph{Biometrics} \strong{70}: 1061.
 #'
 #'
+#' @examples
+#' # Load dataset containing (Y, Xtilde, C) values for pools of size 1, 2, and 3
+#' data(pdat1)
+#'
+#' # Estimate log-OR for Xtilde and Y adjusted for C
+#' fit <- p_logreg(g = pdat1$g, y = pdat1$allcases, x = pdat1[, c("xtilde", "c")])
+#' fit$theta.hat
+#'
+#'
 #' @export
 p_logreg <- function(g, y, x,
                      method = "glm", prev = NULL, samp_y1y0 = NULL,
@@ -76,15 +85,8 @@ p_logreg <- function(g, y, x,
     stop("The input 'estimate_var' should be TRUE or FALSE.")
   }
 
-  # Get name of x input
-  x.varname <- deparse(substitute(x))
-  if (grep("$", x.varname)) {
-    x.varname <- substr(x.varname,
-                        start = which(unlist(strsplit(x.varname, "")) == "$") + 1,
-                        stop = nchar(x.varname))
-  }
-
   # Get number of X variables (and assign names)
+  x.varname <- deparse(substitute(x))
   if (class(x) != "matrix") {
     x <- as.matrix(x)
   }
@@ -92,6 +94,11 @@ p_logreg <- function(g, y, x,
   x.varnames <- colnames(x)
   if (is.null(x.varnames)) {
     if (n.xvars == 1) {
+      if (length(grep("$", x.varname, fixed = TRUE)) > 0) {
+        x.varname <- substr(x.varname,
+                            start = which(unlist(strsplit(x.varname, "")) == "$") + 1,
+                            stop = nchar(x.varname))
+      }
       x.varnames <- x.varname
     } else {
       x.varnames <- paste("x", 1: n.xvars, sep = "")

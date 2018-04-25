@@ -13,8 +13,8 @@ p_dfa_xerrors2(g, y, xtilde, c = NULL, constant_or = TRUE,
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
 
-\item{y}{Numeric vector of poolwise \code{Y} values (number of cases in each
-pool).}
+\item{y}{Numeric vector with poolwise \code{Y} values, coded 0 if all members
+are controls and 1 if all members are cases.}
 
 \item{xtilde}{Numeric vector (or list of numeric vectors, if some pools have
 replicates) with \code{Xtilde} values.}
@@ -62,6 +62,26 @@ and those ending in 2 are for model that assumes constant log-OR.
 Assumes exposure measurements are subject to multiplicative lognormal
 processing error and measurement error, and exposure given covariates and
 outcome is a Gamma regression.
+}
+\examples{
+# Load datasets - pdat2 has poolwise (Y, Xtilde) values and pdat2_c has
+# individual-level C values. Xtilde values are affected by processing error.
+data(pdat2)
+data(pdat2_c)
+
+# Estimate log-OR for X and Y adjusted for C, ignoring processing error
+fit1 <- p_dfa_xerrors2(g = pdat2$g, y = pdat2$y, xtilde = pdat2$xtilde,
+                       c = pdat2_c, errors = "neither")
+fit1$estimates
+
+# Repeat, but accounting for processing error. Takes about 5 minutes to run
+# due to numerical integration. Gives log-OR closer to true value of 0.5.
+# fit2 <- p_dfa_xerrors2(g = pdat2$g, y = pdat2$y, xtilde = pdat2$xtilde,
+#                        c = pdat2_c, errors = "processing",
+#                        control = list(trace = 1))
+# fit2$estimates
+
+
 }
 \references{
 Lyles, R.H., Van Domelen, D.R., Mitchell, E.M. and Schisterman, E.F. (2015)

@@ -47,6 +47,16 @@ returned \code{\link[stats]{nlminb}} object (if \code{method = "ml"}).
 Fit homogeneous-pools logistic regression model described by Weinberg &
 Umbach (1999).
 }
+\examples{
+# Load dataset containing (Y, Xtilde, C) values for pools of size 1, 2, and 3
+data(pdat1)
+
+# Estimate log-OR for Xtilde and Y adjusted for C
+fit <- p_logreg(g = pdat1$g, y = pdat1$allcases, x = pdat1[, c("xtilde", "c")])
+fit$theta.hat
+
+
+}
 \references{
 Weinberg, C.R. and Umbach, D.M. (1999) "Using pooled exposure assessment to
 improve efficiency in case-control studies." \emph{Biometrics} \strong{55}:
