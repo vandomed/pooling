@@ -8,7 +8,8 @@
 \description{
 Functions for calculating power and fitting regression models in studies
 where a biomarker is measured in "pooled" samples rather than for each
-individual.
+individual. Approaches for handling measurement error follow the framework of
+Schisterman et al. (2010) <doi:10.1002/sim.3823>.
 }
 \details{
 \tabular{ll}{

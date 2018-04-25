@@ -41,11 +41,11 @@ poolpower_t <- function(g = c(1, 3, 10),
                         ylim = NULL,
                         ...) {
 
-  # Create vector from 2 to sample size needed for 99.9% power
-  n.assays <- 2: ceiling(power.t.test(delta = d,
-                                      sd = sqrt(sigsq + sigsq_m),
-                                      type = type,
-                                      power = 0.999, ...)$n)
+  # Create vector from 4 to total sample size needed for 99.9% power
+  n.assays <- (2: ceiling(power.t.test(delta = d,
+                                       sd = sqrt(sigsq + sigsq_m),
+                                       type = type,
+                                       power = 0.999, ...)$n)) * 2
 
   # Prepare data for ggplot
   df <- NULL
@@ -60,7 +60,7 @@ poolpower_t <- function(g = c(1, 3, 10),
 
     n.subjects <- n.assays * ii
     costs <- n.assays * assay_cost + n.subjects * other_costs
-    power <- power.t.test(n = n.assays,
+    power <- power.t.test(n = n.assays / 2,
                           delta = d,
                           sd = sqrt(sigsq_xtilde),
                           type = type)$power
@@ -80,9 +80,11 @@ poolpower_t <- function(g = c(1, 3, 10),
   # Create labels
   if (all(df$costs[df$power.lab == 1] > 1000)) {
     df$costs <- df$costs / 1000
-    df$costlabel <- paste("$", df$costs, "k (", n.assays, " assays)", sep = "")
+    df$costlabel <- paste("$", df$costs, "k (", df$n.assays, " assays)", sep = "")
+    dollar.units <- "($1,000's)"
   } else {
-    df$costlabel <- paste("$", df$costs, " (", n.assays, " assays)", sep = "")
+    df$costlabel <- paste("$", df$costs, " (", df$n.assays, " assays)", sep = "")
+    dollar.units <- "($)"
   }
 
   # Create plot
@@ -91,7 +93,7 @@ poolpower_t <- function(g = c(1, 3, 10),
     geom_line() +
     labs(title = "Power vs. Total Study Costs",
          y = "Power",
-         x = "Study costs",
+         x = paste("Study costs", dollar.units),
          color = "Pool size") +
     geom_hline(yintercept = unique(c(0, 0.5, 1 - beta, 1)), linetype = 2) +
     theme_bw() +
