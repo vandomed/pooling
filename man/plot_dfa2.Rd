@@ -9,7 +9,7 @@ plot_dfa2(estimates, varcov = NULL, xrange, xname = "X", cvals = NULL,
 }
 \arguments{
 \item{estimates}{Numeric vector of point estimates for
-\code{(gamma_0, gamma_1, gamma_c^T, b1, b0)}.}
+\code{(gamma_0, gamma_y, gamma_c^T, b1, b0)}.}
 
 \item{varcov}{Numeric matrix with variance-covariance matrix for
 \code{estimates}. If \code{NULL}, 95\% confidence bands are omitted.}

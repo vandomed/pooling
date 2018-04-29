@@ -16,7 +16,7 @@ Schisterman et al. (2010) <doi:10.1002/sim.3823>.
 Package: \tab pooling \cr
 Type: \tab Package \cr
 Version: \tab 1.1.1 \cr
-Date: \tab 2018-04-25 \cr
+Date: \tab 2018-04-29 \cr
 License: \tab GPL-3 \cr
 }
 }
