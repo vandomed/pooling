@@ -148,7 +148,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
   # Get name of xtilde input
   x.varname <- deparse(substitute(xtilde))
-  if (grep("$", x.varname)) {
+  if (length(grep("$", x.varname, fixed = TRUE)) > 0) {
     x.varname <- substr(x.varname,
                         start = which(unlist(strsplit(x.varname, "")) == "$") + 1,
                         stop = nchar(x.varname))

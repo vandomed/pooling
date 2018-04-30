@@ -112,7 +112,7 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
   # Get name of xtilde input
   x.varname <- deparse(substitute(xtilde))
-  if (grep("$", x.varname)) {
+  if (length(grep("$", x.varname, fixed = TRUE)) > 0) {
     x.varname <- substr(x.varname,
                         start = which(unlist(strsplit(x.varname, "")) == "$") + 1,
                         stop = nchar(x.varname))
@@ -124,12 +124,18 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
     n.cvars <- 0
     some.cs <- FALSE
   } else {
+    c.varname <- deparse(substitute(c))
     n.cvars <- ncol(c[[1]])
     some.cs <- TRUE
     c.varnames <- colnames(c[[1]])
     if (is.null(c.varnames)) {
       if (n.cvars == 1) {
-        c.varnames <- deparse(substitute(c))
+        if (length(grep("$", c.varname, fixed = TRUE)) > 0) {
+          c.varname <- substr(c.varname,
+                              start = which(unlist(strsplit(c.varname, "")) == "$") + 1,
+                              stop = nchar(c.varname))
+        }
+        c.varnames <- c.varname
       } else {
         c.varnames <- paste("c", 1: n.cvars, sep = "")
       }

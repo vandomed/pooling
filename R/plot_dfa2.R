@@ -91,7 +91,7 @@ plot_dfa2 <- function(estimates,
     p <- ggplot(df, aes(x, logOR)) +
       geom_line() +
       geom_hline(yintercept = 0, linetype = 2) +
-      labs(title = paste("Log-OR vs.", xname),
+      labs(title = paste("Estimated Log-OR vs.", xname),
            y = "Log-OR",
            x = xname) +
       ylim(min(logOR), max(logOR)) +
