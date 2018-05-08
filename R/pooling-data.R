@@ -69,3 +69,39 @@ NULL
 #' @docType data
 #' @source Simulated data in R.
 NULL
+#'
+#'
+#' Dataset with Simulated Values for Examples in cond_logreg
+#'
+#' Includes 50 pools of size 1 and 75 pools of size 2. The error-prone
+#' \code{Xtilde} values for case pools and control pools are stored as separate
+#' lists called \code{\link{xtilde1_matched}} and \code{\link{xtilde0_matched}}.
+#'
+#' @name pdat_matched
+#' @docType data
+#' @source Simulated data in R.
+NULL
+#'
+#'
+#' Dataset with Simulated Xtilde1's for Examples in cond_logreg
+#'
+#' Includes 50 case pools of size 1 (25 of which have replicates) and 75 of
+#' size 2. Other variables are stored in a separate data frame called
+#' \code{\link{pdat_matched}}.
+#'
+#' @name xtilde1_matched
+#' @docType data
+#' @source Simulated data in R.
+NULL
+#'
+#'
+#' Dataset with Simulated Xtilde0's for Examples in cond_logreg
+#'
+#' Includes 50 control pools of size 1 (25 of which have replicates) and 75 of
+#' size 2. Other variables are stored in a separate data frame called
+#' \code{\link{pdat_matched}}.
+#'
+#' @name xtilde0_matched
+#' @docType data
+#' @source Simulated data in R.
+NULL
