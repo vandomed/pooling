@@ -8,11 +8,11 @@ Subject to Measurement Error}
 dfa_xerrors(y, xtilde, c = NULL, merror = TRUE, ...)
 }
 \arguments{
-\item{y}{Numeric vector of \code{Y} values.}
+\item{y}{Numeric vector of Y values.}
 
-\item{xtilde}{List of numeric vectors with \code{Xtilde} values.}
+\item{xtilde}{List of numeric vectors with Xtilde values.}
 
-\item{c}{Numeric matrix with \strong{\code{C}} values (if any), with
+\item{c}{Numeric matrix with \strong{C} values (if any), with
 one row for each pool. Can be a vector if there is only 1 covariate.}
 
 \item{merror}{Logical value for whether there is measurement error.}

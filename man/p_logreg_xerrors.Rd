@@ -50,7 +50,7 @@ approximation for the logistic-normal integral, to avoid numerically
 integrating \code{X}'s out of the likelihood function.}
 
 \item{integrate_tol}{Numeric value specifying the \code{tol} input to
-\code{\link{adaptIntegrate}}. Only used if \code{approx_integral = FALSE}.}
+\code{\link[cubature]{adaptIntegrate}}. Only used if \code{approx_integral = FALSE}.}
 
 \item{integrate_tol_start}{Same as \code{integrate_tol}, but applies only to
 the very first iteration of ML maximization. The first iteration tends to

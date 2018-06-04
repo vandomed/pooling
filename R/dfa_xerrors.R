@@ -6,7 +6,10 @@
 #' regression. Some replicates are required for identifiability.
 #'
 #'
-#' @inheritParams logreg_xerrors
+#' @param y Numeric vector of Y values.
+#' @param xtilde List of numeric vectors with Xtilde values.
+#' @param c Numeric matrix with \strong{C} values (if any), with
+#' one row for each pool. Can be a vector if there is only 1 covariate.
 #' @param merror Logical value for whether there is measurement error.
 #' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
 #'

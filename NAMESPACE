@@ -2,8 +2,6 @@
 
 export(cond_logreg)
 export(dfa_xerrors)
-export(lognormal)
-export(logreg_xerrors)
 export(p_dfa_xerrors)
 export(p_dfa_xerrors2)
 export(p_logreg)
