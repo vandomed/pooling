@@ -8,7 +8,8 @@ p_logreg_xerrors2(g = NULL, y, xtilde, c = NULL, errors = "both",
   nondiff_pe = TRUE, nondiff_me = TRUE, constant_pe = TRUE, prev = NULL,
   samp_y1y0 = NULL, integrate_tol = 1e-08,
   integrate_tol_start = integrate_tol,
-  integrate_tol_hessian = integrate_tol, estimate_var = TRUE, ...)
+  integrate_tol_hessian = integrate_tol, estimate_var = TRUE,
+  fix_posdef = FALSE, ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -47,7 +48,7 @@ for cases and controls, allowing for valid estimation of the intercept with
 case-control sampling. Can specify \code{prev} instead if it's easier.}
 
 \item{integrate_tol}{Numeric value specifying the \code{tol} input to
-\code{\link{adaptIntegrate}}.}
+\code{\link{hcubature}}.}
 
 \item{integrate_tol_start}{Same as \code{integrate_tol}, but applies only to
 the very first iteration of ML maximization. The first iteration tends to
@@ -61,6 +62,10 @@ prevent cases where the inverse Hessian is not positive definite.}
 
 \item{estimate_var}{Logical value for whether to return variance-covariance
 matrix for parameter estimates.}
+
+\item{fix_posdef}{Logical value for whether to repeatedly reduce
+\code{integrate_tol_hessian} by factor of 10 and re-estimate Hessian to try
+to avoid non-positive definite variance-covariance matrix.}
 
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }

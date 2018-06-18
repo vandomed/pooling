@@ -8,7 +8,8 @@ p_logreg_xerrors(g, y, xtilde, c = NULL, errors = "both",
   nondiff_pe = TRUE, nondiff_me = TRUE, constant_pe = TRUE, prev = NULL,
   samp_y1y0 = NULL, approx_integral = TRUE, integrate_tol = 1e-08,
   integrate_tol_start = integrate_tol,
-  integrate_tol_hessian = integrate_tol, estimate_var = TRUE, ...)
+  integrate_tol_hessian = integrate_tol, estimate_var = TRUE,
+  fix_posdef = FALSE, ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -50,7 +51,8 @@ approximation for the logistic-normal integral, to avoid numerically
 integrating \code{X}'s out of the likelihood function.}
 
 \item{integrate_tol}{Numeric value specifying the \code{tol} input to
-\code{\link[cubature]{adaptIntegrate}}. Only used if \code{approx_integral = FALSE}.}
+\code{\link[cubature]{hcubature}}. Only used if
+\code{approx_integral = FALSE}.}
 
 \item{integrate_tol_start}{Same as \code{integrate_tol}, but applies only to
 the very first iteration of ML maximization. The first iteration tends to
@@ -64,6 +66,10 @@ prevent cases where the inverse Hessian is not positive definite.}
 
 \item{estimate_var}{Logical value for whether to return variance-covariance
 matrix for parameter estimates.}
+
+\item{fix_posdef}{Logical value for whether to repeatedly reduce
+\code{integrate_tol_hessian} by factor of 10 and re-estimate Hessian to try
+to avoid non-positive definite variance-covariance matrix.}
 
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }

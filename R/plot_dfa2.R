@@ -113,7 +113,7 @@ plot_dfa2 <- function(estimates,
 
     # Calculate log-OR's
     logOR <- 1 / b0 - 1 / b1 + log((x + 1) / x) *
-      exp(gamma_0 + sum(gamma_c * cvals)) * (exp(gamma_y - 1))
+      exp(gamma_0 + sum(gamma_c * cvals)) * (exp(gamma_y) - 1)
     df <- data.frame(x = x, logOR = logOR)
 
     # Calculate confidence bands

@@ -5,45 +5,50 @@
 #' exposure. Manuscript fully describing the approach is under review.
 #'
 #'
-#' @inheritParams p_logreg
-#'
+#' @param g Numeric vector with pool sizes, i.e. number of members in each pool.
+#' @param y Numeric vector with poolwise \code{Y} values, coded 0 if all members
+#' are controls and 1 if all members are cases.
 #' @param xtilde Numeric vector (or list of numeric vectors, if some pools have
 #' replicates) with \code{Xtilde} values.
-#'
 #' @param c Numeric matrix with poolwise \strong{\code{C}} values (if any), with
 #' one row for each pool. Can be a vector if there is only 1 covariate.
-#'
 #' @param errors Character string specifying the errors that \code{X} is subject
 #' to. Choices are \code{"neither"}, \code{"processing"} for processing error
 #' only, \code{"measurement"} for measurement error only, and \code{"both"}.
-#'
 #' @param nondiff_pe Logical value for whether to assume the processing error
 #' variance is non-differential, i.e. the same in case pools and control pools.
-#'
 #' @param nondiff_me Logical value for whether to assume the measurement error
 #' variance is non-differential, i.e. the same in case pools and control pools.
-#'
 #' @param constant_pe Logical value for whether to assume the processing error
 #' variance is constant with pool size. If \code{FALSE}, assumption is that
 #' processing error variance increase with pool size such that, for example, the
 #' processing error affecting a pool 2x as large as another has 2x the variance.
-#'
+#' @param prev Numeric value specifying disease prevalence, allowing
+#' for valid estimation of the intercept with case-control sampling. Can specify
+#' \code{samp_y1y0} instead if sampling rates are known.
+#' @param samp_y1y0 Numeric vector of length 2 specifying sampling probabilities
+#' for cases and controls, allowing for valid estimation of the intercept with
+#' case-control sampling. Can specify \code{prev} instead if it's easier.
 #' @param approx_integral Logical value for whether to use the probit
 #' approximation for the logistic-normal integral, to avoid numerically
 #' integrating \code{X}'s out of the likelihood function.
-#'
 #' @param integrate_tol Numeric value specifying the \code{tol} input to
-#' \code{\link[cubature]{adaptIntegrate}}. Only used if \code{approx_integral = FALSE}.
-#'
+#' \code{\link[cubature]{hcubature}}. Only used if
+#' \code{approx_integral = FALSE}.
 #' @param integrate_tol_start Same as \code{integrate_tol}, but applies only to
 #' the very first iteration of ML maximization. The first iteration tends to
 #' take much longer than subsequent ones, so less precise integration at the
 #' start can speed things up.
-#'
 #' @param integrate_tol_hessian Same as \code{integrate_tol}, but for use when
 #' estimating the Hessian matrix only. Sometimes more precise integration
 #' (i.e. smaller tolerance) than used for maximizing the likelihood helps
 #' prevent cases where the inverse Hessian is not positive definite.
+#' @param estimate_var Logical value for whether to return variance-covariance
+#' matrix for parameter estimates.
+#' @param fix_posdef Logical value for whether to repeatedly reduce
+#' \code{integrate_tol_hessian} by factor of 10 and re-estimate Hessian to try
+#' to avoid non-positive definite variance-covariance matrix.
+#' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
 #'
 #'
 #' @return
@@ -103,6 +108,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
                              integrate_tol_start = integrate_tol,
                              integrate_tol_hessian = integrate_tol,
                              estimate_var = TRUE,
+                             fix_posdef = FALSE,
                              ...) {
 
   # Check that inputs are valid
@@ -578,14 +584,14 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
           # Try integrating out X with default settings
           int.ii <-
-            adaptIntegrate(f = int.f_i1, tol = int_tol,
-                           lowerLimit = -1, upperLimit = 1,
-                           vectorInterface = TRUE,
-                           k_i = k_i, g_i = g_i,
-                           y_i = y_i, gc_i = gc_i, qg_i = qg_i,
-                           mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
-                           xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
-                           sigsq_m_i = sigsq_m_i)
+            hcubature(f = int.f_i1, tol = int_tol,
+                      lowerLimit = -1, upperLimit = 1,
+                      vectorInterface = TRUE,
+                      k_i = k_i, g_i = g_i,
+                      y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                      mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                      xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                      sigsq_m_i = sigsq_m_i)
 
           # If integral 0 and sigsq_m_i small, look at region around Xtilde
           if (int.ii$integral == 0 & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
@@ -598,14 +604,14 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                adaptIntegrate(f = int.f_i1, tol = int_tol,
-                               lowerLimit = lowupp.x[1],
-                               upperLimit = lowupp.x[2],
-                               vectorInterface = TRUE,
-                               k_i = k_i, g_i = g_i, y_i = y_i, gc_i = gc_i,
-                               qg_i = qg_i, mu_x.c_i = mu_x.c_i,
-                               sigsq_x.c_i = sigsq_x.c_i, xtilde_i = xtilde_i,
-                               sigsq_p_i = sigsq_p_i, sigsq_m_i = sigsq_m_i)
+                hcubature(f = int.f_i1, tol = int_tol,
+                          lowerLimit = lowupp.x[1],
+                          upperLimit = lowupp.x[2],
+                          vectorInterface = TRUE,
+                          k_i = k_i, g_i = g_i, y_i = y_i, gc_i = gc_i,
+                          qg_i = qg_i, mu_x.c_i = mu_x.c_i,
+                          sigsq_x.c_i = sigsq_x.c_i, xtilde_i = xtilde_i,
+                          sigsq_p_i = sigsq_p_i, sigsq_m_i = sigsq_m_i)
               if (int.ii$integral > 0) {
                 break
               }
@@ -624,14 +630,14 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                adaptIntegrate(f = int.f_i1, tol = int_tol,
-                               lowerLimit = lowupp.x[1],
-                               upperLimit = lowupp.x[2],
-                               vectorInterface = TRUE,
-                               k_i = k_i, g_i = g_i, y_i = y_i, gc_i = gc_i,
-                               qg_i = qg_i, mu_x.c_i = mu_x.c_i,
-                               sigsq_x.c_i = sigsq_x.c_i, xtilde_i = xtilde_i,
-                               sigsq_p_i = sigsq_p_i, sigsq_m_i = sigsq_m_i)
+                hcubature(f = int.f_i1, tol = int_tol,
+                          lowerLimit = lowupp.x[1],
+                          upperLimit = lowupp.x[2],
+                          vectorInterface = TRUE,
+                          k_i = k_i, g_i = g_i, y_i = y_i, gc_i = gc_i,
+                          qg_i = qg_i, mu_x.c_i = mu_x.c_i,
+                          sigsq_x.c_i = sigsq_x.c_i, xtilde_i = xtilde_i,
+                          sigsq_p_i = sigsq_p_i, sigsq_m_i = sigsq_m_i)
               if (int.ii$integral > 0) {
                 break
               }
@@ -775,13 +781,13 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
           # Try integrating out X_i with default settings
           int.ii <-
-            adaptIntegrate(f = int.f_i2, tol = int_tol,
-                           lowerLimit = -1, upperLimit = 1,
-                           vectorInterface = TRUE,
-                           g_i = g_i, y_i = y_i, gc_i = gc_i, qg_i = qg_i,
-                           mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
-                           xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
-                           sigsq_m_i = sigsq_m_i)
+            hcubature(f = int.f_i2, tol = int_tol,
+                      lowerLimit = -1, upperLimit = 1,
+                      vectorInterface = TRUE,
+                      g_i = g_i, y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                      mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                      xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                      sigsq_m_i = sigsq_m_i)
 
           # If integral 0 and f.sigsq_m small, look at region around Xtilde
           if (int.ii$integral == 0 & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
@@ -794,14 +800,14 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                adaptIntegrate(f = int.f_i2, tol = int_tol,
-                               lowerLimit = lowupp.x[1],
-                               upperLimit = lowupp.x[2],
-                               vectorInterface = TRUE,
-                               g_i = g_i, y_i = y_i, gc_i = gc_i, qg_i = qg_i,
-                               mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
-                               xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
-                               sigsq_m_i = sigsq_m_i)
+                hcubature(f = int.f_i2, tol = int_tol,
+                          lowerLimit = lowupp.x[1],
+                          upperLimit = lowupp.x[2],
+                          vectorInterface = TRUE,
+                          g_i = g_i, y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                          mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                          xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                          sigsq_m_i = sigsq_m_i)
               if (int.ii$integral > 0) {
                 break
               }
@@ -820,14 +826,14 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
               incr <- incr / 10
               lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
               int.ii <-
-                adaptIntegrate(f = int.f_i2, tol = int_tol,
-                               lowerLimit = lowupp.x[1],
-                               upperLimit = lowupp.x[2],
-                               vectorInterface = TRUE,
-                               g_i = g_i, y_i = y_i, gc_i = gc_i, qg_i = qg_i,
-                               mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
-                               xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
-                               sigsq_m_i = sigsq_m_i)
+                hcubature(f = int.f_i2, tol = int_tol,
+                          lowerLimit = lowupp.x[1],
+                          upperLimit = lowupp.x[2],
+                          vectorInterface = TRUE,
+                          g_i = g_i, y_i = y_i, gc_i = gc_i, qg_i = qg_i,
+                          mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
+                          xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
+                          sigsq_m_i = sigsq_m_i)
               if (int.ii$integral > 0) {
                 break
               }
@@ -906,17 +912,42 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
   # If requested, add variance-covariance matrix to ret.list
   if (estimate_var) {
+
+    # Estimate Hessian
     hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
                                    x0 = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
-    if (class(theta.variance) == "try-error") {
+    if (class(theta.variance) == "try-error" ||
+        ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
+
+      # Repeatedly divide integrate_tol_hessian by 10 and re-try
+      while (integrate_tol_hessian > 1e-15 & fix_posdef) {
+        integrate_tol_hessian <- integrate_tol_hessian / 5
+        hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
+                                       x0 = theta.hat)
+        theta.variance <- try(solve(hessian.mat), silent = TRUE)
+        if (class(theta.variance) != "try-error" &&
+            all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
+          break
+        }
+
+      }
+    }
+
+    if (class(theta.variance) == "try-error" ||
+        ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
+
       print(hessian.mat)
       message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
       ret.list$theta.var <- NULL
+
     } else {
+
       colnames(theta.variance) <- rownames(theta.variance) <- theta.labels
       ret.list$theta.var <- theta.variance
+
     }
+
   }
 
   # Add nlminb object and AIC to ret.list

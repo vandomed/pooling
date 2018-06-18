@@ -11,9 +11,8 @@
 #' @param c List where each element is a numeric matrix containing the
 #' \strong{\code{C}} values for members of a particular pool (1 row for each
 #' member).
-#'
 #' @param integrate_tol Numeric value specifying the \code{tol} input to
-#' \code{\link{adaptIntegrate}}.
+#' \code{\link{hcubature}}.
 #'
 #'
 #' @inherit p_logreg_xerrors return
@@ -70,7 +69,9 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
                               integrate_tol = 1e-8,
                               integrate_tol_start = integrate_tol,
                               integrate_tol_hessian = integrate_tol,
-                              estimate_var = TRUE, ...) {
+                              estimate_var = TRUE,
+                              fix_posdef = FALSE,
+                              ...) {
 
   # Check that inputs are valid
   if (! errors %in% c("neither", "processing", "measurement", "both")) {
@@ -508,13 +509,13 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
         # Try integrating out X with default settings
         int.ii <-
-          adaptIntegrate(f = int.f_i1, tol = int_tol,
-                         lowerLimit = 0, upperLimit = 1,
-                         vectorInterface = TRUE,
-                         g_i = g_i, Ig_i = Ig_i, k_i = k_i, y_i = y_i,
-                         cstar_i = cstar_i, qg_i = qg_i, xtilde_i = xtilde_i,
-                         a_i = a_i, sigsq_p_i = sigsq_p_i,
-                         sigsq_m_i = sigsq_m_i)
+          hcubature(f = int.f_i1, tol = int_tol,
+                    lowerLimit = 0, upperLimit = 1,
+                    vectorInterface = TRUE,
+                    g_i = g_i, Ig_i = Ig_i, k_i = k_i, y_i = y_i,
+                    cstar_i = cstar_i, qg_i = qg_i, xtilde_i = xtilde_i,
+                    a_i = a_i, sigsq_p_i = sigsq_p_i,
+                    sigsq_m_i = sigsq_m_i)
         int.vals[ii] <- int.ii$integral
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
@@ -638,13 +639,13 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
         # Try integrating out X_i with default settings
         int.ii <-
-          adaptIntegrate(f = int.f_i2, tol = int_tol,
-                         lowerLimit = 0, upperLimit = 1,
-                         vectorInterface = TRUE,
-                         g_i = g_i, Ig_i = Ig_i, y_i = y_i,
-                         cstar_i = cstar_i, qg_i = qg_i, xtilde_i = xtilde_i,
-                         a_i = a_i, sigsq_p_i = sigsq_p_i,
-                         sigsq_m_i = sigsq_m_i)
+          hcubature(f = int.f_i2, tol = int_tol,
+                    lowerLimit = 0, upperLimit = 1,
+                    vectorInterface = TRUE,
+                    g_i = g_i, Ig_i = Ig_i, y_i = y_i,
+                    cstar_i = cstar_i, qg_i = qg_i, xtilde_i = xtilde_i,
+                    a_i = a_i, sigsq_p_i = sigsq_p_i,
+                    sigsq_m_i = sigsq_m_i)
         int.vals[ii] <- int.ii$integral
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
@@ -714,18 +715,58 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
   # If requested, add variance-covariance matrix to ret.list
   if (estimate_var) {
+
+    # Estimate Hessian
     hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
                                    x0 = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
-    if (class(theta.variance) == "try-error") {
+    if (class(theta.variance) == "try-error" ||
+        ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
+
+      # Repeatedly divide integrate_tol_hessian by 5 and re-try
+      while (integrate_tol_hessian > 1e-15 & fix_posdef) {
+        integrate_tol_hessian <- integrate_tol_hessian / 5
+        hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
+                                       x0 = theta.hat)
+        theta.variance <- try(solve(hessian.mat), silent = TRUE)
+        if (class(theta.variance) != "try-error" &&
+            all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
+          break
+        }
+
+      }
+    }
+
+    if (class(theta.variance) == "try-error" ||
+        ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
+
       print(hessian.mat)
       message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
       ret.list$theta.var <- NULL
+
     } else {
+
       colnames(theta.variance) <- rownames(theta.variance) <- theta.labels
       ret.list$theta.var <- theta.variance
+
     }
+
   }
+
+  # # If requested, add variance-covariance matrix to ret.list
+  # if (estimate_var) {
+  #   hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
+  #                                  x0 = theta.hat)
+  #   theta.variance <- try(solve(hessian.mat), silent = TRUE)
+  #   if (class(theta.variance) == "try-error") {
+  #     print(hessian.mat)
+  #     message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
+  #     ret.list$theta.var <- NULL
+  #   } else {
+  #     colnames(theta.variance) <- rownames(theta.variance) <- theta.labels
+  #     ret.list$theta.var <- theta.variance
+  #   }
+  # }
 
   # Add nlminb object and AIC to ret.list
   ret.list$nlminb.object <- ml.max

@@ -6,15 +6,21 @@
 #' normal-errors linear regression.
 #'
 #'
-#' @inheritParams p_logreg_xerrors
-#'
+#' @param g Numeric vector with pool sizes, i.e. number of members in each pool.
 #' @param y Numeric vector of poolwise \code{Y} values (number of cases in each
 #' pool).
-#'
+#' @param xtilde Numeric vector (or list of numeric vectors, if some pools have
+#' replicates) with \code{Xtilde} values.
+#' @param c Numeric matrix with poolwise \strong{\code{C}} values (if any), with
+#' one row for each pool. Can be a vector if there is only 1 covariate.
 #' @param constant_or Logical value for whether to assume a constant OR for
 #' \code{X}, which means that \code{sigsq_1 = sigsq_0}. If \code{NULL}, model is
 #' fit with and without this assumption, and likelihood ratio test is performed
 #' to test it.
+#' @param errors Character string specifying the errors that \code{X} is subject
+#' to. Choices are \code{"neither"}, \code{"processing"} for processing error
+#' only, \code{"measurement"} for measurement error only, and \code{"both"}.
+#' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
 #'
 #'
 #' @return

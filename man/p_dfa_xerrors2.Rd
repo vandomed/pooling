@@ -8,7 +8,8 @@ Measured in Pools and Subject to Errors}
 p_dfa_xerrors2(g, y, xtilde, c = NULL, constant_or = TRUE,
   errors = "both", integrate_tol = 1e-08,
   integrate_tol_start = integrate_tol,
-  integrate_tol_hessian = integrate_tol, estimate_var = TRUE, ...)
+  integrate_tol_hessian = integrate_tol, estimate_var = TRUE,
+  fix_posdef = FALSE, ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -19,8 +20,9 @@ are controls and 1 if all members are cases.}
 \item{xtilde}{Numeric vector (or list of numeric vectors, if some pools have
 replicates) with \code{Xtilde} values.}
 
-\item{c}{Numeric matrix with poolwise \strong{\code{C}} values (if any), with
-one row for each pool. Can be a vector if there is only 1 covariate.}
+\item{c}{List where each element is a numeric matrix containing the
+\strong{\code{C}} values for members of a particular pool (1 row for each
+member).}
 
 \item{constant_or}{Logical value for whether to assume a constant OR for
 \code{X}, which means that \code{gamma_y = 0}. If \code{NULL}, model is
@@ -32,20 +34,16 @@ to. Choices are \code{"neither"}, \code{"processing"} for processing error
 only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 
 \item{integrate_tol}{Numeric value specifying the \code{tol} input to
-\code{\link{adaptIntegrate}}.}
-
-\item{integrate_tol_start}{Same as \code{integrate_tol}, but applies only to
-the very first iteration of ML maximization. The first iteration tends to
-take much longer than subsequent ones, so less precise integration at the
-start can speed things up.}
+\code{\link{hcubature}}.}
 
 \item{integrate_tol_hessian}{Same as \code{integrate_tol}, but for use when
 estimating the Hessian matrix only. Sometimes more precise integration
-(i.e. smaller tolerance) than used for maximizing the likelihood helps
-prevent cases where the inverse Hessian is not positive definite.}
+(i.e. smaller tolerance) helps prevent cases where the inverse Hessian is not
+positive definite.}
 
-\item{estimate_var}{Logical value for whether to return variance-covariance
-matrix for parameter estimates.}
+\item{fix_posdef}{Logical value for whether to repeatedly reduce
+\code{integrate_tol_hessian} by factor of 10 and re-estimate Hessian to try
+to avoid non-positive definite variance-covariance matrix.}
 
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }
