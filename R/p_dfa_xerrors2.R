@@ -568,7 +568,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
   if (is.null(constant_or) || constant_or) {
 
     # Log-likelihood function
-    ll.f2 <- function(f.theta) {
+    ll.f2 <- function(f.theta, estimating.hessian = FALSE) {
 
       # Extract parameters
       f.gammas <- matrix(f.theta[loc.gammas2], ncol = 1)
