@@ -68,7 +68,7 @@ prevent cases where the inverse Hessian is not positive definite.}
 matrix for parameter estimates.}
 
 \item{fix_posdef}{Logical value for whether to repeatedly reduce
-\code{integrate_tol_hessian} by factor of 10 and re-estimate Hessian to try
+\code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
 to avoid non-positive definite variance-covariance matrix.}
 
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}

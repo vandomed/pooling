@@ -56,28 +56,36 @@ poolcost_t <- function(g = 1: 10,
   if (multiplicative) {
     sigsq_pm <- sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m +
       sigsq_p * ifelse(g > 1, 1, 0) * sigsq_m
-    n <- ceiling(2 * z^2 / d^2 * (sigsq_pm * (mu^2 + sigsq / g) + sigsq / g))
+    n <- 2 * ceiling(2 * z^2 / d^2 * (sigsq_pm * (mu^2 + sigsq / g) + sigsq / g))
   } else {
-    n <- ceiling(2 * z^2 / d^2 * (sigsq / g + sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m))
+    n <- 2 * ceiling(2 * z^2 / d^2 * (sigsq / g + sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m))
   }
-  costs <-  2 * n * (assay_cost + g * other_costs)
+  costs <-  n * (assay_cost + g * other_costs)
   df <- data.frame(g = g, n = n, costs = costs)
   df$lab <- 0
-  df$labeltext <- paste(n, " assays", sep = "")
+  df$labeltext <- paste(n, " total assays", sep = "")
   locs <- unique(c(1, which.min(df$costs)))
   df$labeltext[-locs] <- ""
   df$lab[locs] <- 1
 
+  # Create labels
+  if (all(df$costs > 1000)) {
+    df$costs <- df$costs / 1000
+    dollar.units <- "($1,000)"
+  } else {
+    dollar.units <- "($)"
+  }
+
   # Default ylim
   if (is.null(ylim)) {
-    ylim <- c(0, max(costs) * 1.06)
+    ylim <- c(0, max(df$costs) * 1.06)
   }
 
   # Create plot
   p <- ggplot(df, aes_string(x = "g", y = "costs", label = "labeltext")) +
     geom_col() +
     labs(title = "Total Study Costs vs. Pool Size",
-         y = "Total costs ($)",
+         y = paste("Total costs", dollar.units),
          x = "Pool size") +
     ylim(ylim) +
     scale_x_continuous(breaks = g) +
@@ -88,7 +96,7 @@ poolcost_t <- function(g = 1: 10,
     p <- p + geom_label_repel(point.padding = 0.3,
                               box.padding = 1.5,
                               direction = "y",
-                              nudge_y = max(costs) / 25,
+                              nudge_y = max(df$costs) / 25,
                               label.padding = 0.4)
   }
   p

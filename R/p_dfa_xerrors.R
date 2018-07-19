@@ -1,9 +1,9 @@
 #' Discriminant Function Approach for Estimating Odds Ratio with Normal Exposure
-#' Measured in Pools and Subject to Errors
+#' Measured in Pools and Potentially Subject to Errors
 #'
-#' Assumes exposure measurements are subject to additive normal processing error
-#' and measurement error, and exposure given covariates and outcome is a
-#' normal-errors linear regression.
+#' Assumes exposure given covariates and outcome is a normal-errors linear
+#' regression. Pooled exposure measurements can be assumed precise or subject to
+#' additive normal processing error and/or measurement error.
 #'
 #'
 #' @param g Numeric vector with pool sizes, i.e. number of members in each pool.
@@ -22,11 +22,6 @@
 #' only, \code{"measurement"} for measurement error only, and \code{"both"}.
 #' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
 #'
-#'
-#' @return
-#' List of point estimates, variance-covariance matrix, objects returned by
-#' \code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
-#' \code{constant_or}.
 #'
 #' @return
 #' List of point estimates, variance-covariance matrix, objects returned by

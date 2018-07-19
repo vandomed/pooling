@@ -1,9 +1,9 @@
 #' Discriminant Function Approach for Estimating Odds Ratio with Gamma Exposure
-#' Measured in Pools and Subject to Errors
+#' Measured in Pools and Potentially Subject to Errors
 #'
-#' Assumes exposure measurements are subject to multiplicative lognormal
-#' processing error and measurement error, and exposure given covariates and
-#' outcome is a Gamma regression.
+#' Assumes exposure given covariates and outcome is a constant-scale Gamma
+#' regression. Pooled exposure measurements can be assumed precise or subject to
+#' multiplicative lognormal processing error and/or measurement error.
 #'
 #'
 #' @inheritParams p_dfa_xerrors
@@ -23,7 +23,7 @@
 #' (i.e. smaller tolerance) helps prevent cases where the inverse Hessian is not
 #' positive definite.
 #' @param fix_posdef Logical value for whether to repeatedly reduce
-#' \code{integrate_tol_hessian} by factor of 10 and re-estimate Hessian to try
+#' \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
 #' to avoid non-positive definite variance-covariance matrix.
 #'
 #'

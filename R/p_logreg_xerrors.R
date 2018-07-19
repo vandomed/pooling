@@ -46,7 +46,7 @@
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
 #' @param fix_posdef Logical value for whether to repeatedly reduce
-#' \code{integrate_tol_hessian} by factor of 10 and re-estimate Hessian to try
+#' \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
 #' to avoid non-positive definite variance-covariance matrix.
 #' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
 #'
@@ -920,7 +920,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
     if (class(theta.variance) == "try-error" ||
         ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
 
-      # Repeatedly divide integrate_tol_hessian by 10 and re-try
+      # Repeatedly divide integrate_tol_hessian by 5 and re-try
       while (integrate_tol_hessian > 1e-15 & fix_posdef) {
         integrate_tol_hessian <- integrate_tol_hessian / 5
         hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,

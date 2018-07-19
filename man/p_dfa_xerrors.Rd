@@ -3,7 +3,7 @@
 \name{p_dfa_xerrors}
 \alias{p_dfa_xerrors}
 \title{Discriminant Function Approach for Estimating Odds Ratio with Normal Exposure
-Measured in Pools and Subject to Errors}
+Measured in Pools and Potentially Subject to Errors}
 \usage{
 p_dfa_xerrors(g, y, xtilde, c = NULL, constant_or = TRUE, errors = "both",
   ...)
@@ -34,10 +34,6 @@ only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 \value{
 List of point estimates, variance-covariance matrix, objects returned by
 \code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
-\code{constant_or}.
-
-List of point estimates, variance-covariance matrix, objects returned by
-\code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
 \code{constant_or}. If \code{constant_or = NULL}, also returns result of a
 likelihood ratio test for \code{H0: sigsq_1 = sigsq_0}, which is equivalent
 to \code{H0: log-OR is constant}. If \code{constant_or = NULL}, returned
@@ -45,9 +41,9 @@ objects with names ending in 1 are for model that does not assume constant
 log-OR, and those ending in 2 are for model that assumes constant log-OR.
 }
 \description{
-Assumes exposure measurements are subject to additive normal processing error
-and measurement error, and exposure given covariates and outcome is a
-normal-errors linear regression.
+Assumes exposure given covariates and outcome is a normal-errors linear
+regression. Pooled exposure measurements can be assumed precise or subject to
+additive normal processing error and/or measurement error.
 }
 \examples{
 # Load dataset containing poolwise (Y, Xtilde, C) values for pools of size

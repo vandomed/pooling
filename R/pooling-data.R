@@ -1,3 +1,16 @@
+#' Dataset for Examples in p_linreg_yerrors
+#'
+#' List containing (1) data frame with poolwise (Y, X1, X2) values and (2) list
+#' with replicate Y values. Data were generated under linear regression of Y on
+#' (X1, X2) with beta_0 = 0.25, beta_x1 = 0.5, and beta_x2 = 0.25, with Y
+#' subject to processing error and measurement error.
+#'
+#' @name dat_p_linreg_yerrors
+#' @docType data
+#' @source Simulated data in R.
+NULL
+#'
+#'
 #' Dataset with Simulated (Y, C) Values for Examples in dfa_xerrors and
 #' logreg_xerrors
 #'

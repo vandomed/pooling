@@ -3,7 +3,7 @@
 \name{p_dfa_xerrors2}
 \alias{p_dfa_xerrors2}
 \title{Discriminant Function Approach for Estimating Odds Ratio with Gamma Exposure
-Measured in Pools and Subject to Errors}
+Measured in Pools and Potentially Subject to Errors}
 \usage{
 p_dfa_xerrors2(g, y, xtilde, c = NULL, constant_or = TRUE,
   errors = "both", integrate_tol = 1e-08,
@@ -42,7 +42,7 @@ estimating the Hessian matrix only. Sometimes more precise integration
 positive definite.}
 
 \item{fix_posdef}{Logical value for whether to repeatedly reduce
-\code{integrate_tol_hessian} by factor of 10 and re-estimate Hessian to try
+\code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
 to avoid non-positive definite variance-covariance matrix.}
 
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
@@ -57,9 +57,9 @@ with names ending in 1 are for model that does not assume constant log-OR,
 and those ending in 2 are for model that assumes constant log-OR.
 }
 \description{
-Assumes exposure measurements are subject to multiplicative lognormal
-processing error and measurement error, and exposure given covariates and
-outcome is a Gamma regression.
+Assumes exposure given covariates and outcome is a constant-scale Gamma
+regression. Pooled exposure measurements can be assumed precise or subject to
+multiplicative lognormal processing error and/or measurement error.
 }
 \examples{
 # Load datasets - pdat2 has poolwise (Y, Xtilde) values and pdat2_c has
