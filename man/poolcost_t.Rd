@@ -4,15 +4,16 @@
 \alias{poolcost_t}
 \title{Visualize Total Costs for Pooling Design as a Function of Pool Size}
 \usage{
-poolcost_t(g = 1:10, d = 0.2, sigsq = 1, sigsq_p = 0, sigsq_m = 0,
-  multiplicative = FALSE, mu = 1, alpha = 0.05, beta = 0.2,
-  type = "two.sample", assay_cost = 100, other_costs = 0, labels = TRUE,
+poolcost_t(g = 1:10, d = NULL, sigsq, sigsq_p = 0, sigsq_m = 0,
+  multiplicative = FALSE, mu1 = NULL, mu2 = NULL, alpha = 0.05,
+  beta = 0.2, assay_cost = 100, other_costs = 0, labels = TRUE,
   ylim = NULL)
 }
 \arguments{
 \item{g}{Numeric vector of pool sizes to include.}
 
-\item{d}{Numeric value specifying true difference in group means.}
+\item{d}{Numeric value specifying true difference in group means. Only used
+if \code{multiplicative = FALSE}.}
 
 \item{sigsq}{Numeric value specifying the variance of observations.}
 
@@ -23,15 +24,12 @@ poolcost_t(g = 1:10, d = 0.2, sigsq = 1, sigsq_p = 0, sigsq_m = 0,
 \item{multiplicative}{Logical value for whether to assume multiplicative
 rather than additive errors.}
 
-\item{mu}{Numeric value specifying the larger of the two suspected means.
-Only used if \code{multiplicative = TRUE}.}
+\item{mu1, mu2}{Numeric value specifying group means. Only used if
+\code{multiplicative = TRUE}.}
 
-\item{alpha}{Numeric value specifying significance level.}
+\item{alpha}{Numeric value specifying type-1 error rate.}
 
-\item{beta}{Numeric value specifying beta = 1 - power.}
-
-\item{type}{Character string specifying type of t-test. Choices are
-\code{"two.sample"}, \code{"one.sample"}, and \code{"paired"}.}
+\item{beta}{Numeric value specifying type-2 error rate.}
 
 \item{assay_cost}{Numeric value specifying cost of each assay.}
 
@@ -50,11 +48,12 @@ Useful for determining whether pooling is a good idea, what pool size
 minimizes costs, and how many assays are needed for a target power.
 }
 \examples{
-# Plot study costs vs. pool size with default settings
-poolcost_t()
+# Plot total study costs vs. pool size for d = 0.25, sigsq = 1, and costs of
+# $100 per assay and $0 in other per-subject costs.
+poolcost_t(d = 0.25, sigsq = 1)
 
-# Add processing error and other per-subject costs
-poolcost_t(sigsq_p = 0.2, other_costs = 0.1)
+# Repeat but with additive processing error and $10 in per-subject costs.
+poolcost_t(d = 0.25, sigsq = 1, sigsq_p = 0.5, other_costs = 10)
 
 
 }

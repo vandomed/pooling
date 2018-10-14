@@ -42,22 +42,35 @@
 #'
 #'
 #' @examples
-#' # Load datasets - pdat2 has poolwise (Y, Xtilde) values and pdat2_c has
-#' # individual-level C values. Xtilde values are affected by processing error.
+#' # Load dataset with (g, Y, Xtilde, C) values for 248 pools and list of C
+#' # values for members of each pool. Xtilde values are affected by processing
+#' error.
 #' data(pdat2)
-#' data(pdat2_c)
+#' dat <- pdat2$dat
+#' c.list <- pdat2$c.list
 #'
 #' # Estimate log-OR for X and Y adjusted for C, ignoring processing error
-#' fit1 <- p_logreg_xerrors2(g = pdat2$g, y = pdat2$y, xtilde = pdat2$xtilde,
-#'                           c = pdat2_c, errors = "neither")
+#' fit1 <- p_logreg_xerrors2(
+#'   g = dat$g,
+#'   y = dat$y,
+#'   xtilde = dat$xtilde,
+#'   c = c.list,
+#'   errors = "neither"
+#' )
 #' fit1$theta.hat
 #'
-#' # Repeat, but accounting for processing error. Takes about 1 minute to run
-#' # due to numerical integration. Gives log-OR closer to true value of 0.5.
-#' # fit2 <- p_logreg_xerrors2(g = pdat2$g, y = pdat2$y, xtilde = pdat2$xtilde,
-#' #                           c = pdat2_c, errors = "processing",
-#' #                           control = list(trace = 1))
-#' # fit2$theta.hat
+#' # Repeat, but accounting for processing error.
+#' \dontrun{
+#' fit2 <- p_logreg_xerrors2(
+#'   g = dat$g,
+#'   y = dat$y,
+#'   xtilde = dat$xtilde,
+#'   c = c.list,
+#'   errors = "processing",
+#'   control = list(trace = 1)
+#' )
+#' fit2$theta.hat
+#' }
 #'
 #'
 #' @export

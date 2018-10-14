@@ -5,18 +5,17 @@
 #'
 #'
 #' @param g Numeric vector of pool sizes to include.
-#' @param d Numeric value specifying true difference in group means.
+#' @param d Numeric value specifying true difference in group means. Only used
+#' if \code{multiplicative = FALSE}.
 #' @param sigsq Numeric value specifying the variance of observations.
 #' @param sigsq_p Numeric value specifying the variance of processing errors.
 #' @param sigsq_m Numeric value specifying the variance of measurement errors.
 #' @param multiplicative Logical value for whether to assume multiplicative
 #' rather than additive errors.
-#' @param mu Numeric value specifying the larger of the two suspected means.
-#' Only used if \code{multiplicative = TRUE}.
-#' @param alpha Numeric value specifying significance level.
-#' @param beta Numeric value specifying beta = 1 - power.
-#' @param type Character string specifying type of t-test. Choices are
-#' \code{"two.sample"}, \code{"one.sample"}, and \code{"paired"}.
+#' @param mu1,mu2 Numeric value specifying group means. Only used if
+#' \code{multiplicative = TRUE}.
+#' @param alpha Numeric value specifying type-1 error rate.
+#' @param beta Numeric value specifying type-2 error rate.
 #' @param assay_cost Numeric value specifying cost of each assay.
 #' @param other_costs Numeric value specifying other per-subject costs.
 #' @param labels Logical value.
@@ -28,42 +27,70 @@
 #'
 #'
 #' @examples
-#' # Plot study costs vs. pool size with default settings
-#' poolcost_t()
+#' # Plot total study costs vs. pool size for d = 0.25, sigsq = 1, and costs of
+#' # $100 per assay and $0 in other per-subject costs.
+#' poolcost_t(d = 0.25, sigsq = 1)
 #'
-#' # Add processing error and other per-subject costs
-#' poolcost_t(sigsq_p = 0.2, other_costs = 0.1)
+#' # Repeat but with additive processing error and $10 in per-subject costs.
+#' poolcost_t(d = 0.25, sigsq = 1, sigsq_p = 0.5, other_costs = 10)
 #'
 #'
 #'@export
 poolcost_t <- function(g = 1: 10,
-                       d = 0.2,
-                       sigsq = 1,
+                       d = NULL,
+                       sigsq,
                        sigsq_p = 0,
                        sigsq_m = 0,
                        multiplicative = FALSE,
-                       mu = 1,
+                       mu1 = NULL,
+                       mu2 = NULL,
                        alpha = 0.05,
                        beta = 0.2,
-                       type = "two.sample",
                        assay_cost = 100,
                        other_costs = 0,
                        labels = TRUE,
                        ylim = NULL) {
 
-  # Prepare data for ggplot
-  z <- qnorm(p = 1 - beta) + qnorm(p = 1 - alpha / 2)
-  if (multiplicative) {
-    sigsq_pm <- sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m +
-      sigsq_p * ifelse(g > 1, 1, 0) * sigsq_m
-    n <- 2 * ceiling(2 * z^2 / d^2 * (sigsq_pm * (mu^2 + sigsq / g) + sigsq / g))
+  # Figure out per-group sample sizes for each pool size
+  if (! multiplicative) {
+
+    n <- sapply(g, function(x) {
+      n_2t_equal(
+        d = d,
+        sigsq = sigsq / x + sigsq_p * ifelse(x > 1, 1, 0) + sigsq_m,
+        alpha = alpha,
+        beta = beta
+      )
+    })
+
   } else {
-    n <- 2 * ceiling(2 * z^2 / d^2 * (sigsq / g + sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m))
+
+    # Check that mu1 and mu2 are specified and that mu1 > mu2
+    if (is.null(mu1) | is.null(mu2)) {
+      stop("For multiplicative errors, you have to specify the group means mu1 and mu2.")
+    } else if (mu1 <= mu2) {
+      stop("mu1 should be larger than mu2")
+    }
+
+    n <- sapply(g, function(x) {
+      sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(x > 1, 1, 0)
+      n_2t_unequal(
+        d = mu1 - mu2,
+        sigsq1 = sigsq_pm * (mu1^2 + sigsq / x) + sigsq / x,
+        sigsq2 = sigsq_pm * (mu2^2 + sigsq / x) + sigsq / x,
+        alpha = alpha,
+        beta = beta
+      )
+    })
+
   }
-  costs <-  n * (assay_cost + g * other_costs)
-  df <- data.frame(g = g, n = n, costs = costs)
+
+  # Prep for ggplot
+  n.total <- 2 * n
+  costs <-  n.total * (assay_cost + g * other_costs)
+  df <- data.frame(g = g, n.total = n.total, costs = costs)
   df$lab <- 0
-  df$labeltext <- paste(n, " total assays", sep = "")
+  df$labeltext <- paste(n.total, " total assays", sep = "")
   locs <- unique(c(1, which.min(df$costs)))
   df$labeltext[-locs] <- ""
   df$lab[locs] <- 1

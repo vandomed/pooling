@@ -62,34 +62,39 @@
 #'
 #' @examples
 #' # Load simulated data for 150 case pools and 150 control pools
-#' data(pdat_matched)
-#' data(xtilde1_matched)
-#' data(xtilde0_matched)
+#' data(dat_cond_logreg)
+#' dat <- dat_cond_logreg$dat
+#' xtilde1 <- dat_cond_logreg$xtilde1
+#' xtilde0 <- dat_cond_logreg$xtilde0
 #'
 #' # Fit conditional logistic regression to estimate log-odds ratio for X and Y
 #' # adjusted for C, using the precise poolwise summed exposure X. True log-OR
 #' # for X is 0.5.
-#' truth <- cond_logreg(g = pdat_matched$g,
-#'                      xtilde1 = pdat_matched$x1,
-#'                      xtilde0 = pdat_matched$x0,
-#'                      c1 = pdat_matched$c1.model,
-#'                      c0 = pdat_matched$c0.model,
-#'                      errors = "neither",
-#'                      control = list(trace = 1))
+#' truth <- cond_logreg(
+#'   g = dat$g,
+#'   xtilde1 = dat$x1,
+#'   xtilde0 = dat$x0,
+#'   c1 = dat$c1.model,
+#'   c0 = dat$c0.model,
+#'   errors = "neither",
+#'   control = list(trace = 1)
+#' )
 #' truth$theta.hat
 #'
 #' # Suppose X is subject to additive measurement error and processing error,
 #' # and we observe Xtilde1 and Xtilde0 rather than X1 and X0. Fit model with
 #' # Xtilde's, accounting for errors (numerical integration avoided by using
 #' # probit approximation).
-#' corrected <- cond_logreg(g = pdat_matched$g,
-#'                          xtilde1 = xtilde1_matched,
-#'                          xtilde0 = xtilde0_matched,
-#'                          c1 = pdat_matched$c1.model,
-#'                          c0 = pdat_matched$c0.model,
-#'                          errors = "both",
-#'                          approx_integral = TRUE,
-#'                          control = list(trace = 1))
+#' corrected <- cond_logreg(
+#'   g = dat$g,
+#'   xtilde1 = xtilde1,
+#'   xtilde0 = xtilde0,
+#'   c1 = dat$c1.model,
+#'   c0 = dat$c0.model,
+#'   errors = "both",
+#'   approx_integral = TRUE,
+#'   control = list(trace = 1)
+#' )
 #' corrected$theta.hat
 #'
 #'

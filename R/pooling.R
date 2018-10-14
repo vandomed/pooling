@@ -10,7 +10,7 @@
 #' Package: \tab pooling \cr
 #' Type: \tab Package \cr
 #' Version: \tab 1.1.1 \cr
-#' Date: \tab 2018-07-18 \cr
+#' Date: \tab 2018-10-14 \cr
 #' License: \tab GPL-3 \cr
 #' }
 #'
@@ -24,8 +24,8 @@
 #'
 #' @docType package
 #'
-#' @importFrom cubature adaptIntegrate
-#' @import dvmisc
+#' @importFrom cubature adaptIntegrate hcubature
+#' @importFrom dvmisc iterate
 #' @import ggplot2
 #' @import ggrepel
 #' @importFrom mvtnorm dmvnorm

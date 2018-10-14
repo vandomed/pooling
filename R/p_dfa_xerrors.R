@@ -1,12 +1,10 @@
 #' Discriminant Function Approach for Estimating Odds Ratio with Normal Exposure
 #' Measured in Pools and Potentially Subject to Errors
 #'
-#' Assumes exposure given covariates and outcome is a normal-errors linear
-#' regression. Pooled exposure measurements can be assumed precise or subject to
-#' additive normal processing error and/or measurement error.
+#' Archived on 7/23/18. Please use \code{\link{p_ndfa}} instead.
 #'
 #'
-#' @param g Numeric vector with pool sizes, i.e. number of members in each pool.
+#' @param g Numeric vector of pool sizes, i.e. number of members in each pool.
 #' @param y Numeric vector of poolwise \code{Y} values (number of cases in each
 #' pool).
 #' @param xtilde Numeric vector (or list of numeric vectors, if some pools have
@@ -24,8 +22,8 @@
 #'
 #'
 #' @return
-#' List of point estimates, variance-covariance matrix, objects returned by
-#' \code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
+#' List of point estimates, variance-covariance matrix, object returned by
+#' \code{\link[stats]{nlminb}}, and AIC, for one or two models depending on
 #' \code{constant_or}. If \code{constant_or = NULL}, also returns result of a
 #' likelihood ratio test for \code{H0: sigsq_1 = sigsq_0}, which is equivalent
 #' to \code{H0: log-OR is constant}. If \code{constant_or = NULL}, returned
@@ -74,9 +72,6 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
          'measurement', or 'both'.")
   }
 
-  # Sample size
-  n <- length(y)
-
   # Get name of y input
   y.varname <- deparse(substitute(y))
   if (length(grep("$", y.varname, fixed = TRUE)) > 0) {
@@ -110,16 +105,24 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     }
   }
 
+  # Sample size
+  n <- length(y)
+
   # Get number of gammas
   n.gammas <- 2 + n.cvars
 
   # Create vector indicating which observations are pools
   Ig <- ifelse(g > 1, 1, 0)
 
-  # Create matrix of (g, Y, C) values
+  # Construct (g, Y, C) matrix
   gyc <- cbind(g, y, c)
 
-  # Separate into replicate and singles
+  # If no measurement error and xtilde is a list, just use first measurements
+  if (errors %in% c("neither", "processing") & class(xtilde) == "list") {
+    xtilde <- sapply(xtilde, function(x) x[1])
+  }
+
+  # Separate out subjects with replicates
   class.xtilde <- class(xtilde)
   if (class.xtilde == "list") {
     k <- sapply(xtilde, length)
@@ -245,7 +248,8 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
 
         # Log-likelihood
         ll.s <- sum(dnorm(x = xtilde, log = TRUE,
-                          mean = mu_xtilde.yc, sd = sqrt(sigsq_xtilde.yc)))
+                          mean = mu_xtilde.yc,
+                          sd = sqrt(sigsq_xtilde.yc)))
 
       } else {
         ll.s <- 0

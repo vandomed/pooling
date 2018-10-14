@@ -1,11 +1,31 @@
-#' Linear Regression with Outcome Measured in Pools and (Potentially) Subject to
-#' Errors
+#' Linear Regression of Y vs. Covariates with Y Measured in Pools and
+#' (Potentially) Subject to Additive Normal Errors
 #'
-#' Assumes outcome given exposure is a normal-errors linear regression. Pooled
+#' Assumes outcome given covariates is a normal-errors linear regression. Pooled
 #' outcome measurements can be assumed precise or subject to additive normal
-#' processing error and/or measurement error. Replicates can be incorporated but
-#' are not strictly required for identifiability, provided there are several
-#' different pool sizes.
+#' processing error and/or measurement error. Replicates are supported.
+#'
+#' The individual-level model of interest for Y|\strong{X} is:
+#'
+#' Y = beta_0 + \strong{beta_x}^T \strong{X} + e, e ~ N(0, sigsq)
+#'
+#' The implied model for summed Y*|\strong{X*} in a pool with g members is:
+#'
+#' Y* = g beta_0 + \strong{beta_x}^T \strong{X*} + e*, e* ~ N(0, g sigsq)
+#'
+#' The assay targets Ybar, the mean Y value for each pool, from which the sum Y*
+#' can be calculated as Y* = g Ybar. But the Ybar's may be subject to processing
+#' error and/or measurement error. Suppose Ybartilde is the imprecise version of
+#' Ybar from the assay. If both errors are present, the assumed error structure
+#' is:
+#'
+#' Ybartilde = Ybar + e_p I(g > 1) + e_m, e_p ~ N(0, sigsq_p),
+#' e_m ~ N(0, sigsq_m)
+#'
+#' with the processing error e_p and measurement error e_m assumed independent
+#' of each other. This motivates a maximum likelihood analysis for estimating
+#' \strong{theta} = (beta_0, \strong{beta_x}^T)^T based on observed
+#' (Ytilde*, \strong{X}*) values, where Ytilde* = g Ytildebar.
 #'
 #'
 #' @param g Numeric vector with pool sizes, i.e. number of members in each pool.
@@ -16,17 +36,14 @@
 #' @param errors Character string specifying the errors that \code{Y} is subject
 #' to. Choices are \code{"neither"}, \code{"processing"} for processing error
 #' only, \code{"measurement"} for measurement error only, and \code{"both"}.
+#' @param estimate_var Logical value for whether to return variance-covariance
+#' matrix for parameter estimates.
 #' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
 #'
-#' @return
-#' List containing:
-#' \enumerate{
-#' \item Numeric vector of parameter estimates.
-#' \item Variance-covariance matrix (if \code{estimate_var = TRUE}).
-#' \item Returned \code{\link[stats]{nlminb}} object from maximizing the
-#' log-likelihood function.
-#' \item Akaike information criterion (AIC).
-#' }
+#'
+#' @return List of parameter estimates, variance-covariance matrix (if
+#' requested), \code{\link[stats]{nlminb}} object, and AIC.
+#'
 #'
 #' @references
 #' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
@@ -35,17 +52,17 @@
 #'
 #'
 #' @examples
-#' # Load dataset containing data frame with (g, X1, X2, Y, Ytilde) values for
-#' # 500 pools each of size 1, 2, and 3, and list of Ytilde values where 20 of
-#' # the single-specimen pools have replicates. Ytilde values are affected by
-#' # processing error and measurement error; true regression coefficients are
-#' # (0.25, 0.5, 0.25).
+#' # Load dataset containing data frame with (g, X1*, X2*, Y*, Ytilde*) values
+#' # for 500 pools each of size 1, 2, and 3, and list of Ytilde values where 20
+#' # of the single-specimen pools have replicates. Ytilde values are affected by
+#' # processing error and measurement error; true parameter values are
+#' # beta_0 = 0.25, beta_x1 = 0.5, beta_x2 = 0.25, sigsq = 1.
 #' data(dat_p_linreg_yerrors)
 #' dat <- dat_p_linreg_yerrors$dat
 #' reps <- dat_p_linreg_yerrors$reps
 #'
-#' # Fit Ytilde vs. (X1, X2) ignoring errors in Ytilde (leads to loss of
-#' # precision, but does not induce bias).
+#' # Fit Ytilde* vs. (X1*, X2*) ignoring errors in Ytilde (leads to loss of
+#' # precision and overestimated sigsq, but no bias).
 #' fit.naive <- p_linreg_yerrors(
 #'   g = dat$g,
 #'   y = dat$y,
@@ -54,26 +71,27 @@
 #' )
 #' fit.naive$theta.hat
 #'
-#' # Account for errors in Ytilde, without using replicates
+#' # Account for errors in Ytilde*, without using replicates
 #' fit.corrected.noreps <- p_linreg_yerrors(
 #'   g = dat$g,
 #'   y = dat$ytilde,
-#'   x = dat[, x("x1", "x2")],
+#'   x = dat[, c("x1", "x2")],
 #'   errors = "both"
 #' )
 #' fit.corrected.noreps$theta.hat
 #'
-#' # Account for errors in Ytilde, incorporating the 20 replicates
+#' # Account for errors in Ytilde*, incorporating the 20 replicates
 #' fit.corrected.reps <- p_linreg_yerrors(
 #'   g = dat$g,
 #'   y = reps,
-#'   x = dat[, x("x1", "x2")],
+#'   x = dat[, c("x1", "x2")],
 #'   errors = "both"
 #' )
 #' fit.corrected.reps$theta.hat
 #'
 #' # In this trial, incorporating replicates resulted in much better estimates
-#' # of sigsq_p (truly 0.4) and sigsq_m (truly = 0.2) but very similar betahat's.
+#' # of sigsq (truly 1), sigsq_p (truly 0.4), and sigsq_m (truly = 0.2) but very
+#' # similar regression coefficient estimates.
 #' fit.corrected.noreps$theta.hat
 #' fit.corrected.reps$theta.hat
 #'

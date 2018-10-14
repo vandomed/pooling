@@ -1,27 +1,19 @@
 #' Plot Log-OR vs. X for Normal Discriminant Function Approach
 #'
-#' When \code{\link{p_dfa_xerrors}} is fit with \code{constant_or = FALSE}, the
-#' log-odds ratio for \code{X} depends on the value of \code{X}. This function
-#' plots the log-odds ratio vs. \code{X}.
+#' Archived on 7/23/2018. Please use \code{\link{plot_ndfa}} instead.
 #'
 #'
 #' @param estimates Numeric vector of point estimates for
 #' \code{(gamma_0, gamma_y, gamma_c^T, sigsq)}.
-#'
 #' @param varcov Numeric matrix with variance-covariance matrix for
 #' \code{estimates}. If \code{NULL}, 95\% confidence bands are omitted.
-#'
-#' @param xrange Numeric vector specifying range of \code{X} values to plot.
-#'
-#' @param xname Character vector specifying name of \code{X} variable, for
+#' @param xrange Numeric vector specifying range of X values to plot.
+#' @param xname Character vector specifying name of X variable, for
 #' plot title and x-axis label.
-#'
 #' @param cvals Numeric vector or list of numeric vectors specifying covariate
 #' values to use in log-odds ratio calculations.
-#'
 #' @param set_labels Character vector of labels for the sets of covariate
 #' values. Only used if \code{cvals} is a list.
-#'
 #' @param set_panels Logical value for whether to use separate panels for each
 #' set of covariate values, as opposed to using different colors on a single
 #' plot.

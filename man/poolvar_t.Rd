@@ -21,12 +21,6 @@ poolvar_t(g = 1:10, sigsq = 1, sigsq_p = 0, sigsq_m = 0,
 \item{multiplicative}{Logical value for whether to assume multiplicative
 rather than additive errors.}
 
-\item{mu}{Numeric value specifying the larger of the two suspected means.
-Only used if \code{multiplicative = TRUE}.}
-
-\item{type}{Character string specifying type of t-test. Choices are
-\code{"two.sample"}, \code{"one.sample"}, and \code{"paired"}.}
-
 \item{assay_cost}{Numeric value specifying cost of each assay.}
 
 \item{other_costs}{Numeric value specifying other per-subject costs.}

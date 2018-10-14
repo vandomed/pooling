@@ -9,7 +9,7 @@ p_dfa_xerrors(g, y, xtilde, c = NULL, constant_or = TRUE, errors = "both",
   ...)
 }
 \arguments{
-\item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
+\item{g}{Numeric vector of pool sizes, i.e. number of members in each pool.}
 
 \item{y}{Numeric vector of poolwise \code{Y} values (number of cases in each
 pool).}
@@ -32,8 +32,8 @@ only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 \item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
 }
 \value{
-List of point estimates, variance-covariance matrix, objects returned by
-\code{\link[stats]{nlminb}}, and AICs, for one or two models depending on
+List of point estimates, variance-covariance matrix, object returned by
+\code{\link[stats]{nlminb}}, and AIC, for one or two models depending on
 \code{constant_or}. If \code{constant_or = NULL}, also returns result of a
 likelihood ratio test for \code{H0: sigsq_1 = sigsq_0}, which is equivalent
 to \code{H0: log-OR is constant}. If \code{constant_or = NULL}, returned
@@ -41,9 +41,7 @@ objects with names ending in 1 are for model that does not assume constant
 log-OR, and those ending in 2 are for model that assumes constant log-OR.
 }
 \description{
-Assumes exposure given covariates and outcome is a normal-errors linear
-regression. Pooled exposure measurements can be assumed precise or subject to
-additive normal processing error and/or measurement error.
+Archived on 7/23/18. Please use \code{\link{p_ndfa}} instead.
 }
 \examples{
 # Load dataset containing poolwise (Y, Xtilde, C) values for pools of size

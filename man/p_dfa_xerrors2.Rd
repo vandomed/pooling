@@ -7,7 +7,6 @@ Measured in Pools and Potentially Subject to Errors}
 \usage{
 p_dfa_xerrors2(g, y, xtilde, c = NULL, constant_or = TRUE,
   errors = "both", integrate_tol = 1e-08,
-  integrate_tol_start = integrate_tol,
   integrate_tol_hessian = integrate_tol, estimate_var = TRUE,
   fix_posdef = FALSE, ...)
 }
@@ -41,6 +40,9 @@ estimating the Hessian matrix only. Sometimes more precise integration
 (i.e. smaller tolerance) helps prevent cases where the inverse Hessian is not
 positive definite.}
 
+\item{estimate_var}{Logical value for whether to return variance-covariance
+matrix for parameter estimates.}
+
 \item{fix_posdef}{Logical value for whether to repeatedly reduce
 \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
 to avoid non-positive definite variance-covariance matrix.}
@@ -57,28 +59,38 @@ with names ending in 1 are for model that does not assume constant log-OR,
 and those ending in 2 are for model that assumes constant log-OR.
 }
 \description{
-Assumes exposure given covariates and outcome is a constant-scale Gamma
-regression. Pooled exposure measurements can be assumed precise or subject to
-multiplicative lognormal processing error and/or measurement error.
+Archived on 7/23/18. Please use \code{\link{p_gdfa}} instead.
 }
 \examples{
-# Load datasets - pdat2 has poolwise (Y, Xtilde) values and pdat2_c has
-# individual-level C values. Xtilde values are affected by processing error.
+# Load dataset with (g, Y, Xtilde, C) values for 248 pools and list of C
+# values for members of each pool. Xtilde values are affected by processing
+# error.
 data(pdat2)
-data(pdat2_c)
+dat <- pdat2$dat
+c.list <- pdat2$c.list
 
 # Estimate log-OR for X and Y adjusted for C, ignoring processing error
-fit1 <- p_dfa_xerrors2(g = pdat2$g, y = pdat2$y, xtilde = pdat2$xtilde,
-                       c = pdat2_c, errors = "neither")
+fit1 <- p_dfa_xerrors2(
+  g = dat$g,
+  y = dat$y,
+  xtilde = dat$xtilde,
+  c = c.list,
+  errors = "neither"
+)
 fit1$estimates
 
-# Repeat, but accounting for processing error. Takes about 5 minutes to run
-# due to numerical integration. Gives log-OR closer to true value of 0.5.
-# fit2 <- p_dfa_xerrors2(g = pdat2$g, y = pdat2$y, xtilde = pdat2$xtilde,
-#                        c = pdat2_c, errors = "processing",
-#                        control = list(trace = 1))
-# fit2$estimates
-
+# Repeat, but accounting for processing error.
+\dontrun{
+fit2 <- p_dfa_xerrors2(
+  g = dat$g,
+  y = dat$y,
+  xtilde = dat$xtilde,
+  c = c.list,
+  errors = "processing",
+  control = list(trace = 1)
+)
+fit2$estimates
+}
 
 }
 \references{

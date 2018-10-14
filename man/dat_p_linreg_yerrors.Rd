@@ -8,8 +8,6 @@
 Simulated data in R.
 }
 \description{
-List containing (1) data frame with poolwise (Y, X1, X2) values and (2) list
-with replicate Y values. Data were generated under linear regression of Y on
-(X1, X2) with beta_0 = 0.25, beta_x1 = 0.5, and beta_x2 = 0.25, with Y
-subject to processing error and measurement error.
+List containing (1) data frame with poolwise (g, Y, X1, X2) values and (2)
+list with replicate Y values.
 }

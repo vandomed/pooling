@@ -3,15 +3,11 @@
 \docType{data}
 \name{pdat2}
 \alias{pdat2}
-\title{Dataset with Simulated (Y, Xtilde) Values for Examples in p_dfa_xerrors2 and
-p_logreg_xerrors2}
+\title{Dataset for Examples in p_dfa_xerrors2 and p_logreg_xerrors2}
 \source{
 Simulated data in R.
 }
 \description{
-Includes 248 pooled observations, with a roughly equal number of pools of
-size 1, 2, and 3. The individual-level \code{C} values are stored as a
-separate list called \code{\link{pdat2_c}}. The data were generated with
-a true log-odds ratio of 0.5 for \code{X} and \code{Y}, adjusted for
-\code{C}. The \code{Xtilde} measurements are subject to processing error.
+List containing (1) data frame with poolwise (g, Y, Xtilde, C) values and
+(2) list of C values for members of each pool.
 }
