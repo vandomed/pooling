@@ -2,4 +2,8 @@
 ^\.Rproj\.user$
 ^LICENSE$
 ^shiny_apps$
+^README.*$
+^Thumbs.db$
 ^misc$
+^.travis.yml$
+^bibliography.bib$
