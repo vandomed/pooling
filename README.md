@@ -1,7 +1,7 @@
 Fit Poolwise Regression Models
 ================
 Dane Van Domelen <br> <vandomed@gmail.com>
-2018-10-14
+2018-10-16
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 [![Build Status](https://travis-ci.org/vandomed/pooling.svg?branch=master)](https://travis-ci.org/vandomed/pooling)
@@ -34,7 +34,7 @@ install_github("vandomed/pooling")
 Designing a pooling study
 -------------------------
 
-Pooling works great in the two-sample t-test scenario, because it reduces the variance of each observation from *σ*<sup>2</sup> to *σ*<sup>2</sup>/*g*, where *g* is the pool size.
+Pooling works great in the two-sample t-test scenario, because it reduces the variance of each observation from *σ*<sup>2</sup> to $\\frac{\\sigma^2}{g}$, where *g* is the pool size.
 
 The *poolcost\_t* function lets you plot total study costs vs. pool size. To illustrate, suppose you want 80% power to detect a difference in group means of 0.25, and the biomarker has variance 1. If it costs $100 per assay and $10 in other per-subject recruitment costs, this is what it looks like:
 
@@ -43,9 +43,9 @@ p <- poolcost_t(d = 0.25, sigsq = 1, assay_cost = 100, other_costs = 10)
 p
 ```
 
-Analyzing data from a pooling study
------------------------------------
+![](README-unnamed-chunk-3-1.png)
 
+<!-- ## Analyzing data from a pooling study -->
 References
 ----------
 
