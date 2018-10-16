@@ -63,7 +63,7 @@ poolpower_t <- function(g = c(1, 3, 10),
   # Calculate power vs. n.pergroup for each pool size
   if (! multiplicative) {
 
-    df <- power_2t_equal %>% dvmisc::iterate(
+    df <- dvmisc::power_2t_equal %>% dvmisc::iterate(
       d = d,
       sigsq = sigsq / g + sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m,
       n = n,
@@ -74,7 +74,7 @@ poolpower_t <- function(g = c(1, 3, 10),
   } else {
 
     sigsq_pm <- sigsq_m + sigsq_p * (1 + sigsq_m) * ifelse(g > 1, 1, 0)
-    df <- power_2t_unequal %>% dvmisc::iterate(
+    df <- dvmisc::power_2t_unequal %>% dvmisc::iterate(
       d = d,
       sigsq1 = sigsq_pm * (mu1^2 + sigsq / g) + sigsq / g,
       sigsq2 = sigsq_pm * (mu2^2 + sigsq / g) + sigsq / g,

@@ -55,7 +55,7 @@ poolcost_t <- function(g = 1: 10,
   if (! multiplicative) {
 
     n <- sapply(g, function(x) {
-      n_2t_equal(
+      dvmisc::n_2t_equal(
         d = d,
         sigsq = sigsq / x + sigsq_p * ifelse(x > 1, 1, 0) + sigsq_m,
         alpha = alpha,
@@ -74,7 +74,7 @@ poolcost_t <- function(g = 1: 10,
 
     n <- sapply(g, function(x) {
       sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(x > 1, 1, 0)
-      n_2t_unequal(
+      dvmisc::n_2t_unequal(
         d = mu1 - mu2,
         sigsq1 = sigsq_pm * (mu1^2 + sigsq / x) + sigsq / x,
         sigsq2 = sigsq_pm * (mu2^2 + sigsq / x) + sigsq / x,

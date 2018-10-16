@@ -117,7 +117,7 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
   if (! (is.numeric(integrate_tol_start) & dvmisc::inside(integrate_tol_start, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_start' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate_tol_hessian) & dvmiscinside(integrate_tol_hessian, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol_hessian) & dvmisc::inside(integrate_tol_hessian, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
   }
   if (! is.logical(estimate_var)) {

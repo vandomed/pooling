@@ -105,6 +105,7 @@ poolvar_t <- function(g = 1: 10,
                      max = c(max1, max2))
 
     # Create plot
+    Group <- NULL
     p <- ggplot(df, aes(g, var_ratio_adj, color = Group)) +
       geom_point() +
       labs(title = "Ratio of Variances, Traditional vs. Pooled",

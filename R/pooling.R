@@ -25,6 +25,7 @@
 #' @docType package
 #'
 #' @importFrom cubature adaptIntegrate hcubature
+#' @importFrom dplyr %>%
 #' @import ggplot2
 #' @import ggrepel
 #' @importFrom mvtnorm dmvnorm
