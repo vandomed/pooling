@@ -106,6 +106,7 @@ poolpower_t <- function(g = c(1, 3, 10),
   }
 
   # Create plot
+  costs <- NULL
   p <- ggplot(df, aes(costs, power, group = g, color = as.factor(g))) +
     geom_point() +
     geom_line() +
@@ -120,6 +121,7 @@ poolpower_t <- function(g = c(1, 3, 10),
 
   # Label points with sufficient power
   if (labels) {
+    power.lab <- NULL
     p <- p + geom_label_repel(
       data = subset(df, power.lab == 1),
       aes_string(x = "costs", y = "power", label = "costlabel"),

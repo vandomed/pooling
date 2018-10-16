@@ -168,10 +168,10 @@ p_gdfa <- function(g,
     stop("The input 'errors' should be set to 'neither', 'processing',
          'measurement', or 'both'.")
   }
-  if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol) & dvmisc::inside(integrate_tol, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol_hessian) & dvmisc::inside(integrate_tol_hessian, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
   }
   if (! is.logical(estimate_var)) {
