@@ -90,7 +90,9 @@ poolcost_t <- function(g = 1: 10,
   costs <-  n.total * (assay_cost + g * other_costs)
   df <- data.frame(g = g, n.total = n.total, costs = costs)
   df$lab <- 0
-  df$labeltext <- paste(n.total, " total assays", sep = "")
+  savings <- sprintf("%.0f", (1 - df$costs / df$costs[1]) * 100)
+  df$labeltext <- paste(n.total, " total assays (", savings, "% savings)", sep = "")
+  df$labeltext[1] <- paste(n.total[1], " total assays", sep = "")
   locs <- unique(c(1, which.min(df$costs)))
   df$labeltext[-locs] <- ""
   df$lab[locs] <- 1
@@ -98,7 +100,7 @@ poolcost_t <- function(g = 1: 10,
   # Create labels
   if (all(df$costs > 1000)) {
     df$costs <- df$costs / 1000
-    dollar.units <- "($1,000)"
+    dollar.units <- "($1,000's)"
   } else {
     dollar.units <- "($)"
   }
