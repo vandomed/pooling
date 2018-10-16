@@ -111,13 +111,13 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
       stop("The input 'samp_y1y0' is the sampling probabilities for cases and controls, and should be a numeric vector of two probabilities adding to 1.")
     }
   }
-  if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol) & dvmisc::inside(integrate_tol, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate_tol_start) & inside(integrate_tol_start, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol_start) & dvmisc::inside(integrate_tol_start, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_start' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol_hessian) & dvmiscinside(integrate_tol_hessian, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
   }
   if (! is.logical(estimate_var)) {
