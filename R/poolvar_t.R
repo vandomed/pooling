@@ -13,8 +13,6 @@
 #' rather than additive errors.
 #' @param mu1,mu2 Numeric value specifying group means. Only used if
 #' \code{multiplicative = TRUE}.
-#' @param alpha Numeric value specifying type-1 error rate.
-#' @param beta Numeric value specifying type-2 error rate.
 #' @param assay_cost Numeric value specifying cost of each assay.
 #' @param other_costs Numeric value specifying other per-subject costs.
 #' @param labels Logical value.

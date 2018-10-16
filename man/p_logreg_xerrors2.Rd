@@ -88,7 +88,7 @@ under review.
 \examples{
 # Load dataset with (g, Y, Xtilde, C) values for 248 pools and list of C
 # values for members of each pool. Xtilde values are affected by processing
-error.
+# error.
 data(pdat2)
 dat <- pdat2$dat
 c.list <- pdat2$c.list
