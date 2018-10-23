@@ -92,7 +92,7 @@ poolpower_t <- function(g = c(1, 3, 10),
   df$power.lab <- c(0, ifelse(diff(sign(df$power - (1 - beta))) >= 1, 1, 0))
 
   # Exclude values with power > 99.9%
-  #df <- df %>% dplyr::filter(power <= 0.999)
+  # df <- df %>% dplyr::filter(power <= 0.999)
   df <- subset(df, power <= 0.999)
 
   # Create labels
