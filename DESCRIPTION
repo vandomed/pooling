@@ -2,7 +2,7 @@ Package: pooling
 Type: Package
 Title: Fit Poolwise Regression Models
 Version: 1.1.1
-Date: 2018-10-16
+Date: 2018-10-23
 Author: Dane R. Van Domelen
 Maintainer: Dane R. Van Domelen <vandomed@gmail.com>
 Description: Functions for calculating power and fitting regression models in studies where a biomarker is measured in "pooled" samples rather than for each individual. Approaches for handling measurement error follow the framework of Schisterman et al. (2010) <doi:10.1002/sim.3823>.
