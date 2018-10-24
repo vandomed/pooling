@@ -57,7 +57,7 @@ poolpower_t <- function(g = c(1, 3, 10),
 
   # Create vector from 3 to assays per group for 99.9% power with traditional
   # design
-  n <- 3: ceiling(2 * (qnorm(0.999) + qnorm(1 - alpha / 2))^2 /
+  n.pergroup <- 3: ceiling(2 * (qnorm(0.999) + qnorm(1 - alpha / 2))^2 /
                     d^2 * (sigsq + sigsq_m))
 
   # Calculate power vs. n.pergroup for each pool size
@@ -66,7 +66,7 @@ poolpower_t <- function(g = c(1, 3, 10),
     df <- dvmisc::power_2t_equal %>% dvmisc::iterate(
       d = d,
       sigsq = sigsq / g + sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m,
-      n = n,
+      n = n.pergroup,
       alpha = alpha,
       varnames = "power"
     )
@@ -78,15 +78,15 @@ poolpower_t <- function(g = c(1, 3, 10),
       d = d,
       sigsq1 = sigsq_pm * (mu1^2 + sigsq / g) + sigsq / g,
       sigsq2 = sigsq_pm * (mu2^2 + sigsq / g) + sigsq / g,
-      n = n,
+      n = n.pergroup,
       alpha = alpha
     )
 
   }
 
   # Prep for ggplot
-  df$g <- rep(g, each = length(n))
-  df$n.assays <- df$n * 2
+  df$g <- rep(g, each = length(n.pergroup))
+  df$n.assays <- df$n.pergroup * 2
   df$n.subjects <- df$g * df$n.assays
   df$costs <- df$n.assays * assay_cost + df$n.subjects * other_costs
   df$power.lab <- c(0, ifelse(diff(sign(df$power - (1 - beta))) >= 1, 1, 0))

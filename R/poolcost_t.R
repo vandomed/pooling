@@ -72,7 +72,7 @@ poolcost_t <- function(g = 1: 10,
       stop("mu1 should be larger than mu2")
     }
 
-    n <- sapply(g, function(x) {
+    n.pergroup <- sapply(g, function(x) {
       sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(x > 1, 1, 0)
       dvmisc::n_2t_unequal(
         d = mu1 - mu2,
@@ -86,13 +86,13 @@ poolcost_t <- function(g = 1: 10,
   }
 
   # Prep for ggplot
-  n.total <- 2 * n
-  costs <-  n.total * (assay_cost + g * other_costs)
-  df <- data.frame(g = g, n.total = n.total, costs = costs)
+  n.assays <- 2 * n
+  costs <-  n.assays * (assay_cost + g * other_costs)
+  df <- data.frame(g = g, n.assays = n.assays, costs = costs)
   df$lab <- 0
   savings <- sprintf("%.0f", (1 - df$costs / df$costs[1]) * 100)
-  df$labeltext <- paste(n.total, " total assays (", savings, "% savings)", sep = "")
-  df$labeltext[1] <- paste(n.total[1], " total assays", sep = "")
+  df$labeltext <- paste(n.assays, " total assays (", savings, "% savings)", sep = "")
+  df$labeltext[1] <- paste(n.assays[1], " total assays", sep = "")
   locs <- unique(c(1, which.min(df$costs)))
   df$labeltext[-locs] <- ""
   df$lab[locs] <- 1

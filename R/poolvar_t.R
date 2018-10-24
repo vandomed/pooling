@@ -96,11 +96,13 @@ poolvar_t <- function(g = 1: 10,
     max2[which.max(var_ratio_adj2)] <- 1
 
     # Prep for ggplot
-    df <- data.frame(g = g,
-                     Group = as.factor(rep(c(1, 2), each = length(g))),
-                     var_ratio = c(var_ratio1, var_ratio2),
-                     var_ratio_adj = c(var_ratio_adj1, var_ratio_adj2),
-                     max = c(max1, max2))
+    df <- data.frame(
+      g = g,
+      Group = as.factor(rep(c(1, 2), each = length(g))),
+      var_ratio = c(var_ratio1, var_ratio2),
+      var_ratio_adj = c(var_ratio_adj1, var_ratio_adj2),
+      max = c(max1, max2)
+    )
 
     # Create plot
     Group <- NULL
