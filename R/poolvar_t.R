@@ -58,10 +58,17 @@ poolvar_t <- function(g = 1: 10,
     max[which.max(var_ratio_adj)] <- 1
 
     # Prep for ggplot
-    df <- data.frame(g = g,
-                     var_ratio = var_ratio,
-                     var_ratio_adj = var_ratio_adj,
-                     max = max)
+    df <- data.frame(
+      g = g,
+      var_ratio = var_ratio,
+      var_ratio_adj = var_ratio_adj,
+      max = max
+    )
+
+    # Default ylim
+    if (is.null(ylim)) {
+      ylim <- c(0, max(1, max(var_ratio_adj)) * 1.1)
+    }
 
     # Create plot
     p <- ggplot(df, aes(g, var_ratio_adj)) +
@@ -69,7 +76,9 @@ poolvar_t <- function(g = 1: 10,
       labs(title = "Ratio of Variances, Traditional vs. Pooled",
            y = "Ratio, adjusted for total costs/assay",
            x = "Pool size") +
+      ylim(ylim) +
       geom_hline(yintercept = 1, linetype = 2) +
+      scale_x_continuous(breaks = g) +
       theme_bw() +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank())
@@ -89,20 +98,25 @@ poolvar_t <- function(g = 1: 10,
       (sigsq_pm * (mu2^2 + sigsq / g) + sigsq / g)
 
     # Calculate cost-adjusted ratio of variances and find max
-    var_ratio_adj1 <- var_ratio1 * costs.ratio
-    var_ratio_adj2 <- var_ratio2 * costs.ratio
+    var_ratio1_adj <- var_ratio1 * costs.ratio
+    var_ratio2_adj <- var_ratio2 * costs.ratio
     max1 <- max2 <- rep(0, length(g))
-    max1[which.max(var_ratio_adj1)] <- 1
-    max2[which.max(var_ratio_adj2)] <- 1
+    max1[which.max(var_ratio1_adj)] <- 1
+    max2[which.max(var_ratio2_adj)] <- 1
 
     # Prep for ggplot
     df <- data.frame(
       g = g,
       Group = as.factor(rep(c(1, 2), each = length(g))),
       var_ratio = c(var_ratio1, var_ratio2),
-      var_ratio_adj = c(var_ratio_adj1, var_ratio_adj2),
+      var_ratio_adj = c(var_ratio1_adj, var_ratio2_adj),
       max = c(max1, max2)
     )
+
+    # Default ylim
+    if (is.null(ylim)) {
+      ylim <- c(0, max(1, max(c(var_ratio1_adj, var_ratio2_adj))) * 1.1)
+    }
 
     # Create plot
     Group <- NULL
@@ -111,7 +125,9 @@ poolvar_t <- function(g = 1: 10,
       labs(title = "Ratio of Variances, Traditional vs. Pooled",
            y = "Ratio, adjusted for total costs/assay",
            x = "Pool size") +
+      ylim(ylim) +
       geom_hline(yintercept = 1, linetype = 2) +
+      scale_x_continuous(breaks = g) +
       theme_bw() +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank())
@@ -131,10 +147,10 @@ poolvar_t <- function(g = 1: 10,
     )
   }
 
-  # Adjust ylim
-  if (! is.null(ylim)) {
-    p <- p + ylim(ylim)
-  }
+  # # Adjust ylim
+  # if (! is.null(ylim)) {
+  #   p <- p + ylim(ylim)
+  # }
   p
 
 }
