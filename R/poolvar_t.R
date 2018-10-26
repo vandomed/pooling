@@ -140,17 +140,11 @@ poolvar_t <- function(g = 1: 10,
       data = subset(df, max == 1),
       aes(g, var_ratio_adj,
           label = paste(round(var_ratio_adj, 1), " (g = ", g, ")", sep = "")),
-      box.padding = 0.5,
-      point.padding = 0.3,
+      min.segment.length = 0,
       label.padding = 0.4,
       show.legend = FALSE
     )
   }
-
-  # # Adjust ylim
-  # if (! is.null(ylim)) {
-  #   p <- p + ylim(ylim)
-  # }
   p
 
 }

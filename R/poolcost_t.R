@@ -122,11 +122,10 @@ poolcost_t <- function(g = 1: 10,
 
   # Label min
   if (labels) {
-    p <- p + geom_label_repel(point.padding = 0.3,
-                              box.padding = 1.5,
-                              direction = "y",
-                              nudge_y = max(df$costs) / 25,
-                              label.padding = 0.4)
+    p <- p + geom_label_repel(
+      min.segment.length = 0,
+      label.padding = 0.4
+    )
   }
   p
 

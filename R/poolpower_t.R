@@ -85,7 +85,7 @@ poolpower_t <- function(g = c(1, 3, 10),
         n = n,
         alpha = alpha
       )
-      df <- df %>% bind_rows(df.ii)
+      df <- df %>% dplyr::bind_rows(df.ii)
     }
 
   }
@@ -117,11 +117,12 @@ poolpower_t <- function(g = c(1, 3, 10),
     geom_line() +
     labs(title = "Power vs. Total Study Costs",
          y = "Power",
-         x = paste("Study costs", dollar.units),
+         x = paste("Total costs", dollar.units),
          color = "Pool size") +
     geom_hline(yintercept = unique(c(0, 0.5, 1 - beta, 1)), linetype = 2) +
     theme_bw() +
-    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank()) +
     scale_y_continuous(breaks = unique(c(0, 0.5, 1 - beta, 1)))
 
   # Label points with sufficient power
@@ -130,8 +131,10 @@ poolpower_t <- function(g = c(1, 3, 10),
     p <- p + geom_label_repel(
       data = subset(df, power.lab == 1),
       aes_string(x = "costs", y = "power", label = "costlabel"),
-      box.padding = 0.5, point.padding = 0.3,
-      show.legend = FALSE)
+      min.segment.length = 0,
+      label.padding = 0.4,
+      show.legend = FALSE
+    )
   }
   p
 
