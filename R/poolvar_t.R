@@ -123,7 +123,7 @@ poolvar_t <- function(g = 1: 10,
     p <- ggplot(df, aes(g, var_ratio_adj, color = Group)) +
       geom_point() +
       labs(title = "Ratio of Variances, Traditional vs. Pooled",
-           y = "Ratio, adjusted for total costs/assay",
+           y = "Cost-adjusted ratio",
            x = "Pool size") +
       ylim(ylim) +
       geom_hline(yintercept = 1, linetype = 2) +

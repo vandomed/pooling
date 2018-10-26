@@ -103,8 +103,8 @@ poolpower_t <- function(g = c(1, 3, 10),
   # Create labels
   if (all(df$costs[df$power.lab == 1] > 1000)) {
     df$costs <- df$costs / 1000
-    df$costlabel <- paste("$", df$costs, "k (", df$n.assays, " total assays)", sep = "")
-    dollar.units <- "($1,000)"
+    df$costlabel <- paste("$", sprintf("%.1f", df$costs), "k (", df$n.assays, " total assays)", sep = "")
+    dollar.units <- "($1,000's)"
   } else {
     df$costlabel <- paste("$", df$costs, " (", df$n.assays, " total assays)", sep = "")
     dollar.units <- "($)"
