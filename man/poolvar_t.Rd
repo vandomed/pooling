@@ -5,14 +5,20 @@
 \title{Visualize Ratio of Variance of Each Pooled Measurement to Variance of Each
 Unpooled Measurement as Function of Pool Size}
 \usage{
-poolvar_t(g = 1:10, sigsq, sigsq_p = 0, sigsq_m = 0,
-  multiplicative = FALSE, mu1 = NULL, mu2 = NULL, assay_cost = 100,
-  other_costs = 0, labels = TRUE, ylim = NULL)
+poolvar_t(g = 1:10, mu1 = NULL, mu2 = NULL, sigsq, sigsq1 = NULL,
+  sigsq2 = NULL, sigsq_p = 0, sigsq_m = 0, multiplicative = FALSE,
+  assay_cost = 100, other_costs = 0, labels = TRUE, ylim = NULL)
 }
 \arguments{
 \item{g}{Numeric vector of pool sizes to include.}
 
+\item{mu1, mu2}{Numeric value specifying group means. Required if
+\code{multiplicative = TRUE}.}
+
 \item{sigsq}{Numeric value specifying the variance of observations.}
+
+\item{sigsq1, sigsq2}{Numeric value specifying the variance of observations
+for each group.}
 
 \item{sigsq_p}{Numeric value specifying the variance of processing errors.}
 
@@ -20,9 +26,6 @@ poolvar_t(g = 1:10, sigsq, sigsq_p = 0, sigsq_m = 0,
 
 \item{multiplicative}{Logical value for whether to assume multiplicative
 rather than additive errors.}
-
-\item{mu1, mu2}{Numeric value specifying group means. Only used if
-\code{multiplicative = TRUE}.}
 
 \item{assay_cost}{Numeric value specifying cost of each assay.}
 

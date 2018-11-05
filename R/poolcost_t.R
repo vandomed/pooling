@@ -5,15 +5,16 @@
 #'
 #'
 #' @param g Numeric vector of pool sizes to include.
-#' @param d Numeric value specifying true difference in group means. Only used
-#' if \code{multiplicative = FALSE}.
+#' @param d Numeric value specifying true difference in group means.
+#' @param mu1,mu2 Numeric value specifying group means. Required if
+#' \code{multiplicative = TRUE}.
 #' @param sigsq Numeric value specifying the variance of observations.
+#' @param sigsq1,sigsq2 Numeric value specifying the variance of observations
+#' for each group.
 #' @param sigsq_p Numeric value specifying the variance of processing errors.
 #' @param sigsq_m Numeric value specifying the variance of measurement errors.
 #' @param multiplicative Logical value for whether to assume multiplicative
 #' rather than additive errors.
-#' @param mu1,mu2 Numeric value specifying group means. Only used if
-#' \code{multiplicative = TRUE}.
 #' @param alpha Numeric value specifying type-1 error rate.
 #' @param beta Numeric value specifying type-2 error rate.
 #' @param assay_cost Numeric value specifying cost of each assay.
@@ -38,12 +39,14 @@
 #'@export
 poolcost_t <- function(g = 1: 10,
                        d = NULL,
-                       sigsq,
+                       mu1 = NULL,
+                       mu2 = NULL,
+                       sigsq = NULL,
+                       sigsq1 = NULL,
+                       sigsq2 = NULL,
                        sigsq_p = 0,
                        sigsq_m = 0,
                        multiplicative = FALSE,
-                       mu1 = NULL,
-                       mu2 = NULL,
                        alpha = 0.05,
                        beta = 0.2,
                        assay_cost = 100,
@@ -51,37 +54,69 @@ poolcost_t <- function(g = 1: 10,
                        labels = TRUE,
                        ylim = NULL) {
 
+  # Error checking
+  if (! is.null(sigsq) & (! is.null(sigsq1) | ! is.null(sigsq2))) {
+    stop("Please specify sigsq or specify sigsq1 and sigsq2")
+  }
+  if (! is.null(d) & (! is.null(mu1) | ! is.null(mu2))) {
+    stop("Please specify d or specify mu1 and mu2")
+  }
+
+  # If sigsq specified, set sigsq1 = sigsq2 = sigsq
+  if (! is.null(sigsq)) {
+    sigsq1 <- sigsq2 <- sigsq
+  }
+
   # Figure out per-group sample sizes for each pool size
   if (! multiplicative) {
 
-    n <- sapply(g, function(x) {
-      dvmisc::n_2t_equal(
-        d = d,
-        sigsq = sigsq / x + sigsq_p * ifelse(x > 1, 1, 0) + sigsq_m,
-        alpha = alpha,
-        beta = beta
-      )
-    })
+    # Calculate d if mu1 and mu2 are specified
+    if (is.null(d)) {
+      d <- abs(mu1 - mu2)
+    }
+
+    # Calculate variance of errors
+    sigsq_pm <- sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m
+
+    # Calculate per-group number of assays required for each pool size
+    n <- mapply(
+      FUN = function(G, SIGSQ_PM) {
+        n_2t_unequal(
+          d = d,
+          sigsq1 = sigsq1 / G + SIGSQ_PM,
+          sigsq2 = sigsq2 / G + SIGSQ_PM,
+          alpha = alpha,
+          beta = beta
+        )
+      },
+      G = g, SIGSQ_PM = sigsq_pm
+    )
 
   } else {
 
     # Check that mu1 and mu2 are specified and that mu1 > mu2
     if (is.null(mu1) | is.null(mu2)) {
-      stop("For multiplicative errors, you have to specify the group means mu1 and mu2.")
+      stop("For multiplicative errors, you have to specify mu1 and mu2.")
     } else if (mu1 <= mu2) {
       stop("mu1 should be larger than mu2")
     }
 
-    n.pergroup <- sapply(g, function(x) {
-      sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(x > 1, 1, 0)
-      dvmisc::n_2t_unequal(
-        d = mu1 - mu2,
-        sigsq1 = sigsq_pm * (mu1^2 + sigsq / x) + sigsq / x,
-        sigsq2 = sigsq_pm * (mu2^2 + sigsq / x) + sigsq / x,
-        alpha = alpha,
-        beta = beta
-      )
-    })
+    # Calculate variance of errors
+    sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(g > 1, 1, 0)
+
+    # Calculate per-group number of assays required for each pool size
+    n <- mapply(
+      FUN = function(G, SIGSQ_PM) {
+        n_2t_unequal(
+          d = mu1 - mu2,
+          sigsq1 = SIGSQ_PM * (mu1^2 + sigsq1 / G) + sigsq1 / G,
+          sigsq2 = SIGSQ_PM * (mu2^2 + sigsq2 / G) + sigsq2 / G,
+          alpha = alpha,
+          beta = beta
+        )
+      },
+      G = g, SIGSQ_PM = sigsq_pm
+    )
 
   }
 

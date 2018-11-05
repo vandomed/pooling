@@ -4,18 +4,23 @@
 \alias{poolcost_t}
 \title{Visualize Total Costs for Pooling Design as a Function of Pool Size}
 \usage{
-poolcost_t(g = 1:10, d = NULL, sigsq, sigsq_p = 0, sigsq_m = 0,
-  multiplicative = FALSE, mu1 = NULL, mu2 = NULL, alpha = 0.05,
-  beta = 0.2, assay_cost = 100, other_costs = 0, labels = TRUE,
-  ylim = NULL)
+poolcost_t(g = 1:10, d = NULL, mu1 = NULL, mu2 = NULL, sigsq = NULL,
+  sigsq1 = NULL, sigsq2 = NULL, sigsq_p = 0, sigsq_m = 0,
+  multiplicative = FALSE, alpha = 0.05, beta = 0.2, assay_cost = 100,
+  other_costs = 0, labels = TRUE, ylim = NULL)
 }
 \arguments{
 \item{g}{Numeric vector of pool sizes to include.}
 
-\item{d}{Numeric value specifying true difference in group means. Only used
-if \code{multiplicative = FALSE}.}
+\item{d}{Numeric value specifying true difference in group means.}
+
+\item{mu1, mu2}{Numeric value specifying group means. Required if
+\code{multiplicative = TRUE}.}
 
 \item{sigsq}{Numeric value specifying the variance of observations.}
+
+\item{sigsq1, sigsq2}{Numeric value specifying the variance of observations
+for each group.}
 
 \item{sigsq_p}{Numeric value specifying the variance of processing errors.}
 
@@ -23,9 +28,6 @@ if \code{multiplicative = FALSE}.}
 
 \item{multiplicative}{Logical value for whether to assume multiplicative
 rather than additive errors.}
-
-\item{mu1, mu2}{Numeric value specifying group means. Only used if
-\code{multiplicative = TRUE}.}
 
 \item{alpha}{Numeric value specifying type-1 error rate.}
 

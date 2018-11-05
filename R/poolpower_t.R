@@ -5,15 +5,16 @@
 #'
 #'
 #' @param g Numeric vector of pool sizes to include.
-#' @param d Numeric value specifying true difference in group means. Only used
-#' if \code{multiplicative = FALSE}.
+#' @param d Numeric value specifying true difference in group means.
+#' @param mu1,mu2 Numeric value specifying group means. Required if
+#' \code{multiplicative = TRUE}.
 #' @param sigsq Numeric value specifying the variance of observations.
+#' @param sigsq1,sigsq2 Numeric value specifying the variance of observations
+#' for each group.
 #' @param sigsq_p Numeric value specifying the variance of processing errors.
 #' @param sigsq_m Numeric value specifying the variance of measurement errors.
 #' @param multiplicative Logical value for whether to assume multiplicative
 #' rather than additive errors.
-#' @param mu1,mu2 Numeric value specifying group means. Only used if
-#' \code{multiplicative = TRUE}.
 #' @param alpha Numeric value specifying type-1 error rate.
 #' @param beta Numeric value specifying type-2 error rate.
 #' @param assay_cost Numeric value specifying cost of each assay.
@@ -42,12 +43,14 @@
 #'@export
 poolpower_t <- function(g = c(1, 3, 10),
                         d = NULL,
-                        sigsq,
+                        mu1 = NULL,
+                        mu2 = NULL,
+                        sigsq = NULL,
+                        sigsq1 = NULL,
+                        sigsq2 = NULL,
                         sigsq_p = 0,
                         sigsq_m = 0,
                         multiplicative = FALSE,
-                        mu1 = NULL,
-                        mu2 = NULL,
                         alpha = 0.05,
                         beta = 0.2,
                         assay_cost = 100,
@@ -55,43 +58,104 @@ poolpower_t <- function(g = c(1, 3, 10),
                         labels = TRUE,
                         ylim = NULL) {
 
-  # Create vector from 3 to assays per group for 99.9% power with traditional
-  # design
-  n <- 3: ceiling(2 * (qnorm(0.999) + qnorm(1 - alpha / 2))^2 /
-                    d^2 * (sigsq + sigsq_m))
+  # Error checking
+  if (! is.null(sigsq) & (! is.null(sigsq1) | ! is.null(sigsq2))) {
+    stop("Please specify sigsq or specify sigsq1 and sigsq2")
+  }
+  if (! is.null(d) & (! is.null(mu1) | ! is.null(mu2))) {
+    stop("Please specify d or specify mu1 and mu2")
+  }
 
-  # Calculate power vs. per-group n for each pool size
+  # If sigsq specified, set sigsq1 = sigsq2 = sigsq
+  if (! is.null(sigsq)) {
+    sigsq1 <- sigsq2 <- sigsq
+  }
+
   if (! multiplicative) {
 
-    df <- dvmisc::power_2t_equal %>% dvmisc::iterate(
-      d = d,
-      sigsq = sigsq / g + sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m,
-      n = n,
-      alpha = alpha,
-      varnames = "power"
+    # Calculate d if mu1 and mu2 are specified
+    if (is.null(d)) {
+      d <- abs(mu1 - mu2)
+    }
+
+    # Calculate assays per group for 99.9% power with traditional design
+    n.max <- (qnorm(0.999) * qnorm(1 - alpha / 2))^2 / d^2 *
+      (sigsq1 + sigsq2 + 2 * sigsq_m)
+    n <- 3: ceiling(n.max)
+
+    # Calculate variance of errors
+    sigsq_pm <- sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m
+
+    # Calculate power vs. per-group n for each pool size
+    df <- data.frame(
+      g = rep(g, each = length(n)),
+      sigsq_pm = rep(sigsq_pm, each = length(n)),
+      n = rep(n, length(g))
+    )
+    df$power <- mapply(
+      FUN = function(G, SIGSQ_PM, N) {
+        power_2t_unequal(
+          n = N,
+          d = d,
+          sigsq1 = sigsq1 / G + SIGSQ_PM,
+          sigsq2 = sigsq2 / G + SIGSQ_PM,
+          alpha = alpha
+        )
+      },
+      G = df$g, SIGSQ_PM = df$sigsq_pm, N = df$n
     )
 
   } else {
 
-    sigsq_pm <- sigsq_m + sigsq_p * (1 + sigsq_m) * ifelse(g > 1, 1, 0)
-    sigsq1 = sigsq_pm * (mu1^2 + sigsq / g) + sigsq / g
-    sigsq2 = sigsq_pm * (mu2^2 + sigsq / g) + sigsq / g
-    df <- NULL
-    for (ii in 1: length(sigsq_pm)) {
-      df.ii <- dvmisc::power_2t_unequal %>% dvmisc::iterate(
-        d = d,
-        sigsq1 = sigsq1[ii],
-        sigsq2 = sigsq2[ii],
-        n = n,
-        alpha = alpha
-      )
-      df <- df %>% dplyr::bind_rows(df.ii)
+    # Check that mu1 and mu2 are specified and that mu1 > mu2
+    if (is.null(mu1) | is.null(mu2)) {
+      stop("For multiplicative errors, you have to specify mu1 and mu2.")
+    } else if (mu1 <= mu2) {
+      stop("mu1 should be larger than mu2")
     }
+
+    # Calculate d
+    if (is.null(d)) {
+      d <- mu1 - mu2
+    }
+
+    # Calculate assays per group for 99.9% power with traditional design
+    n.max <- (qnorm(0.999) * qnorm(1 - alpha / 2))^2 / d^2 *
+      (sigsq_m * (mu1^2 + sigsq1) + sigsq1 + sigsq_m * (mu2^2 + sigsq2) + sigsq2)
+    n <- 3: n.max
+
+    # Calculate variance of errors
+    sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(g > 1, 1, 0)
+
+    # Calculate variance of pooled observations for each group and pool size
+    sigsq_group1 <- sigsq_pm * (mu1^2 + sigsq1 / g) + sigsq / g
+    sigsq_group2 <- sigsq_pm * (mu2^2 + sigsq2 / g) + sigsq / g
+
+    # Calculate power vs. per-group n for each pool size
+    df <- data.frame(
+      g = rep(g, each = length(n)),
+      sigsq_group1 = rep(sigsq_group1, each = length(n)),
+      sigsq_group2 = rep(sigsq_group2, each = length(n)),
+      n = rep(n, length(g))
+    )
+    df$power <- mapply(
+      FUN = function(SIGSQ_GROUP1, SIGSQ_GROUP2, N) {
+        power_2t_unequal(
+          d = d,
+          sigsq1 = SIGSQ_GROUP1,
+          sigsq2 = SIGSQ_GROUP2,
+          n = N,
+          alpha = alpha
+        )
+      },
+      SIGSQ_GROUP1 = df$sigsq_group1,
+      SIGSQ_GROUP2 = df$sigsq_group2,
+      N = df$n
+    )
 
   }
 
   # Prep for ggplot
-  df$g <- rep(g, each = length(n))
   df$n.assays <- df$n * 2
   df$n.subjects <- df$g * df$n.assays
   df$costs <- df$n.assays * assay_cost + df$n.subjects * other_costs

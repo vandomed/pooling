@@ -6,13 +6,15 @@
 #'
 #'
 #' @param g Numeric vector of pool sizes to include.
+#' @param mu1,mu2 Numeric value specifying group means. Required if
+#' \code{multiplicative = TRUE}.
 #' @param sigsq Numeric value specifying the variance of observations.
+#' @param sigsq1,sigsq2 Numeric value specifying the variance of observations
+#' for each group.
 #' @param sigsq_p Numeric value specifying the variance of processing errors.
 #' @param sigsq_m Numeric value specifying the variance of measurement errors.
 #' @param multiplicative Logical value for whether to assume multiplicative
 #' rather than additive errors.
-#' @param mu1,mu2 Numeric value specifying group means. Only used if
-#' \code{multiplicative = TRUE}.
 #' @param assay_cost Numeric value specifying cost of each assay.
 #' @param other_costs Numeric value specifying other per-subject costs.
 #' @param labels Logical value.
@@ -32,107 +34,86 @@
 #'
 #'@export
 poolvar_t <- function(g = 1: 10,
+                      mu1 = NULL,
+                      mu2 = NULL,
                       sigsq,
+                      sigsq1 = NULL,
+                      sigsq2 = NULL,
                       sigsq_p = 0,
                       sigsq_m = 0,
                       multiplicative = FALSE,
-                      mu1 = NULL,
-                      mu2 = NULL,
                       assay_cost = 100,
                       other_costs = 0,
                       labels = TRUE,
                       ylim = NULL) {
 
+  # Error checking
+  if (! is.null(sigsq) & (! is.null(sigsq1) | ! is.null(sigsq2))) {
+    stop("Please specify sigsq or specify sigsq1 and sigsq2")
+  }
+  if (multiplicative & (is.null(mu1) | is.null(mu2))) {
+    stop("For multiplicative errors, you must specify mu1 and mu2")
+  }
+
   # Calculate ratio of costs, traditional / pooling
   costs.ratio <- (assay_cost + other_costs) / (assay_cost + g * other_costs)
 
+  # If sigsq specified, set sigsq1 = sigsq2 = sigsq
+  if (! is.null(sigsq)) {
+    sigsq1 <- sigsq2 <- sigsq
+  }
+
+  # Calculate ratio of variances, traditional / pooling
   if (! multiplicative) {
 
-    # Calculate ratio of variances, traditional / pooling
-    var_ratio <- (sigsq + sigsq_m) /
-      (sigsq / g + sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m)
-
-    # Calculate cost-adjusted ratio of variances and find max
-    var_ratio_adj <- var_ratio * costs.ratio
-    max <- rep(0, length(g))
-    max[which.max(var_ratio_adj)] <- 1
-
-    # Prep for ggplot
-    df <- data.frame(
-      g = g,
-      var_ratio = var_ratio,
-      var_ratio_adj = var_ratio_adj,
-      max = max
-    )
-
-    # Default ylim
-    if (is.null(ylim)) {
-      ylim <- c(0, max(1, max(var_ratio_adj)) * 1.1)
-    }
-
-    # Create plot
-    p <- ggplot(df, aes(g, var_ratio_adj)) +
-      geom_point() +
-      labs(title = "Ratio of Variances, Traditional vs. Pooled",
-           y = "Ratio, adjusted for total costs/assay",
-           x = "Pool size") +
-      ylim(ylim) +
-      geom_hline(yintercept = 1, linetype = 2) +
-      scale_x_continuous(breaks = g) +
-      theme_bw() +
-      theme(panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank())
+    sigsq_pm <- sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m
+    var_ratio1 <- (sigsq1 + sigsq_m) / (sigsq1 / g + sigsq_pm)
+    var_ratio2 <- (sigsq2 + sigsq_m) / (sigsq2 / g + sigsq_pm)
 
   } else {
 
-    # Check that mu1 and mu2 are specified
-    if (is.null(mu1) | is.null(mu2)) {
-      stop("For multiplicative errors, you have to specify the group means mu1 and mu2.")
-    }
-
-    # Calculate ratio of variances, traditional / pooling
-    sigsq_pm <- sigsq_m + sigsq_p * (1 + sigsq_m) * ifelse(g > 1, 1, 0)
-    var_ratio1 <- (mu1^2 * sigsq_m + sigsq + sigsq * sigsq_m) /
-      (sigsq_pm * (mu1^2 + sigsq / g) + sigsq / g)
-    var_ratio2 <- (mu2^2 * sigsq_m + sigsq + sigsq * sigsq_m) /
-      (sigsq_pm * (mu2^2 + sigsq / g) + sigsq / g)
-
-    # Calculate cost-adjusted ratio of variances and find max
-    var_ratio1_adj <- var_ratio1 * costs.ratio
-    var_ratio2_adj <- var_ratio2 * costs.ratio
-    max1 <- max2 <- rep(0, length(g))
-    max1[which.max(var_ratio1_adj)] <- 1
-    max2[which.max(var_ratio2_adj)] <- 1
-
-    # Prep for ggplot
-    df <- data.frame(
-      g = g,
-      Group = as.factor(rep(c(1, 2), each = length(g))),
-      var_ratio = c(var_ratio1, var_ratio2),
-      var_ratio_adj = c(var_ratio1_adj, var_ratio2_adj),
-      max = c(max1, max2)
-    )
-
-    # Default ylim
-    if (is.null(ylim)) {
-      ylim <- c(0, max(1, max(c(var_ratio1_adj, var_ratio2_adj))) * 1.1)
-    }
-
-    # Create plot
-    Group <- NULL
-    p <- ggplot(df, aes(g, var_ratio_adj, color = Group)) +
-      geom_point() +
-      labs(title = "Ratio of Variances, Traditional vs. Pooled",
-           y = "Cost-adjusted ratio",
-           x = "Pool size") +
-      ylim(ylim) +
-      geom_hline(yintercept = 1, linetype = 2) +
-      scale_x_continuous(breaks = g) +
-      theme_bw() +
-      theme(panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank())
+    sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(g > 1, 1, 0)
+    var_ratio1 <- (sigsq_m * (mu1^2 + sigsq1) + sigsq1) /
+      (sigsq_m * (mu1^2 + sigsq1 / g) + sigsq1 / g)
+    var_ratio2 <- (sigsq_m * (mu2^2 + sigsq2) + sigsq2) /
+      (sigsq_m * (mu2^2 + sigsq2 / g) + sigsq2 / g)
 
   }
+
+  # Calculate cost-adjusted ratio of variances and find max
+  var_ratio1_adj <- var_ratio1 * costs.ratio
+  var_ratio2_adj <- var_ratio2 * costs.ratio
+  max1 <- max2 <- rep(0, length(g))
+  max1[which.max(var_ratio1_adj)] <- 1
+  max2[which.max(var_ratio2_adj)] <- 1
+
+  # Prep for ggplot
+  df <- data.frame(
+    g = g,
+    Group = as.factor(rep(c(1, 2), each = length(g))),
+    var_ratio = c(var_ratio1, var_ratio2),
+    var_ratio_adj = c(var_ratio1_adj, var_ratio2_adj),
+    max = c(max1, max2)
+  )
+
+  # Default ylim
+  if (is.null(ylim)) {
+    ylim <- c(0, max(1, max(c(var_ratio1_adj, var_ratio2_adj))) * 1.1)
+  }
+
+  # Create plot
+  Group <- NULL
+  p <- ggplot(df, aes_string(x = "g", y = "var_ratio_adj", color = "Group")) +
+    geom_point() +
+    labs(title = "Ratio of Variances, Traditional vs. Pooled",
+         y = "Cost-adjusted ratio",
+         x = "Pool size") +
+    ylim(ylim) +
+    geom_hline(yintercept = 1, linetype = 2) +
+    scale_x_continuous(breaks = g) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())
 
   # Label max
   if (labels) {
