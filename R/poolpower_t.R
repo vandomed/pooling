@@ -128,8 +128,8 @@ poolpower_t <- function(g = c(1, 3, 10),
     sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(g > 1, 1, 0)
 
     # Calculate variance of pooled observations for each group and pool size
-    sigsq_group1 <- sigsq_pm * (mu1^2 + sigsq1 / g) + sigsq / g
-    sigsq_group2 <- sigsq_pm * (mu2^2 + sigsq2 / g) + sigsq / g
+    sigsq_group1 <- sigsq_pm * (mu1^2 + sigsq1 / g) + sigsq1 / g
+    sigsq_group2 <- sigsq_pm * (mu2^2 + sigsq2 / g) + sigsq2 / g
 
     # Calculate power vs. per-group n for each pool size
     df <- data.frame(
