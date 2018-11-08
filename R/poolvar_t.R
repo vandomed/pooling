@@ -36,7 +36,7 @@
 poolvar_t <- function(g = 1: 10,
                       mu1 = NULL,
                       mu2 = NULL,
-                      sigsq,
+                      sigsq = NULL,
                       sigsq1 = NULL,
                       sigsq2 = NULL,
                       sigsq_p = 0,
