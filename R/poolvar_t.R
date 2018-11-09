@@ -74,9 +74,9 @@ poolvar_t <- function(g = 1: 10,
 
     sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(g > 1, 1, 0)
     var_ratio1 <- (sigsq_m * (mu1^2 + sigsq1) + sigsq1) /
-      (sigsq_m * (mu1^2 + sigsq1 / g) + sigsq1 / g)
+      (sigsq_pm * (mu1^2 + sigsq1 / g) + sigsq1 / g)
     var_ratio2 <- (sigsq_m * (mu2^2 + sigsq2) + sigsq2) /
-      (sigsq_m * (mu2^2 + sigsq2 / g) + sigsq2 / g)
+      (sigsq_pm * (mu2^2 + sigsq2 / g) + sigsq2 / g)
 
   }
 
@@ -89,7 +89,7 @@ poolvar_t <- function(g = 1: 10,
 
   # Prep for ggplot
   df <- data.frame(
-    g = g,
+    g = c(g - 0.075, g + 0.075),
     Group = as.factor(rep(c(1, 2), each = length(g))),
     var_ratio = c(var_ratio1, var_ratio2),
     var_ratio_adj = c(var_ratio1_adj, var_ratio2_adj),
