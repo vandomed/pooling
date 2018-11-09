@@ -51,7 +51,8 @@ poolcost_t <- function(g = 1: 10,
                        beta = 0.2,
                        assay_cost = 100,
                        other_costs = 0,
-                       labels = TRUE) {
+                       labels = TRUE,
+                       ylim = NULL) {
 
   # Error checking
   if (! is.null(sigsq) & (! is.null(sigsq1) | ! is.null(sigsq2))) {

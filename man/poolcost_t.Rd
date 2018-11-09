@@ -7,7 +7,7 @@
 poolcost_t(g = 1:10, d = NULL, mu1 = NULL, mu2 = NULL, sigsq = NULL,
   sigsq1 = NULL, sigsq2 = NULL, sigsq_p = 0, sigsq_m = 0,
   multiplicative = FALSE, alpha = 0.05, beta = 0.2, assay_cost = 100,
-  other_costs = 0, labels = TRUE)
+  other_costs = 0, labels = TRUE, ylim = NULL)
 }
 \arguments{
 \item{g}{Numeric vector of pool sizes to include.}
