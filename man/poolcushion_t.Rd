@@ -15,6 +15,8 @@ poolcushion_t(g = 2, n = 100, d = NULL, mu1 = NULL, mu2 = NULL,
 
 \item{n}{Numeric value specifying the number of assays per group.}
 
+\item{d}{Numeric value specifying true difference in group means.}
+
 \item{mu1, mu2}{Numeric value specifying group means. Required if
 \code{multiplicative = TRUE}.}
 

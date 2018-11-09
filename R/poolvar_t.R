@@ -117,6 +117,7 @@ poolvar_t <- function(g = 1: 10,
 
   # Label max
   if (labels) {
+    var_ratio_adj <- NULL
     p <- p + geom_label_repel(
       data = subset(df, max == 1),
       aes(g, var_ratio_adj,

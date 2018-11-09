@@ -7,6 +7,7 @@
 #'
 #' @param g Numeric value specifying the pool size.
 #' @param n Numeric value specifying the number of assays per group.
+#' @param d Numeric value specifying true difference in group means.
 #' @param mu1,mu2 Numeric value specifying group means. Required if
 #' \code{multiplicative = TRUE}.
 #' @param sigsq Numeric value specifying the variance of observations.
