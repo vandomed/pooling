@@ -5,7 +5,7 @@
 \title{Visualize T-test Power for Pooling Design}
 \usage{
 poolpower_t(g = c(1, 3, 10), d = NULL, mu1 = NULL, mu2 = NULL,
-  sigsq = NULL, sigsq1 = NULL, sigsq2 = NULL, sigsq_p = 0,
+  sigsq = NULL, sigsq1 = sigsq, sigsq2 = sigsq, sigsq_p = 0,
   sigsq_m = 0, multiplicative = FALSE, alpha = 0.05, beta = 0.2,
   assay_cost = 100, other_costs = 0, labels = TRUE)
 }

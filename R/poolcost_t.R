@@ -42,8 +42,8 @@ poolcost_t <- function(g = 1: 10,
                        mu1 = NULL,
                        mu2 = NULL,
                        sigsq = NULL,
-                       sigsq1 = NULL,
-                       sigsq2 = NULL,
+                       sigsq1 = sigsq,
+                       sigsq2 = sigsq,
                        sigsq_p = 0,
                        sigsq_m = 0,
                        multiplicative = FALSE,
@@ -55,19 +55,10 @@ poolcost_t <- function(g = 1: 10,
                        ylim = NULL) {
 
   # Error checking
-  if (! is.null(sigsq) & (! is.null(sigsq1) | ! is.null(sigsq2))) {
-    stop("Please specify sigsq or specify sigsq1 and sigsq2")
-  }
   if (! is.null(d) & (! is.null(mu1) | ! is.null(mu2))) {
     stop("Please specify d or specify mu1 and mu2")
   }
 
-  # If sigsq specified, set sigsq1 = sigsq2 = sigsq
-  if (! is.null(sigsq)) {
-    sigsq1 <- sigsq2 <- sigsq
-  }
-
-  # Figure out per-group sample sizes for each pool size
   if (! multiplicative) {
 
     # Calculate d if mu1 and mu2 are specified
@@ -75,21 +66,23 @@ poolcost_t <- function(g = 1: 10,
       d <- abs(mu1 - mu2)
     }
 
-    # Calculate variance of errors
+    # Calculate variance of errors and pooled observations
     sigsq_pm <- sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m
+    sigsq_xtilde1 <- sigsq1 / g + sigsq_pm
+    sigsq_xtilde2 <- sigsq2 / g + sigsq_pm
 
     # Calculate per-group number of assays required for each pool size
     n <- mapply(
-      FUN = function(G, SIGSQ_PM) {
+      FUN = function(SIGSQ_XTILDE1, SIGSQ_XTILDE2) {
         n_2t_unequal(
           d = d,
-          sigsq1 = sigsq1 / G + SIGSQ_PM,
-          sigsq2 = sigsq2 / G + SIGSQ_PM,
+          sigsq1 = SIGSQ_XTILDE1,
+          sigsq2 = SIGSQ_XTILDE2,
           alpha = alpha,
           beta = beta
         )
       },
-      G = g, SIGSQ_PM = sigsq_pm
+      SIGSQ_XTILDE1 = sigsq_xtilde1, SIGSQ_XTILDE2 = sigsq_xtilde2
     )
 
   } else {
@@ -101,21 +94,23 @@ poolcost_t <- function(g = 1: 10,
       stop("mu1 should be larger than mu2")
     }
 
-    # Calculate variance of errors
+    # Calculate variance of errors and pooled observations
     sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(g > 1, 1, 0)
+    sigsq_xtilde1 <- sigsq_pm * (mu1^2 + sigsq1 / g) + sigsq1 / g
+    sigsq_xtilde2 <- sigsq_pm * (mu2^2 + sigsq2 / g) + sigsq2 / g
 
     # Calculate per-group number of assays required for each pool size
     n <- mapply(
-      FUN = function(G, SIGSQ_PM) {
+      FUN = function(SIGSQ_XTILDE1, SIGSQ_XTILDE2) {
         n_2t_unequal(
           d = mu1 - mu2,
-          sigsq1 = SIGSQ_PM * (mu1^2 + sigsq1 / G) + sigsq1 / G,
-          sigsq2 = SIGSQ_PM * (mu2^2 + sigsq2 / G) + sigsq2 / G,
+          sigsq1 = SIGSQ_XTILDE1,
+          sigsq2 = SIGSQ_XTILDE2,
           alpha = alpha,
           beta = beta
         )
       },
-      G = g, SIGSQ_PM = sigsq_pm
+      SIGSQ_XTILDE1 = sigsq_xtilde1, SIGSQ_XTILDE2 = sigsq_xtilde2
     )
 
   }

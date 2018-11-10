@@ -45,8 +45,8 @@ poolpower_t <- function(g = c(1, 3, 10),
                         mu1 = NULL,
                         mu2 = NULL,
                         sigsq = NULL,
-                        sigsq1 = NULL,
-                        sigsq2 = NULL,
+                        sigsq1 = sigsq,
+                        sigsq2 = sigsq,
                         sigsq_p = 0,
                         sigsq_m = 0,
                         multiplicative = FALSE,
@@ -57,16 +57,8 @@ poolpower_t <- function(g = c(1, 3, 10),
                         labels = TRUE) {
 
   # Error checking
-  if (! is.null(sigsq) & (! is.null(sigsq1) | ! is.null(sigsq2))) {
-    stop("Please specify sigsq or specify sigsq1 and sigsq2")
-  }
   if (! is.null(d) & (! is.null(mu1) | ! is.null(mu2))) {
     stop("Please specify d or specify mu1 and mu2")
-  }
-
-  # If sigsq specified, set sigsq1 = sigsq2 = sigsq
-  if (! is.null(sigsq)) {
-    sigsq1 <- sigsq2 <- sigsq
   }
 
   if (! multiplicative) {
@@ -81,26 +73,33 @@ poolpower_t <- function(g = c(1, 3, 10),
       (sigsq1 + sigsq2 + 2 * sigsq_m)
     n <- 3: ceiling(n.max)
 
-    # Calculate variance of errors
+    # Calculate variance of errors and pooled observations
     sigsq_pm <- sigsq_p * ifelse(g > 1, 1, 0) + sigsq_m
+    sigsq_xtilde1 <- sigsq1 / g + sigsq_pm
+    sigsq_xtilde2 <- sigsq2 / g + sigsq_pm
 
-    # Calculate power vs. per-group n for each pool size
+    # Create data frame for ggplot
     df <- data.frame(
       g = rep(g, each = length(n)),
-      sigsq_pm = rep(sigsq_pm, each = length(n)),
+      sigsq_xtilde1 = rep(sigsq_xtilde1, each = length(n)),
+      sigsq_xtilde2 = rep(sigsq_xtilde2, each = length(n)),
       n = rep(n, length(g))
     )
+
+    # Calculate power across n for each g
     df$power <- mapply(
-      FUN = function(G, SIGSQ_PM, N) {
+      FUN = function(SIGSQ_XTILDE1, SIGSQ_XTILDE2, N) {
         power_2t_unequal(
-          n = N,
           d = d,
-          sigsq1 = sigsq1 / G + SIGSQ_PM,
-          sigsq2 = sigsq2 / G + SIGSQ_PM,
+          sigsq1 = SIGSQ_XTILDE1,
+          sigsq2 = SIGSQ_XTILDE2,
+          n = N,
           alpha = alpha
         )
       },
-      G = df$g, SIGSQ_PM = df$sigsq_pm, N = df$n
+      SIGSQ_XTILDE1 = df$sigsq_xtilde1,
+      SIGSQ_XTILDE2 = df$sigsq_xtilde2,
+      N = df$n
     )
 
   } else {
@@ -122,32 +121,32 @@ poolpower_t <- function(g = c(1, 3, 10),
       (sigsq_m * (mu1^2 + sigsq1) + sigsq1 + sigsq_m * (mu2^2 + sigsq2) + sigsq2)
     n <- 3: n.max
 
-    # Calculate variance of errors
+    # Calculate variance of errors and pooled observations
     sigsq_pm <- sigsq_m + sigsq_p * (sigsq_m + 1) * ifelse(g > 1, 1, 0)
+    sigsq_xtilde1 <- sigsq_pm * (mu1^2 + sigsq1 / g) + sigsq1 / g
+    sigsq_xtilde2 <- sigsq_pm * (mu2^2 + sigsq2 / g) + sigsq2 / g
 
-    # Calculate variance of pooled observations for each group and pool size
-    sigsq_group1 <- sigsq_pm * (mu1^2 + sigsq1 / g) + sigsq1 / g
-    sigsq_group2 <- sigsq_pm * (mu2^2 + sigsq2 / g) + sigsq2 / g
-
-    # Calculate power vs. per-group n for each pool size
+    # Create data frame for ggplot
     df <- data.frame(
       g = rep(g, each = length(n)),
-      sigsq_group1 = rep(sigsq_group1, each = length(n)),
-      sigsq_group2 = rep(sigsq_group2, each = length(n)),
+      sigsq_xtilde1 = rep(sigsq_xtilde1, each = length(n)),
+      sigsq_xtilde2 = rep(sigsq_xtilde2, each = length(n)),
       n = rep(n, length(g))
     )
+
+    # Calculate power across n for each g
     df$power <- mapply(
-      FUN = function(SIGSQ_GROUP1, SIGSQ_GROUP2, N) {
+      FUN = function(SIGSQ_XTILDE1, SIGSQ_XTILDE2, N) {
         power_2t_unequal(
           d = d,
-          sigsq1 = SIGSQ_GROUP1,
-          sigsq2 = SIGSQ_GROUP2,
+          sigsq1 = SIGSQ_XTILDE1,
+          sigsq2 = SIGSQ_XTILDE2,
           n = N,
           alpha = alpha
         )
       },
-      SIGSQ_GROUP1 = df$sigsq_group1,
-      SIGSQ_GROUP2 = df$sigsq_group2,
+      SIGSQ_XTILDE1 = df$sigsq_xtilde1,
+      SIGSQ_XTILDE2 = df$sigsq_xtilde2,
       N = df$n
     )
 

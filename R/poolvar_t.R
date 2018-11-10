@@ -37,8 +37,8 @@ poolvar_t <- function(g = 1: 10,
                       mu1 = NULL,
                       mu2 = NULL,
                       sigsq = NULL,
-                      sigsq1 = NULL,
-                      sigsq2 = NULL,
+                      sigsq1 = sigsq,
+                      sigsq2 = sigsq,
                       sigsq_p = 0,
                       sigsq_m = 0,
                       multiplicative = FALSE,
@@ -48,20 +48,12 @@ poolvar_t <- function(g = 1: 10,
                       ylim = NULL) {
 
   # Error checking
-  if (! is.null(sigsq) & (! is.null(sigsq1) | ! is.null(sigsq2))) {
-    stop("Please specify sigsq or specify sigsq1 and sigsq2")
-  }
   if (multiplicative & (is.null(mu1) | is.null(mu2))) {
     stop("For multiplicative errors, you must specify mu1 and mu2")
   }
 
   # Calculate ratio of costs, traditional / pooling
   costs.ratio <- (assay_cost + other_costs) / (assay_cost + g * other_costs)
-
-  # If sigsq specified, set sigsq1 = sigsq2 = sigsq
-  if (! is.null(sigsq)) {
-    sigsq1 <- sigsq2 <- sigsq
-  }
 
   # Calculate ratio of variances, traditional / pooling
   if (! multiplicative) {
