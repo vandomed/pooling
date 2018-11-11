@@ -6,9 +6,9 @@
 Variance}
 \usage{
 poolcushion_t(g = NULL, n = NULL, d = NULL, mu1 = NULL, mu2 = NULL,
-  sigsq = NULL, sigsq1 = sigsq, sigsq2 = sigsq, sigsq_p_range = NULL,
-  sigsq_m = 0, multiplicative = FALSE, alpha = 0.05, beta = 0.2,
-  labels = TRUE)
+  sigsq = NULL, sigsq1 = sigsq, sigsq2 = sigsq, sigsq_p_predicted = 0,
+  sigsq_p_range = NULL, sigsq_m = 0, multiplicative = FALSE,
+  alpha = 0.05, beta = 0.2, labels = TRUE)
 }
 \arguments{
 \item{g}{Numeric value specifying the pool size.}
@@ -26,6 +26,9 @@ unspecified, function figures out \code{n} required for
 
 \item{sigsq1, sigsq2}{Numeric value specifying the variance of observations
 for each group.}
+
+\item{sigsq_p_predicted}{Numeric value specifying predicted processing error
+variance. Used to calculate \code{n} if \code{n} is unspecified.}
 
 \item{sigsq_p_range}{Numeric vector specifying range of processing error
 variances to consider.}
@@ -64,13 +67,14 @@ poolcost_t(
   other_costs = 10
 )
 
-# Visualize how power will be affected if the processing error variance was
-# underestimated.
+# Visualize how power of the study will be affected if the true processing
+# error variance is not exactly 0.1.
 poolcushion_t(
   g = 7,
   n = 29,
   d = 0.5,
   sigsq = 1,
+  sigsq_p_predicted = 0.1,
   sigsq_m = 0.2
 )
 

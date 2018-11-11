@@ -15,6 +15,8 @@
 #' @param sigsq Numeric value specifying the variance of observations.
 #' @param sigsq1,sigsq2 Numeric value specifying the variance of observations
 #' for each group.
+#' @param sigsq_p_predicted Numeric value specifying predicted processing error
+#' variance. Used to calculate \code{n} if \code{n} is unspecified.
 #' @param sigsq_p_range Numeric vector specifying range of processing error
 #' variances to consider.
 #' @param sigsq_m Numeric value specifying the variance of measurement errors.
@@ -44,13 +46,14 @@
 #'   other_costs = 10
 #' )
 #'
-#' # Visualize how power will be affected if the processing error variance was
-#' # underestimated.
+#' # Visualize how power of the study will be affected if the true processing
+#' # error variance is not exactly 0.1.
 #' poolcushion_t(
 #'   g = 7,
 #'   n = 29,
 #'   d = 0.5,
 #'   sigsq = 1,
+#'   sigsq_p_predicted = 0.1,
 #'   sigsq_m = 0.2
 #' )
 #'
@@ -64,6 +67,7 @@ poolcushion_t <- function(g = NULL,
                           sigsq = NULL,
                           sigsq1 = sigsq,
                           sigsq2 = sigsq,
+                          sigsq_p_predicted = 0,
                           sigsq_p_range = NULL,
                           sigsq_m = 0,
                           multiplicative = FALSE,
@@ -92,12 +96,13 @@ poolcushion_t <- function(g = NULL,
       d <- abs(mu1 - mu2)
     }
 
-    # If unspecified, calculate n for 100 (1 - beta)% power for sigsq_p = 0
+    # If unspecified, calculate n for target power at sigsq_p_predicted
     if (is.null(n)) {
+      sigsq_pm_predicted <- sigsq_p_predicted * ifelse(g > 1, 1, 0) + sigsq_m
       n <- n_2t_unequal(
         d = d,
-        sigsq1 = sigsq1 / g + sigsq_m,
-        sigsq2 = sigsq2 / g + sigsq_m,
+        sigsq1 = sigsq1 / g + sigsq_pm_predicted,
+        sigsq2 = sigsq2 / g + sigsq_pm_predicted,
         alpha = alpha,
         beta = beta
       )
@@ -137,12 +142,13 @@ poolcushion_t <- function(g = NULL,
       d <- mu1 - mu2
     }
 
-    # If unspecified, calculate n for 100 (1 - beta)% power for sigsq_p = 0
+    # If unspecified, calculate n for target power at sigsq_p_predicted
     if (is.null(n)) {
+      sigsq_pm_predicted <- sigsq_m + sigsq_p_predicted * (sigsq_m + 1) * ifelse(g > 1, 1, 0)
       n <- n_2t_unequal(
         d = d,
-        sigsq1 = sigsq_m * (mu1^2 + sigsq1 / g) + sigsq1 / g,
-        sigsq2 = sigsq_m * (mu2^2 + sigsq2 / g) + sigsq2 / g,
+        sigsq1 = sigsq_pm_predicted * (mu1^2 + sigsq1 / g) + sigsq1 / g,
+        sigsq2 = sigsq_pm_predicted * (mu2^2 + sigsq2 / g) + sigsq2 / g,
         alpha = alpha,
         beta = beta
       )
@@ -157,10 +163,10 @@ poolcushion_t <- function(g = NULL,
     power <- mapply(
       FUN = function(SIGSQ_XTILDE1, SIGSQ_XTILDE2) {
         power_2t_unequal(
+          n = n,
           d = d,
           sigsq1 = SIGSQ_XTILDE1,
           sigsq2 = SIGSQ_XTILDE2,
-          n = n,
           alpha = alpha
         )
       },
@@ -181,7 +187,7 @@ poolcushion_t <- function(g = NULL,
   p <- ggplot(df, aes(sigsq_p, power)) +
     geom_point() +
     geom_line() +
-    labs(title = "Power vs. Processing Error Variance",
+    labs(title = paste("Power vs. Processing Error Variance (g = ", g, ", n = ", n, ")", sep = ""),
          y = "Power",
          x = expression(sigma[p]^2)) +
     geom_hline(yintercept = unique(c(0, 0.5, 1 - beta, 1)), linetype = 2) +
