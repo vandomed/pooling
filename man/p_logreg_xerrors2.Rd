@@ -4,7 +4,7 @@
 \alias{p_logreg_xerrors2}
 \title{Poolwise Logistic Regression with Gamma Exposure Subject to Errors}
 \usage{
-p_logreg_xerrors2(g = NULL, y, xtilde, c = NULL, errors = "both",
+p_logreg_xerrors2(g = NULL, y, xtilde, c = NULL, errors = "processing",
   nondiff_pe = TRUE, nondiff_me = TRUE, constant_pe = TRUE, prev = NULL,
   samp_y1y0 = NULL, integrate_tol = 1e-08,
   integrate_tol_start = integrate_tol,

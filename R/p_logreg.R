@@ -5,28 +5,21 @@
 #'
 #'
 #' @param g Numeric vector with pool sizes, i.e. number of members in each pool.
-#'
 #' @param y Numeric vector with poolwise \code{Y} values, coded 0 if all members
 #' are controls and 1 if all members are cases.
-#'
 #' @param x Numeric matrix with poolwise \strong{\code{X}} values, with one row
 #' for each pool. Can be a vector if there is only 1 predictor.
-#'
 #' @param method Character string specifying method to use for estimation.
 #' Choices are "glm" for \code{\link[stats]{glm}} function and \code{"ml"} for
 #' maximum likelihood.
-#'
 #' @param prev Numeric value specifying disease prevalence, allowing
 #' for valid estimation of the intercept with case-control sampling. Can specify
 #' \code{samp_y1y0} instead if sampling rates are known.
-#'
 #' @param samp_y1y0 Numeric vector of length 2 specifying sampling probabilities
 #' for cases and controls, allowing for valid estimation of the intercept with
 #' case-control sampling. Can specify \code{prev} instead if it's easier.
-#'
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
-#'
 #' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
 #'
 #'
@@ -218,7 +211,7 @@ p_logreg <- function(g, y, x,
 
     # If requested, add variance-covariance matrix to ret.list
     if (estimate_var) {
-      hessian.mat <- pracma::hessian(f = ll.f, x0 = theta.hat)
+      hessian.mat <- hessian(f = ll.f, x0 = theta.hat)
       theta.variance <- solve(hessian.mat)
       colnames(theta.variance) <- rownames(theta.variance) <- beta.labels
       ret.list$theta.var <- theta.variance

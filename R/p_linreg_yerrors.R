@@ -311,7 +311,7 @@ p_linreg_yerrors <- function(g,
   # If requested, add variance-covariance matrix to ret.list
   if (estimate_var) {
 
-    hessian.mat <- pracma::hessian(f = llf, x0 = theta.hat)
+    hessian.mat <- hessian(f = llf, x0 = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
       message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")

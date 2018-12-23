@@ -267,7 +267,7 @@ p_ndfa_constant <- function(g,
   logOR.hat <- gamma_y.hat / sigsq.hat
 
   # Obtain variance estimates and perform bias adjustment
-  hessian.mat <- pracma::hessian(f = llf, x0 = ml.estimates)
+  hessian.mat <- hessian(f = llf, x0 = ml.estimates)
   theta.variance <- try(solve(hessian.mat), silent = TRUE)
   if (class(theta.variance) == "try-error") {
     message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained and bias adjustment cannot be applied.")

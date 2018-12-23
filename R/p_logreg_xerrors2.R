@@ -75,7 +75,7 @@
 #'
 #' @export
 p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
-                              errors = "both",
+                              errors = "processing",
                               nondiff_pe = TRUE, nondiff_me = TRUE,
                               constant_pe = TRUE,
                               prev = NULL, samp_y1y0 = NULL,
@@ -111,13 +111,13 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
       stop("The input 'samp_y1y0' is the sampling probabilities for cases and controls, and should be a numeric vector of two probabilities adding to 1.")
     }
   }
-  if (! (is.numeric(integrate_tol) & dvmisc::inside(integrate_tol, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate_tol_start) & dvmisc::inside(integrate_tol_start, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol_start) & inside(integrate_tol_start, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_start' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate_tol_hessian) & dvmisc::inside(integrate_tol_hessian, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
   }
   if (! is.logical(estimate_var)) {
@@ -421,43 +421,6 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
         alphas <- g.r * exp(f.alpha_0)
       }
 
-      # # Function for integrating out X's
-      # int.f_i1 <- function(k_i, g_i, Ig_i, y_i, x_i, cstar_i, qg_i, xtilde_i,
-      #                      a_i, sigsq_p_i, sigsq_m_i) {
-      #
-      #   # f(Y,Xtilde,X|C_1,...,C_g)
-      #   x_i <- matrix(x_i, nrow = 1)
-      #   f_yxtildex.c <- apply(x_i, 2, function(z) {
-      #
-      #     # Transformation
-      #     s_i <- z / (1 - z)
-      #
-      #     # P(Y|X,C)
-      #     if (some.cs) {
-      #       p_y.xc <- (1 + exp(-g_i * f.beta_0 - f.beta_x * s_i -
-      #                            as.vector(t(f.beta_c) %*% cstar_i) - qg_i))^(-1)
-      #     } else {
-      #       p_y.xc <- (1 + exp(-g_i * f.beta_0 - f.beta_x * s_i - qg_i))^(-1)
-      #     }
-      #
-      #     # E(log(e_i)) and V(log(e_i))
-      #     Mu_loge <- rep(-1/2 * (sigsq_p_i + sigsq_m_i), k_i)
-      #     Sigma_loge <- matrix(sigsq_p_i, ncol = k_i, nrow = k_i) +
-      #       diag(x = sigsq_m_i, ncol = k_i, nrow = k_i)
-      #
-      #     # Density
-      #     dbinom(x = y_i, size = 1, prob = p_y.xc) *
-      #       1 / prod(xtilde_i) * dmvnorm(x = log(1 / s_i * xtilde_i),
-      #                                    mean = Mu_loge, sigma = Sigma_loge) *
-      #       dgamma(x = s_i, shape = a_i, scale = f.b)
-      #
-      #   })
-      #
-      #   # Back-transformation
-      #   out <- matrix(f_yxtildex.c / (1 - x_i)^2, ncol = ncol(x_i))
-      #
-      # }
-
       # Function for integrating out X's
       int.f_i1 <- function(k_i, g_i, Ig_i, y_i, x_i, cstar_i, qg_i, xtilde_i,
                            a_i, sigsq_p_i, sigsq_m_i) {
@@ -562,38 +525,6 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
       } else {
         alphas <- g.i * exp(f.alpha_0)
       }
-
-      # # Function for integrating out X's
-      # int.f_i2 <- function(g_i, Ig_i, y_i, x_i, cstar_i, qg_i, xtilde_i, a_i,
-      #                      sigsq_p_i, sigsq_m_i) {
-      #
-      #   # Transformation
-      #   s_i <- x_i / (1 - x_i)
-      #
-      #   # P(Y|X,C)
-      #   if (some.cs) {
-      #     p_y.xc <- (1 + exp(-g_i * f.beta_0 - f.beta_x * s_i -
-      #                          as.vector(t(f.beta_c) %*% cstar_i) - qg_i))^(-1)
-      #   } else {
-      #     p_y.xc <- (1 + exp(-g_i * f.beta_0 - f.beta_x * s_i - qg_i))^(-1)
-      #   }
-      #
-      #   # E(log(e_i)) and V(log(e_i))
-      #   mu_loge <- -1/2 * (sigsq_p_i * Ig_i + sigsq_m_i)
-      #   sigsq_loge <- sigsq_p_i * Ig_i + sigsq_m_i
-      #
-      #   # f(Y_i,Xtilde_i^*,X_i^*|C_i1, ..., C_igi) = f(Y_i|X_i^*,C_i^*)
-      #   # f(Xtilde_i^*|X_i^*) f(X_i^*|C_i1, ..., C_igi)
-      #   f_yxtildex.c <- dbinom(x = y_i, size = 1, prob = p_y.xc) *
-      #     1 / xtilde_i * dnorm(x = log(xtilde_i / s_i),
-      #                          mean = mu_loge, sd = sqrt(sigsq_loge)) *
-      #     dgamma(x = s_i, shape = a_i, scale = f.b)
-      #
-      #   # Back-transformation
-      #   out <- f_yxtildex.c / (1 - x_i)^2
-      #   return(out)
-      #
-      # }
 
       # Function for integrating out X's
       int.f_i2 <- function(g_i, Ig_i, y_i, x_i, cstar_i, qg_i, xtilde_i, a_i,
@@ -730,8 +661,7 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
   if (estimate_var) {
 
     # Estimate Hessian
-    hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
-                                   x0 = theta.hat)
+    hessian.mat <- hessian(f = ll.f, estimating.hessian = TRUE, x0 = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error" ||
         ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
@@ -739,8 +669,8 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
       # Repeatedly divide integrate_tol_hessian by 5 and re-try
       while (integrate_tol_hessian > 1e-15 & fix_posdef) {
         integrate_tol_hessian <- integrate_tol_hessian / 5
-        hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
-                                       x0 = theta.hat)
+        hessian.mat <- hessian(f = ll.f, estimating.hessian = TRUE,
+                               x0 = theta.hat)
         theta.variance <- try(solve(hessian.mat), silent = TRUE)
         if (class(theta.variance) != "try-error" &&
             all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
@@ -765,21 +695,6 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
     }
 
   }
-
-  # # If requested, add variance-covariance matrix to ret.list
-  # if (estimate_var) {
-  #   hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
-  #                                  x0 = theta.hat)
-  #   theta.variance <- try(solve(hessian.mat), silent = TRUE)
-  #   if (class(theta.variance) == "try-error") {
-  #     print(hessian.mat)
-  #     message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
-  #     ret.list$theta.var <- NULL
-  #   } else {
-  #     colnames(theta.variance) <- rownames(theta.variance) <- theta.labels
-  #     ret.list$theta.var <- theta.variance
-  #   }
-  # }
 
   # Add nlminb object and AIC to ret.list
   ret.list$nlminb.object <- ml.max

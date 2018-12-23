@@ -265,7 +265,7 @@ p_ndfa_nonconstant <- function(g,
   ml.estimates <- ml.max$par
 
   # Obtain variance estimates
-  hessian.mat <- pracma::hessian(f = llf, x0 = ml.estimates)
+  hessian.mat <- hessian(f = llf, x0 = ml.estimates)
   theta.variance <- try(solve(hessian.mat), silent = TRUE)
   if (class(theta.variance) == "try-error") {
     message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")

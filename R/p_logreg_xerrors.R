@@ -99,7 +99,7 @@
 #'
 #' @export
 p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
-                             errors = "both",
+                             errors = "processing",
                              nondiff_pe = TRUE, nondiff_me = TRUE,
                              constant_pe = TRUE,
                              prev = NULL, samp_y1y0 = NULL,
@@ -139,13 +139,13 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   if (! is.logical(approx_integral)) {
     stop("The input 'approx_integral' should be TRUE or FALSE.")
   }
-  if (! (is.numeric(integrate_tol) & dvmisc::inside(integrate_tol, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate_tol_start) & dvmisc::inside(integrate_tol_start, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol_start) & inside(integrate_tol_start, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_start' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate_tol_hessian) & dvmisc::inside(integrate_tol_hessian, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
   }
   if (! is.logical(estimate_var)) {
@@ -594,7 +594,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
                       sigsq_m_i = sigsq_m_i)
 
           # If integral 0 and sigsq_m_i small, look at region around Xtilde
-          if (int.ii$integral == 0 & dvmisc::inside(sigsq_m_i, c(0, 0.1), FALSE)) {
+          if (int.ii$integral == 0 & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
 
             center.s <- mean(xtilde_i)
             center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
@@ -790,7 +790,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
                       sigsq_m_i = sigsq_m_i)
 
           # If integral 0 and f.sigsq_m small, look at region around Xtilde
-          if (int.ii$integral == 0 & dvmisc::inside(sigsq_m_i, c(0, 0.1), FALSE)) {
+          if (int.ii$integral == 0 & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
 
             center.s <- xtilde_i
             center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
@@ -816,7 +816,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
           }
 
           # If integral 0 and f.sigsq_x.c small, look at region around E(X|C)
-          if (int.ii$integral == 0 & dvmisc::inside(f.sigsq_x.c, c(0, 0.1), FALSE)) {
+          if (int.ii$integral == 0 & inside(f.sigsq_x.c, c(0, 0.1), FALSE)) {
 
             center.s <- mu_x.c_i
             center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
@@ -914,8 +914,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   if (estimate_var) {
 
     # Estimate Hessian
-    hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
-                                   x0 = theta.hat)
+    hessian.mat <- hessian(f = ll.f, estimating.hessian = TRUE, x0 = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error" ||
         ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
@@ -923,8 +922,8 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       # Repeatedly divide integrate_tol_hessian by 5 and re-try
       while (integrate_tol_hessian > 1e-15 & fix_posdef) {
         integrate_tol_hessian <- integrate_tol_hessian / 5
-        hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
-                                       x0 = theta.hat)
+        hessian.mat <- hessian(f = ll.f, estimating.hessian = TRUE,
+                               x0 = theta.hat)
         theta.variance <- try(solve(hessian.mat), silent = TRUE)
         if (class(theta.variance) != "try-error" &&
             all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {

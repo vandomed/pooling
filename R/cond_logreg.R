@@ -520,8 +520,7 @@ cond_logreg <- function(g = rep(1, length(xtilde1)),
 
   # If requested, add variance-covariance matrix to ret.list
   if (estimate_var) {
-    hessian.mat <- pracma::hessian(f = llf, estimating.hessian = TRUE,
-                                   x0 = theta.hat)
+    hessian.mat <- hessian(f = llf, estimating.hessian = TRUE, x0 = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
       print(hessian.mat)
@@ -1066,7 +1065,7 @@ cond_logreg <- function(g = rep(1, length(xtilde1)),
 #
 #   # If requested, add variance-covariance matrix to ret.list
 #   if (estimate_var) {
-#     hessian.mat <- pracma::hessian(f = llf, estimating.hessian = TRUE,
+#     hessian.mat <- hessian(f = llf, estimating.hessian = TRUE,
 #                                    x0 = theta.hat)
 #     theta.variance <- try(solve(hessian.mat), silent = TRUE)
 #     if (class(theta.variance) == "try-error") {
@@ -1524,7 +1523,7 @@ cond_logreg <- function(g = rep(1, length(xtilde1)),
 #
 #   # If requested, add variance-covariance matrix to ret.list
 #   if (estimate_var) {
-#     hessian.mat <- pracma::hessian(f = llf, estimating.hessian = TRUE,
+#     hessian.mat <- hessian(f = llf, estimating.hessian = TRUE,
 #                                    x0 = theta.hat)
 #     theta.variance <- try(solve(hessian.mat), silent = TRUE)
 #     if (class(theta.variance) == "try-error") {
@@ -2064,7 +2063,7 @@ cond_logreg <- function(g = rep(1, length(xtilde1)),
 #
 #   # If requested, add variance-covariance matrix to ret.list
 #   if (estimate_var) {
-#     hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
+#     hessian.mat <- hessian(f = ll.f, estimating.hessian = TRUE,
 #                                    x0 = theta.hat)
 #     theta.variance <- try(solve(hessian.mat), silent = TRUE)
 #     if (class(theta.variance) == "try-error") {
@@ -2440,7 +2439,7 @@ cond_logreg <- function(g = rep(1, length(xtilde1)),
 #
 #   # If requested, add variance-covariance matrix to ret.list
 #   if (estimate_var) {
-#     hessian.mat <- pracma::hessian(f = ll.f, estimating.hessian = TRUE,
+#     hessian.mat <- hessian(f = ll.f, estimating.hessian = TRUE,
 #                                    x0 = theta.hat)
 #     theta.variance <- try(solve(hessian.mat), silent = TRUE)
 #     if (class(theta.variance) == "try-error") {

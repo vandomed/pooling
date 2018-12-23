@@ -10,7 +10,7 @@
 #' Package: \tab pooling \cr
 #' Type: \tab Package \cr
 #' Version: \tab 1.1.1 \cr
-#' Date: \tab 2018-11-10 \cr
+#' Date: \tab 2018-12-23 \cr
 #' License: \tab GPL-3 \cr
 #' }
 #'
@@ -26,7 +26,7 @@
 #'
 #' @importFrom cubature adaptIntegrate hcubature
 #' @importFrom dplyr %>%
-#' @importFrom dvmisc n_2t_equal n_2t_unequal power_2t_equal power_2t_unequal
+#' @importFrom dvmisc inside n_2t_equal n_2t_unequal power_2t_equal power_2t_unequal
 #' @import ggplot2
 #' @import ggrepel
 #' @importFrom mvtnorm dmvnorm

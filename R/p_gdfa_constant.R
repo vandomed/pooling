@@ -89,10 +89,10 @@ p_gdfa_constant <- function(g,
     stop("The input 'errors' should be set to 'neither', 'processing',
          'measurement', or 'both'.")
   }
-  if (! (is.numeric(integrate_tol) & dvmisc::inside(integrate_tol, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate_tol_hessian) & dvmisc::inside(integrate_tol_hessian, c(1e-32, Inf)))) {
+  if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
   }
   if (! is.logical(estimate_var)) {
@@ -476,8 +476,8 @@ p_gdfa_constant <- function(g,
   if (estimate_var) {
 
     # Estimate Hessian
-    hessian.mat <- pracma::hessian(f = llf, estimating.hessian = TRUE,
-                                   x0 = ml.estimates)
+    hessian.mat <- hessian(f = llf, estimating.hessian = TRUE,
+                           x0 = ml.estimates)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error" ||
         ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
@@ -485,8 +485,8 @@ p_gdfa_constant <- function(g,
       # Repeatedly divide integrate_tol_hessian by 5 and re-try
       while (integrate_tol_hessian > 1e-15 & fix_posdef) {
         integrate_tol_hessian <- integrate_tol_hessian / 5
-        hessian.mat <- pracma::hessian(f = llf, estimating.hessian = TRUE,
-                                       x0 = ml.estimates)
+        hessian.mat <- hessian(f = llf, estimating.hessian = TRUE,
+                               x0 = ml.estimates)
         theta.variance <- try(solve(hessian.mat), silent = TRUE)
         if (class(theta.variance) != "try-error" &&
             all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
