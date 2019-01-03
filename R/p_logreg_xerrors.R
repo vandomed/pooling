@@ -137,9 +137,6 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
   }
-  if (! (is.numeric(integrate_tol_start) & inside(integrate_tol_start, c(1e-32, Inf)))) {
-    stop("The input 'integrate_tol_start' must be a numeric value greater than 1e-32.")
-  }
   if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
     stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
   }
@@ -556,8 +553,6 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
         # Get integration tolerance
         if (estimating.hessian) {
           int_tol <- integrate_tol_hessian
-        } else if (identical(f.theta, extra.args$start, ignore.environment = TRUE)) {
-          int_tol <- integrate_tol_start
         } else {
           int_tol <- integrate_tol
         }
@@ -754,8 +749,6 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
         # Get integration tolerance
         if (estimating.hessian) {
           int_tol <- integrate_tol_hessian
-        } else if (identical(f.theta, extra.args$start, ignore.environment = TRUE)) {
-          int_tol <- integrate_tol_start
         } else {
           int_tol <- integrate_tol
         }

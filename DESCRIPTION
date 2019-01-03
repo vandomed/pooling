@@ -10,4 +10,4 @@ License: GPL-3
 LazyData: true
 RoxygenNote: 6.0.1
 Remotes: vandomed/dvmisc
-Imports: cubature, dplyr, dvmisc, ggplot2, ggrepel, mvtnorm, optimx, pracma, stats
+Imports: cubature, dplyr, dvmisc, ggplot2, ggrepel, mvtnorm, pracma, stats

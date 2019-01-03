@@ -30,7 +30,6 @@
 #' @import ggplot2
 #' @import ggrepel
 #' @importFrom mvtnorm dmvnorm
-#' @importFrom optimx optimx
 #' @importFrom pracma hessian
 #' @import stats
 #' @name pooling
