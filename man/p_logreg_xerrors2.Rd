@@ -18,6 +18,9 @@ p_logreg_xerrors2(g = NULL, y, xtilde, c = NULL, errors = "processing",
 \item{y}{Numeric vector with poolwise Y values, coded 0 if all members are
 controls and 1 if all members are cases.}
 
+\item{xtilde}{Numeric vector (or list of numeric vectors, if some pools have
+replicates) with Xtilde values.}
+
 \item{c}{List where each element is a numeric matrix containing the
 \strong{C} values for members of a particular pool (1 row for each member).}
 

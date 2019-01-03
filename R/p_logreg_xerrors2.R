@@ -9,6 +9,8 @@
 #' @param g Numeric vector with pool sizes, i.e. number of members in each pool.
 #' @param y Numeric vector with poolwise Y values, coded 0 if all members are
 #' controls and 1 if all members are cases.
+#' @param xtilde Numeric vector (or list of numeric vectors, if some pools have
+#' replicates) with Xtilde values.
 #' @param c List where each element is a numeric matrix containing the
 #' \strong{C} values for members of a particular pool (1 row for each member).
 #' @param errors Character string specifying the errors that X is subject to.
@@ -746,8 +748,8 @@ p_logreg_xerrors2 <- function(
 
   }
 
-  # Add ML optimization object and AIC to ret.list
-  ret.list$opt.object <- ml.max
+  # Add nlminb object and AIC to ret.list
+  ret.list$nlminb.object <- ml.max
   ret.list$aic <- 2 * (length(theta.hat) + ml.max$objective)
 
   # return ret.list
