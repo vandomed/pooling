@@ -7,25 +7,22 @@
 p_logreg_xerrors2(g = NULL, y, xtilde, c = NULL, errors = "processing",
   nondiff_pe = TRUE, nondiff_me = TRUE, constant_pe = TRUE, prev = NULL,
   samp_y1y0 = NULL, integrate_tol = 1e-08,
-  integrate_tol_start = integrate_tol,
   integrate_tol_hessian = integrate_tol, estimate_var = TRUE,
-  fix_posdef = FALSE, ...)
+  fix_posdef = FALSE, start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500))
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
 
-\item{y}{Numeric vector with poolwise \code{Y} values, coded 0 if all members
-are controls and 1 if all members are cases.}
-
-\item{xtilde}{Numeric vector (or list of numeric vectors, if some pools have
-replicates) with \code{Xtilde} values.}
+\item{y}{Numeric vector with poolwise Y values, coded 0 if all members are
+controls and 1 if all members are cases.}
 
 \item{c}{List where each element is a numeric matrix containing the
-\strong{\code{C}} values for members of a particular pool (1 row for each
-member).}
+\strong{C} values for members of a particular pool (1 row for each member).}
 
-\item{errors}{Character string specifying the errors that \code{X} is subject
-to. Choices are \code{"neither"}, \code{"processing"} for processing error
+\item{errors}{Character string specifying the errors that X is subject to.
+Choices are \code{"neither"}, \code{"processing"} for processing error
 only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 
 \item{nondiff_pe}{Logical value for whether to assume the processing error
@@ -50,11 +47,6 @@ case-control sampling. Can specify \code{prev} instead if it's easier.}
 \item{integrate_tol}{Numeric value specifying the \code{tol} input to
 \code{\link{hcubature}}.}
 
-\item{integrate_tol_start}{Same as \code{integrate_tol}, but applies only to
-the very first iteration of ML maximization. The first iteration tends to
-take much longer than subsequent ones, so less precise integration at the
-start can speed things up.}
-
 \item{integrate_tol_hessian}{Same as \code{integrate_tol}, but for use when
 estimating the Hessian matrix only. Sometimes more precise integration
 (i.e. smaller tolerance) than used for maximizing the likelihood helps
@@ -67,7 +59,17 @@ matrix for parameter estimates.}
 \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
 to avoid non-positive definite variance-covariance matrix.}
 
-\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
+\item{start_nonvar_var}{Numeric vector of length 2 specifying starting value
+for non-variance terms and variance terms, respectively.}
+
+\item{lower_nonvar_var}{Numeric vector of length 2 specifying lower bound for
+non-variance terms and variance terms, respectively.}
+
+\item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
+non-variance terms and variance terms, respectively.}
+
+\item{control}{List of control parameters for \code{\link[stats]{nlminb}},
+which is used to maximize the log-likelihood function.}
 }
 \value{
 List containing:
@@ -110,8 +112,7 @@ fit2 <- p_logreg_xerrors2(
   y = dat$y,
   xtilde = dat$xtilde,
   c = c.list,
-  errors = "processing",
-  control = list(trace = 1)
+  errors = "processing"
 )
 fit2$theta.hat
 }

@@ -6,16 +6,58 @@
 #' under review.
 #'
 #'
-#' @inheritParams p_logreg_xerrors
-#'
+#' @param g Numeric vector with pool sizes, i.e. number of members in each pool.
+#' @param y Numeric vector with poolwise Y values, coded 0 if all members are
+#' controls and 1 if all members are cases.
 #' @param c List where each element is a numeric matrix containing the
-#' \strong{\code{C}} values for members of a particular pool (1 row for each
-#' member).
+#' \strong{C} values for members of a particular pool (1 row for each member).
+#' @param errors Character string specifying the errors that X is subject to.
+#' Choices are \code{"neither"}, \code{"processing"} for processing error
+#' only, \code{"measurement"} for measurement error only, and \code{"both"}.
+#' @param nondiff_pe Logical value for whether to assume the processing error
+#' variance is non-differential, i.e. the same in case pools and control pools.
+#' @param nondiff_me Logical value for whether to assume the measurement error
+#' variance is non-differential, i.e. the same in case pools and control pools.
+#' @param constant_pe Logical value for whether to assume the processing error
+#' variance is constant with pool size. If \code{FALSE}, assumption is that
+#' processing error variance increase with pool size such that, for example, the
+#' processing error affecting a pool 2x as large as another has 2x the variance.
+#' @param prev Numeric value specifying disease prevalence, allowing
+#' for valid estimation of the intercept with case-control sampling. Can specify
+#' \code{samp_y1y0} instead if sampling rates are known.
+#' @param samp_y1y0 Numeric vector of length 2 specifying sampling probabilities
+#' for cases and controls, allowing for valid estimation of the intercept with
+#' case-control sampling. Can specify \code{prev} instead if it's easier.
 #' @param integrate_tol Numeric value specifying the \code{tol} input to
 #' \code{\link{hcubature}}.
+#' @param integrate_tol_hessian Same as \code{integrate_tol}, but for use when
+#' estimating the Hessian matrix only. Sometimes more precise integration
+#' (i.e. smaller tolerance) than used for maximizing the likelihood helps
+#' prevent cases where the inverse Hessian is not positive definite.
+#' @param estimate_var Logical value for whether to return variance-covariance
+#' matrix for parameter estimates.
+#' @param fix_posdef Logical value for whether to repeatedly reduce
+#' \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
+#' to avoid non-positive definite variance-covariance matrix.
+#' @param start_nonvar_var Numeric vector of length 2 specifying starting value
+#' for non-variance terms and variance terms, respectively.
+#' @param lower_nonvar_var Numeric vector of length 2 specifying lower bound for
+#' non-variance terms and variance terms, respectively.
+#' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
+#' non-variance terms and variance terms, respectively.
+#' @param control List of control parameters for \code{\link[stats]{nlminb}},
+#' which is used to maximize the log-likelihood function.
 #'
 #'
-#' @inherit p_logreg_xerrors return
+#' @return
+#' List containing:
+#' \enumerate{
+#' \item Numeric vector of parameter estimates.
+#' \item Variance-covariance matrix (if \code{estimate_var = TRUE}).
+#' \item Returned \code{\link[stats]{nlminb}} object from maximizing the
+#' log-likelihood function.
+#' \item Akaike information criterion (AIC).
+#' }
 #'
 #'
 #' @references
@@ -66,25 +108,28 @@
 #'   y = dat$y,
 #'   xtilde = dat$xtilde,
 #'   c = c.list,
-#'   errors = "processing",
-#'   control = list(trace = 1)
+#'   errors = "processing"
 #' )
 #' fit2$theta.hat
 #' }
 #'
 #'
 #' @export
-p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
-                              errors = "processing",
-                              nondiff_pe = TRUE, nondiff_me = TRUE,
-                              constant_pe = TRUE,
-                              prev = NULL, samp_y1y0 = NULL,
-                              integrate_tol = 1e-8,
-                              integrate_tol_start = integrate_tol,
-                              integrate_tol_hessian = integrate_tol,
-                              estimate_var = TRUE,
-                              fix_posdef = FALSE,
-                              ...) {
+p_logreg_xerrors2 <- function(
+  g = NULL, y, xtilde, c = NULL,
+  errors = "processing",
+  nondiff_pe = TRUE, nondiff_me = TRUE,
+  constant_pe = TRUE,
+  prev = NULL, samp_y1y0 = NULL,
+  integrate_tol = 1e-8,
+  integrate_tol_hessian = integrate_tol,
+  estimate_var = TRUE,
+  fix_posdef = FALSE,
+  start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf),
+  upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500)
+) {
 
   # Check that inputs are valid
   if (! errors %in% c("neither", "processing", "measurement", "both")) {
@@ -112,16 +157,22 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
     }
   }
   if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
-    stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
-  }
-  if (! (is.numeric(integrate_tol_start) & inside(integrate_tol_start, c(1e-32, Inf)))) {
-    stop("The input 'integrate_tol_start' must be a numeric value greater than 1e-32.")
+    stop("The input 'integrate_tol' should be a numeric value greater than 1e-32.")
   }
   if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
-    stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
+    stop("The input 'integrate_tol_hessian' should be a numeric value greater than 1e-32.")
   }
   if (! is.logical(estimate_var)) {
     stop("The input 'estimate_var' should be TRUE or FALSE.")
+  }
+  if (! (is.numeric(start_nonvar_var) & length(start_nonvar_var) == 2)) {
+    stop("The input 'start_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(lower_nonvar_var) & length(lower_nonvar_var) == 2)) {
+    stop("The input 'lower_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(upper_nonvar_var) & length(upper_nonvar_var) == 2)) {
+    stop("The input 'upper_nonvar_var' should be a numeric vector of length 2.")
   }
 
   # Get name of xtilde input
@@ -462,8 +513,6 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
       # Get integration tolerance
       if (estimating.hessian) {
         int_tol <- integrate_tol_hessian
-      } else if (identical(f.theta, extra.args$start, ignore.environment = TRUE)) {
-        int_tol <- integrate_tol_start
       } else {
         int_tol <- integrate_tol
       }
@@ -495,7 +544,7 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
         int.vals[ii] <- int.ii$integral
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
-        if (int.ii$integral == 0) {
+        if (is.na(int.ii$integral) | int.ii$integral == 0) {
           print(paste("Integral is 0 for ii = ", ii, sep = ""))
           print(f.theta)
           print(int.ii)
@@ -561,8 +610,6 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
       # Get integration tolerance
       if (estimating.hessian) {
         int_tol <- integrate_tol_hessian
-      } else if (identical(f.theta, extra.args$start, ignore.environment = TRUE)) {
-        int_tol <- integrate_tol_start
       } else {
         int_tol <- integrate_tol
       }
@@ -593,7 +640,7 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
         int.vals[ii] <- int.ii$integral
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
-        if (int.ii$integral == 0) {
+        if (is.na(int.ii$integral) | int.ii$integral == 0) {
           print(paste("Integral is 0 for ii = ", ii, sep = ""))
           print(f.theta)
           print(int.ii)
@@ -614,43 +661,46 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
   }
 
-  # Create list of extra arguments, and assign default starting values and lower
-  # values if not specified by user
-  extra.args <- list(...)
-  if (is.null(extra.args$start)) {
-    if (errors == "neither") {
-      extra.args$start <- c(rep(0.01, n.betas + n.alphas), 1)
-    } else if (errors == "processing") {
-      extra.args$start <- c(rep(0.01, n.betas + n.alphas),
-                            rep(1, loc.sigsq_p0 - loc.b + 1))
-    } else if (errors %in% c("measurement", "both")) {
-      extra.args$start <- c(rep(0.01, n.betas + n.alphas),
-                            rep(1, loc.sigsq_m0 - loc.b + 1))
-    }
+  # Starting values
+  if (errors == "neither") {
+    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+               start_nonvar_var[2])
+  } else if (errors == "processing") {
+    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+               rep(start_nonvar_var[2], loc.sigsq_p0 - loc.b + 1))
+  } else if (errors %in% c("measurement", "both")) {
+    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+               rep(start_nonvar_var[2], loc.sigsq_m0 - loc.b + 1))
   }
-  if (is.null(extra.args$lower)) {
-    if (errors == "neither") {
-      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas), 1e-3)
-    } else if (errors == "processing") {
-      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas),
-                            rep(1e-3, loc.sigsq_p0 - loc.b + 1))
-    } else if (errors %in% c("measurement", "both")) {
-      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas),
-                            rep(1e-3, loc.sigsq_m0 - loc.b + 1))
-    }
+  print(start)
+
+  # Lower bounds
+  if (errors == "neither") {
+    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+               lower_nonvar_var[2])
+  } else if (errors == "processing") {
+    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+               rep(lower_nonvar_var[2], loc.sigsq_p0 - loc.b + 1))
+  } else if (errors %in% c("measurement", "both")) {
+    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+               rep(lower_nonvar_var[2], loc.sigsq_m0 - loc.b + 1))
   }
-  if (is.null(extra.args$control$rel.tol)) {
-    extra.args$control$rel.tol <- 1e-6
-  }
-  if (is.null(extra.args$control$eval.max)) {
-    extra.args$control$eval.max <- 1000
-  }
-  if (is.null(extra.args$control$iter.max)) {
-    extra.args$control$iter.max <- 750
+
+  # Upper bounds
+  if (errors == "neither") {
+    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+               upper_nonvar_var[2])
+  } else if (errors == "processing") {
+    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+               rep(upper_nonvar_var[2], loc.sigsq_p0 - loc.b + 1))
+  } else if (errors %in% c("measurement", "both")) {
+    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+               rep(upper_nonvar_var[2], loc.sigsq_m0 - loc.b + 1))
   }
 
   # Obtain ML estimates
-  ml.max <- do.call(nlminb, c(list(objective = ll.f), extra.args))
+  ml.max <- nlminb(start = start, objective = ll.f,
+                   lower = lower, upper = upper, control = control)
 
   # Create list to return
   theta.hat <- ml.max$par
@@ -696,8 +746,8 @@ p_logreg_xerrors2 <- function(g = NULL, y, xtilde, c = NULL,
 
   }
 
-  # Add nlminb object and AIC to ret.list
-  ret.list$nlminb.object <- ml.max
+  # Add ML optimization object and AIC to ret.list
+  ret.list$opt.object <- ml.max
   ret.list$aic <- 2 * (length(theta.hat) + ml.max$objective)
 
   # return ret.list

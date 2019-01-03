@@ -7,24 +7,23 @@
 p_logreg_xerrors(g, y, xtilde, c = NULL, errors = "processing",
   nondiff_pe = TRUE, nondiff_me = TRUE, constant_pe = TRUE, prev = NULL,
   samp_y1y0 = NULL, approx_integral = TRUE, integrate_tol = 1e-08,
-  integrate_tol_start = integrate_tol,
   integrate_tol_hessian = integrate_tol, estimate_var = TRUE,
   fix_posdef = FALSE, ...)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
 
-\item{y}{Numeric vector with poolwise \code{Y} values, coded 0 if all members
-are controls and 1 if all members are cases.}
+\item{y}{Numeric vector with poolwise Y values, coded 0 if all members are
+controls and 1 if all members are cases.}
 
 \item{xtilde}{Numeric vector (or list of numeric vectors, if some pools have
-replicates) with \code{Xtilde} values.}
+replicates) with Xtilde values.}
 
-\item{c}{Numeric matrix with poolwise \strong{\code{C}} values (if any), with
-one row for each pool. Can be a vector if there is only 1 covariate.}
+\item{c}{Numeric matrix with poolwise \strong{C} values (if any), with one
+row for each pool. Can be a vector if there is only 1 covariate.}
 
-\item{errors}{Character string specifying the errors that \code{X} is subject
-to. Choices are \code{"neither"}, \code{"processing"} for processing error
+\item{errors}{Character string specifying the errors that X is subject to.
+Choices are \code{"neither"}, \code{"processing"} for processing error
 only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 
 \item{nondiff_pe}{Logical value for whether to assume the processing error
@@ -48,16 +47,11 @@ case-control sampling. Can specify \code{prev} instead if it's easier.}
 
 \item{approx_integral}{Logical value for whether to use the probit
 approximation for the logistic-normal integral, to avoid numerically
-integrating \code{X}'s out of the likelihood function.}
+integrating X's out of the likelihood function.}
 
 \item{integrate_tol}{Numeric value specifying the \code{tol} input to
 \code{\link[cubature]{hcubature}}. Only used if
 \code{approx_integral = FALSE}.}
-
-\item{integrate_tol_start}{Same as \code{integrate_tol}, but applies only to
-the very first iteration of ML maximization. The first iteration tends to
-take much longer than subsequent ones, so less precise integration at the
-start can speed things up.}
 
 \item{integrate_tol_hessian}{Same as \code{integrate_tol}, but for use when
 estimating the Hessian matrix only. Sometimes more precise integration
