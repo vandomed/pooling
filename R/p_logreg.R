@@ -20,7 +20,9 @@
 #' case-control sampling. Can specify \code{prev} instead if it's easier.
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
-#' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
+#' @param control List of control parameters for \code{\link[stats]{nlminb}},
+#' which is used to maximize the log-likelihood function. Only used if
+#' \code{method = "ml"}.
 #'
 #'
 #' @return
@@ -55,9 +57,16 @@
 #'
 #'
 #' @export
-p_logreg <- function(g, y, x,
-                     method = "glm", prev = NULL, samp_y1y0 = NULL,
-                     estimate_var = TRUE, ...) {
+p_logreg <- function(
+  g,
+  y,
+  x,
+  method = "glm",
+  prev = NULL,
+  samp_y1y0 = NULL,
+  estimate_var = TRUE,
+  control = list(trace = 1, eval.max = 500, iter.max = 500)
+) {
 
   # Check that inputs are valid
   if (! method %in% c("glm", "ml")) {
@@ -173,7 +182,7 @@ p_logreg <- function(g, y, x,
 
     # Log-likelihood function
     n.betas <- length(beta.labels)
-    ll.f <- function(f.theta) {
+    llf <- function(f.theta) {
 
       # Likelihood:
       # L_i = f(Y|X)
@@ -188,21 +197,8 @@ p_logreg <- function(g, y, x,
 
     }
 
-    # Create list of extra arguments, and assign default starting values and
-    # lower values if not specified by user
-    extra.args <- list(...)
-    if (is.null(extra.args$start)) {
-      extra.args$start <- rep(0.01, n.betas)
-    }
-    if (is.null(extra.args$lower)) {
-      extra.args$lower <- rep(-Inf, n.betas)
-    }
-    if (is.null(extra.args$control$rel.tol)) {
-      extra.args$control$rel.tol <- 1e-6
-    }
-
     # Obtain ML estimates
-    ml.max <- do.call(nlminb, c(list(objective = ll.f), extra.args))
+    ml.max <- nlminb(start = start, objective = llf, control = control)
 
     # Create list to return
     theta.hat <- ml.max$par
@@ -211,7 +207,7 @@ p_logreg <- function(g, y, x,
 
     # If requested, add variance-covariance matrix to ret.list
     if (estimate_var) {
-      hessian.mat <- hessian(f = ll.f, x0 = theta.hat)
+      hessian.mat <- hessian(f = llf, x0 = theta.hat)
       theta.variance <- solve(hessian.mat)
       colnames(theta.variance) <- rownames(theta.variance) <- beta.labels
       ret.list$theta.var <- theta.variance
