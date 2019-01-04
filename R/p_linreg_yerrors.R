@@ -38,11 +38,25 @@
 #' only, \code{"measurement"} for measurement error only, and \code{"both"}.
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
-#' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
+#' @param start_nonvar_var Numeric vector of length 2 specifying starting value
+#' for non-variance terms and variance terms, respectively.
+#' @param lower_nonvar_var Numeric vector of length 2 specifying lower bound for
+#' non-variance terms and variance terms, respectively.
+#' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
+#' non-variance terms and variance terms, respectively.
+#' @param control List of control parameters for \code{\link[stats]{nlminb}},
+#' which is used to maximize the log-likelihood function.
 #'
 #'
-#' @return List of parameter estimates, variance-covariance matrix (if
-#' requested), \code{\link[stats]{nlminb}} object, and AIC.
+#' @return
+#' List containing:
+#' \enumerate{
+#' \item Numeric vector of parameter estimates.
+#' \item Variance-covariance matrix (if \code{estimate_var = TRUE}).
+#' \item Returned \code{\link[stats]{nlminb}} object from maximizing the
+#' log-likelihood function.
+#' \item Akaike information criterion (AIC).
+#' }
 #'
 #'
 #' @references
@@ -97,16 +111,34 @@
 #'
 #'
 #' @export
-p_linreg_yerrors <- function(g,
-                             ytilde,
-                             x = NULL,
-                             errors = "both",
-                             estimate_var = TRUE, ...) {
+p_linreg_yerrors <- function(
+  g,
+  ytilde,
+  x = NULL,
+  errors = "processing",
+  estimate_var = TRUE,
+  start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf),
+  upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500)
+) {
 
   # Check that inputs are valid
   if (! errors %in% c("neither", "processing", "measurement", "both")) {
     stop("The input 'errors' should be set to 'neither', 'processing',
          'measurement', or 'both'.")
+  }
+  if (! is.logical(estimate_var)) {
+    stop("The input 'estimate_var' should be TRUE or FALSE.")
+  }
+  if (! (is.numeric(start_nonvar_var) & length(start_nonvar_var) == 2)) {
+    stop("The input 'start_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(lower_nonvar_var) & length(lower_nonvar_var) == 2)) {
+    stop("The input 'lower_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(upper_nonvar_var) & length(upper_nonvar_var) == 2)) {
+    stop("The input 'upper_nonvar_var' should be a numeric vector of length 2.")
   }
 
   # Sample size
@@ -269,39 +301,45 @@ p_linreg_yerrors <- function(g,
 
   }
 
-  # Create list of extra arguments, and assign default starting values and
-  # lower values if not specified by user
-  extra.args <- list(...)
-  if (is.null(extra.args$start)) {
-    if (errors == "neither") {
-      extra.args$start <- c(rep(0.01, n.betas), 1)
-    } else if (errors %in% c("measurement", "processing")) {
-      extra.args$start <- c(rep(0.01, n.betas), rep(1, 2))
-    } else if (errors == "both") {
-      extra.args$start <- c(rep(0.01, n.betas), rep(1, 3))
-    }
+  # Starting values
+  if (errors == "neither") {
+    start <- c(rep(start_nonvar_var[1], n.betas),
+               start_nonvar_var[2])
+  } else if (errors %in% c("measurement", "processing")) {
+    start <- c(rep(start_nonvar_var[1], n.betas),
+               rep(start_nonvar_var[2], 2))
+  } else if (errors == "both") {
+    start <- c(rep(start_nonvar_var[1], n.betas),
+               rep(start_nonvar_var[2], 3))
   }
-  if (is.null(extra.args$lower)) {
-    if (errors == "neither") {
-      extra.args$lower <- c(rep(-Inf, n.betas), 1e-3)
-    } else if (errors %in% c("measurement", "processing")) {
-      extra.args$lower <- c(rep(-Inf, n.betas), rep(1e-3, 2))
-    } else if (errors == "both") {
-      extra.args$lower <- c(rep(-Inf, n.betas), rep(1e-3, 3))
-    }
+
+  # Lower bounds
+  if (errors == "neither") {
+    lower <- c(rep(lower_nonvar_var[1], n.betas),
+               lower_nonvar_var[2])
+  } else if (errors %in% c("measurement", "processing")) {
+    lower <- c(rep(lower_nonvar_var[1], n.betas),
+               rep(lower_nonvar_var[2], 2))
+  } else if (errors == "both") {
+    lower <- c(rep(lower_nonvar_var[1], n.betas),
+               rep(lower_nonvar_var[2], 3))
   }
-  if (is.null(extra.args$control$rel.tol)) {
-    extra.args$control$rel.tol <- 1e-6
-  }
-  if (is.null(extra.args$control$eval.max)) {
-    extra.args$control$eval.max <- 1000
-  }
-  if (is.null(extra.args$control$iter.max)) {
-    extra.args$control$iter.max <- 750
+
+  # Upper bounds
+  if (errors == "neither") {
+    upper <- c(rep(upper_nonvar_var[1], n.betas),
+               upper_nonvar_var[2])
+  } else if (errors %in% c("measurement", "processing")) {
+    upper <- c(rep(upper_nonvar_var[1], n.betas),
+               rep(upper_nonvar_var[2], 2))
+  } else if (errors == "both") {
+    upper <- c(rep(upper_nonvar_var[1], n.betas),
+               rep(upper_nonvar_var[2], 3))
   }
 
   # Obtain ML estimates
-  ml.max <- do.call(nlminb, c(list(objective = llf), extra.args))
+  ml.max <- nlminb(start = start, objective = llf,
+                   lower = lower, upper = upper, control = control)
 
   # Create list to return
   theta.hat <- ml.max$par

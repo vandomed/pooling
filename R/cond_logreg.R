@@ -3,39 +3,38 @@
 #' Compatible with individual or pooled measurements. Assumes a normal linear
 #' model for exposure given other covariates, and additive normal errors.
 #'
-#' @inheritParams p_logreg
 #'
 #' @param g Numeric vector with pool sizes, i.e. number of members in each pool.
-#'
 #' @param xtilde1 Numeric vector (or list of numeric vectors, if some
-#' observations have replicates) with \code{Xtilde} values for cases.
-#'
+#' observations have replicates) with Xtilde values for cases.
 #' @param xtilde0 Numeric vector (or list of numeric vectors, if some
-#' observations have replicates) with \code{Xtilde} values for controls.
-#'
+#' observations have replicates) with Xtilde values for controls.
 #' @param c1 Numeric matrix with precisely measured covariates for cases.
-#'
 #' @param c0 Numeric matrix with precisely measured covariates for controls.
-#'
-#' @param errors Character string specifying the errors that \code{X} is subject
-#' to. Choices are \code{"none"}, \code{"measurement"} for measurement error,
+#' @param errors Character string specifying the errors that X is subject to.
+#' Choices are \code{"none"}, \code{"measurement"} for measurement error,
 #' \code{"processing"} for processing error (only relevant for pooled data), and
 #' \code{"both"}.
-#'
 #' @param approx_integral Logical value for whether to use the probit
 #' approximation for the logistic-normal integral, to avoid numerically
-#' integrating \code{X}'s out of the likelihood function.
-#'
+#' integrating X's out of the likelihood function.
 #' @param integrate_tol Numeric value specifying the \code{tol} input to
-#' \code{\link{adaptIntegrate}}. Only used if \code{approx_integral = FALSE}.
-#'
+#' \code{\link[cubature]{hcubature}}. Only used if
+#' \code{approx_integral = FALSE}.
 #' @param integrate_tol_hessian Same as \code{integrate_tol}, but for use when
 #' estimating the Hessian matrix only. Sometimes more precise integration
 #' (i.e. smaller tolerance) than used for maximizing the likelihood helps
 #' prevent cases where the inverse Hessian is not positive definite.
-#'
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
+#' @param start_nonvar_var Numeric vector of length 2 specifying starting value
+#' for non-variance terms and variance terms, respectively.
+#' @param lower_nonvar_var Numeric vector of length 2 specifying lower bound for
+#' non-variance terms and variance terms, respectively.
+#' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
+#' non-variance terms and variance terms, respectively.
+#' @param control List of control parameters for \code{\link[stats]{nlminb}},
+#' which is used to maximize the log-likelihood function.
 #'
 #'
 #' @return
@@ -49,8 +48,6 @@
 #' }
 #'
 #'
-#' @inherit p_logreg references
-#'
 #' @references
 #' Saha-Chaudhuri, P., Umbach, D.M. and Weinberg, C.R. (2011) "Pooled exposure
 #' assessment for matched case-control studies." \emph{Epidemiology}
@@ -59,6 +56,16 @@
 #' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
 #' pooled-unpooled design for cost-efficient measurement of biomarkers."
 #' \emph{Stat. Med.} \strong{29}(5): 597--613.
+#'
+#' Weinberg, C.R. and Umbach, D.M. (1999) "Using pooled exposure assessment to
+#' improve efficiency in case-control studies." \emph{Biometrics} \strong{55}:
+#' 718--726.
+#'
+#' Weinberg, C.R. and Umbach, D.M. (2014) "Correction to 'Using pooled exposure
+#' assessment to improve efficiency in case-control studies' by Clarice R.
+#' Weinberg and David M. Umbach; 55, 718--726, September 1999."
+#' \emph{Biometrics} \strong{70}: 1061.
+#'
 #'
 #' @examples
 #' # Load simulated data for 150 case pools and 150 control pools
@@ -99,17 +106,22 @@
 #'
 #'
 #' @export
-cond_logreg <- function(g = rep(1, length(xtilde1)),
-                        xtilde1,
-                        xtilde0,
-                        c1 = NULL,
-                        c0 = NULL,
-                        errors = "both",
-                        approx_integral = TRUE,
-                        integrate_tol = 1e-4,
-                        integrate_tol_hessian = integrate_tol,
-                        estimate_var = FALSE,
-                        ...) {
+cond_logreg <- function(
+  g = rep(1, length(xtilde1)),
+  xtilde1,
+  xtilde0,
+  c1 = NULL,
+  c0 = NULL,
+  errors = "processing",
+  approx_integral = TRUE,
+  integrate_tol = 1e-4,
+  integrate_tol_hessian = integrate_tol,
+  estimate_var = FALSE,
+  start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf),
+  upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500)
+) {
 
   # Get number of pools
   n <- length(g)
@@ -435,25 +447,24 @@ cond_logreg <- function(g = rep(1, length(xtilde1)),
         for (ii in 1: n.i) {
 
           # Perform integration
-          int.ii <-
-            adaptIntegrate(f = lf.full,
-                           tol = integrate_tol,
-                           lowerLimit = rep(-1, 2),
-                           upperLimit = rep(1, 2),
-                           vectorInterface = TRUE,
-                           g = g.i[ii],
-                           Ig = Ig.i[ii],
-                           k1 = k1.i[ii],
-                           k0 = k0.i[ii],
-                           xtilde1 = unlist(xtilde1.i[ii]),
-                           xtilde0 = unlist(xtilde0.i[ii]),
-                           mu_x1.c1 = mu_x1.c1s[ii],
-                           mu_x0.c0 = mu_x0.c0s[ii],
-                           sigsq_x.c = sigsq_x.cs[ii],
-                           f.sigsq_p = f.sigsq_p,
-                           f.sigsq_m = f.sigsq_m,
-                           f.beta_x = f.beta_x,
-                           cterm = cterms[ii])
+          int.ii <- hcubature(f = lf.full,
+                              tol = integrate_tol,
+                              lowerLimit = rep(-1, 2),
+                              upperLimit = rep(1, 2),
+                              vectorInterface = TRUE,
+                              g = g.i[ii],
+                              Ig = Ig.i[ii],
+                              k1 = k1.i[ii],
+                              k0 = k0.i[ii],
+                              xtilde1 = unlist(xtilde1.i[ii]),
+                              xtilde0 = unlist(xtilde0.i[ii]),
+                              mu_x1.c1 = mu_x1.c1s[ii],
+                              mu_x0.c0 = mu_x0.c0s[ii],
+                              sigsq_x.c = sigsq_x.cs[ii],
+                              f.sigsq_p = f.sigsq_p,
+                              f.sigsq_m = f.sigsq_m,
+                              f.beta_x = f.beta_x,
+                              cterm = cterms[ii])
           int.vals[ii] <- int.ii$integral
           if (int.ii$integral == 0) {
             print(paste("Integral is 0 for ii = ", ii, sep = ""))
@@ -479,39 +490,45 @@ cond_logreg <- function(g = rep(1, length(xtilde1)),
 
   }
 
-  # Create list of extra arguments, and assign default starting values and
-  # lower values if not specified by user
-  extra.args <- list(...)
-  if (is.null(extra.args$start)) {
-    if (errors == "neither") {
-      extra.args$start <- c(rep(0.01, n.betas + n.alphas), 1)
-    } else if (errors %in% c("processing", "measurement")) {
-      extra.args$start <- c(rep(0.01, n.betas + n.alphas), rep(1, 2))
-    } else if (errors == "both") {
-      extra.args$start <- c(rep(0.01, n.betas + n.alphas), rep(1, 3))
-    }
+  # Starting values
+  if (errors == "neither") {
+    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+               start_nonvar_var[2])
+  } else if (errors %in% c("processing", "measurement")) {
+    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+               rep(start_nonvar_var[2], 2))
+  } else if (errors == "both") {
+    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+               rep(start_nonvar_var[2], 3))
   }
-  if (is.null(extra.args$lower)) {
-    if (errors == "neither") {
-      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas), 1e-3)
-    } else if (errors %in% c("processing", "measurement")) {
-      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas), rep(1e-3, 2))
-    } else if (errors == "both") {
-      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas), rep(1e-3, 3))
-    }
+
+  # Lower bounds
+  if (errors == "neither") {
+    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+               lower_nonvar_var[2])
+  } else if (errors %in% c("processing", "measurement")) {
+    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+               rep(lower_nonvar_var[2], 2))
+  } else if (errors == "both") {
+    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+               rep(lower_nonvar_var[2], 3))
   }
-  if (is.null(extra.args$control$rel.tol)) {
-    extra.args$control$rel.tol <- 1e-6
-  }
-  if (is.null(extra.args$control$eval.max)) {
-    extra.args$control$eval.max <- 1000
-  }
-  if (is.null(extra.args$control$iter.max)) {
-    extra.args$control$iter.max <- 750
+
+  # Upper bounds
+  if (errors == "neither") {
+    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+               upper_nonvar_var[2])
+  } else if (errors %in% c("processing", "measurement")) {
+    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+               rep(upper_nonvar_var[2], 2))
+  } else if (errors == "both") {
+    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+               rep(upper_nonvar_var[2], 3))
   }
 
   # Obtain ML estimates
-  ml.max <- do.call(nlminb, c(list(objective = llf), extra.args))
+  ml.max <- nlminb(start = start, objective = llf,
+                   lower = lower, upper = upper, control = control)
 
   # Create list to return
   theta.hat <- ml.max$par
@@ -540,10 +557,6 @@ cond_logreg <- function(g = rep(1, length(xtilde1)),
   return(ret.list)
 
 }
-
-
-
-
 
 # Archived 5/6/2018
 

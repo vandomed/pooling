@@ -17,7 +17,14 @@
 #' @param errors Character string specifying the errors that X is subject to.
 #' Choices are \code{"neither"}, \code{"processing"} for processing error only,
 #' \code{"measurement"} for measurement error only, and \code{"both"}.
-#' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
+#' @param start_nonvar_var Numeric vector of length 2 specifying starting value
+#' for non-variance terms and variance terms, respectively.
+#' @param lower_nonvar_var Numeric vector of length 2 specifying lower bound for
+#' non-variance terms and variance terms, respectively.
+#' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
+#' non-variance terms and variance terms, respectively.
+#' @param control List of control parameters for \code{\link[stats]{nlminb}},
+#' which is used to maximize the log-likelihood function.
 #'
 #'
 #' @return List containing:
@@ -42,26 +49,32 @@
 #'
 #'
 #' @export
-p_ndfa_nonconstant <- function(g,
-                               y,
-                               xtilde,
-                               c = NULL,
-                               errors = "processing",
-                               ...) {
+p_ndfa_nonconstant <- function(
+  g,
+  y,
+  xtilde,
+  c = NULL,
+  errors = "processing",
+  start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf),
+  upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500)
+) {
 
   # Check that inputs are valid
   if (! errors %in% c("neither", "processing", "measurement", "both")) {
     stop("The input 'errors' should be set to 'neither', 'processing',
          'measurement', or 'both'.")
   }
-
-  # # Get name of y input
-  # y.varname <- deparse(substitute(y))
-  # if (length(grep("$", y.varname, fixed = TRUE)) > 0) {
-  #   y.varname <- substr(y.varname,
-  #                       start = which(unlist(strsplit(y.varname, "")) == "$") + 1,
-  #                       stop = nchar(y.varname))
-  # }
+  if (! (is.numeric(start_nonvar_var) & length(start_nonvar_var) == 2)) {
+    stop("The input 'start_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(lower_nonvar_var) & length(lower_nonvar_var) == 2)) {
+    stop("The input 'lower_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(upper_nonvar_var) & length(upper_nonvar_var) == 2)) {
+    stop("The input 'upper_nonvar_var' should be a numeric vector of length 2.")
+  }
 
   # Get number of C variables (and assign names)
   if (is.null(c)) {
@@ -229,39 +242,45 @@ p_ndfa_nonconstant <- function(g,
 
   }
 
-  # Create list of extra arguments, and assign default starting values and
-  # lower values if not specified by user
-  extra.args <- list(...)
-  if (is.null(extra.args$start)) {
-    if (errors == "neither") {
-      extra.args$start <- c(rep(0.01, n.gammas), rep(1, 2))
-    } else if (errors %in% c("measurement", "processing")) {
-      extra.args$start <- c(rep(0.01, n.gammas), rep(1, 3))
-    } else if (errors == "both") {
-      extra.args$start <- c(rep(0.01, n.gammas), rep(1, 4))
-    }
+  # Starting values
+  if (errors == "neither") {
+    start <- c(rep(start_nonvar_var[1], n.gammas),
+               rep(start_nonvar_var[2], 2))
+  } else if (errors %in% c("measurement", "processing")) {
+    start <- c(rep(start_nonvar_var[1], n.gammas),
+               rep(start_nonvar_var[2], 3))
+  } else if (errors == "both") {
+    start <- c(rep(start_nonvar_var[1], n.gammas),
+               rep(start_nonvar_var[2], 4))
   }
-  if (is.null(extra.args$lower)) {
-    if (errors == "neither") {
-      extra.args$lower <- c(rep(-Inf, n.gammas), rep(1e-3, 2))
-    } else if (errors %in% c("measurement", "processing")) {
-      extra.args$lower <- c(rep(-Inf, n.gammas), rep(1e-3, 3))
-    } else if (errors == "both") {
-      extra.args$lower <- c(rep(-Inf, n.gammas), rep(1e-3, 4))
-    }
+
+  # Lower bounds
+  if (errors == "neither") {
+    lower <- c(rep(lower_nonvar_var[1], n.gammas),
+               rep(lower_nonvar_var[2], 2))
+  } else if (errors %in% c("measurement", "processing")) {
+    lower <- c(rep(lower_nonvar_var[1], n.gammas),
+               rep(lower_nonvar_var[2], 3))
+  } else if (errors == "both") {
+    lower <- c(rep(lower_nonvar_var[1], n.gammas),
+               rep(lower_nonvar_var[2], 4))
   }
-  if (is.null(extra.args$control$rel.tol)) {
-    extra.args$control$rel.tol <- 1e-6
-  }
-  if (is.null(extra.args$control$eval.max)) {
-    extra.args$control$eval.max <- 1000
-  }
-  if (is.null(extra.args$control$iter.max)) {
-    extra.args$control$iter.max <- 750
+
+  # Upper bounds
+  if (errors == "neither") {
+    upper <- c(rep(upper_nonvar_var[1], n.gammas),
+               rep(upper_nonvar_var[2], 2))
+  } else if (errors %in% c("measurement", "processing")) {
+    upper <- c(rep(upper_nonvar_var[1], n.gammas),
+               rep(upper_nonvar_var[2], 3))
+  } else if (errors == "both") {
+    upper <- c(rep(upper_nonvar_var[1], n.gammas),
+               rep(upper_nonvar_var[2], 4))
   }
 
   # Obtain ML estimates
-  ml.max <- do.call(nlminb, c(list(objective = llf), extra.args))
+  ml.max <- nlminb(start = start, objective = llf,
+                   lower = lower, upper = upper, control = control)
   ml.estimates <- ml.max$par
 
   # Obtain variance estimates

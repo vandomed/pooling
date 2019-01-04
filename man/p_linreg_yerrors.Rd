@@ -5,8 +5,10 @@
 \title{Linear Regression of Y vs. Covariates with Y Measured in Pools and
 (Potentially) Subject to Additive Normal Errors}
 \usage{
-p_linreg_yerrors(g, ytilde, x = NULL, errors = "both",
-  estimate_var = TRUE, ...)
+p_linreg_yerrors(g, ytilde, x = NULL, errors = "processing",
+  estimate_var = TRUE, start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500))
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -24,11 +26,27 @@ only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 \item{estimate_var}{Logical value for whether to return variance-covariance
 matrix for parameter estimates.}
 
-\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
+\item{start_nonvar_var}{Numeric vector of length 2 specifying starting value
+for non-variance terms and variance terms, respectively.}
+
+\item{lower_nonvar_var}{Numeric vector of length 2 specifying lower bound for
+non-variance terms and variance terms, respectively.}
+
+\item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
+non-variance terms and variance terms, respectively.}
+
+\item{control}{List of control parameters for \code{\link[stats]{nlminb}},
+which is used to maximize the log-likelihood function.}
 }
 \value{
-List of parameter estimates, variance-covariance matrix (if
-requested), \code{\link[stats]{nlminb}} object, and AIC.
+List containing:
+\enumerate{
+\item Numeric vector of parameter estimates.
+\item Variance-covariance matrix (if \code{estimate_var = TRUE}).
+\item Returned \code{\link[stats]{nlminb}} object from maximizing the
+log-likelihood function.
+\item Akaike information criterion (AIC).
+}
 }
 \description{
 Assumes outcome given covariates is a normal-errors linear regression. Pooled

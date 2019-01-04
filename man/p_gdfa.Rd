@@ -7,7 +7,9 @@ Measured in Pools and Potentially Subject to Multiplicative Lognormal Errors}
 \usage{
 p_gdfa(g, y, xtilde, c = NULL, constant_or = TRUE, errors = "processing",
   integrate_tol = 1e-08, integrate_tol_hessian = integrate_tol,
-  estimate_var = TRUE, fix_posdef = FALSE, ...)
+  estimate_var = TRUE, fix_posdef = FALSE, start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500))
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -44,7 +46,17 @@ matrix for parameter estimates.}
 \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
 to avoid non-positive definite variance-covariance matrix.}
 
-\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
+\item{start_nonvar_var}{Numeric vector of length 2 specifying starting value
+for non-variance terms and variance terms, respectively.}
+
+\item{lower_nonvar_var}{Numeric vector of length 2 specifying lower bound for
+non-variance terms and variance terms, respectively.}
+
+\item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
+non-variance terms and variance terms, respectively.}
+
+\item{control}{List of control parameters for \code{\link[stats]{nlminb}},
+which is used to maximize the log-likelihood function.}
 }
 \value{
 List containing:

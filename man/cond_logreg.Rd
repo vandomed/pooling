@@ -5,34 +5,37 @@
 \title{Conditional Logistic Regression with Measurement Error in One Covariate}
 \usage{
 cond_logreg(g = rep(1, length(xtilde1)), xtilde1, xtilde0, c1 = NULL,
-  c0 = NULL, errors = "both", approx_integral = TRUE,
+  c0 = NULL, errors = "processing", approx_integral = TRUE,
   integrate_tol = 1e-04, integrate_tol_hessian = integrate_tol,
-  estimate_var = FALSE, ...)
+  estimate_var = FALSE, start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500))
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
 
 \item{xtilde1}{Numeric vector (or list of numeric vectors, if some
-observations have replicates) with \code{Xtilde} values for cases.}
+observations have replicates) with Xtilde values for cases.}
 
 \item{xtilde0}{Numeric vector (or list of numeric vectors, if some
-observations have replicates) with \code{Xtilde} values for controls.}
+observations have replicates) with Xtilde values for controls.}
 
 \item{c1}{Numeric matrix with precisely measured covariates for cases.}
 
 \item{c0}{Numeric matrix with precisely measured covariates for controls.}
 
-\item{errors}{Character string specifying the errors that \code{X} is subject
-to. Choices are \code{"none"}, \code{"measurement"} for measurement error,
+\item{errors}{Character string specifying the errors that X is subject to.
+Choices are \code{"none"}, \code{"measurement"} for measurement error,
 \code{"processing"} for processing error (only relevant for pooled data), and
 \code{"both"}.}
 
 \item{approx_integral}{Logical value for whether to use the probit
 approximation for the logistic-normal integral, to avoid numerically
-integrating \code{X}'s out of the likelihood function.}
+integrating X's out of the likelihood function.}
 
 \item{integrate_tol}{Numeric value specifying the \code{tol} input to
-\code{\link{adaptIntegrate}}. Only used if \code{approx_integral = FALSE}.}
+\code{\link[cubature]{hcubature}}. Only used if
+\code{approx_integral = FALSE}.}
 
 \item{integrate_tol_hessian}{Same as \code{integrate_tol}, but for use when
 estimating the Hessian matrix only. Sometimes more precise integration
@@ -42,7 +45,17 @@ prevent cases where the inverse Hessian is not positive definite.}
 \item{estimate_var}{Logical value for whether to return variance-covariance
 matrix for parameter estimates.}
 
-\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
+\item{start_nonvar_var}{Numeric vector of length 2 specifying starting value
+for non-variance terms and variance terms, respectively.}
+
+\item{lower_nonvar_var}{Numeric vector of length 2 specifying lower bound for
+non-variance terms and variance terms, respectively.}
+
+\item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
+non-variance terms and variance terms, respectively.}
+
+\item{control}{List of control parameters for \code{\link[stats]{nlminb}},
+which is used to maximize the log-likelihood function.}
 }
 \value{
 List containing:
@@ -105,4 +118,13 @@ assessment for matched case-control studies." \emph{Epidemiology}
 Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
 pooled-unpooled design for cost-efficient measurement of biomarkers."
 \emph{Stat. Med.} \strong{29}(5): 597--613.
+
+Weinberg, C.R. and Umbach, D.M. (1999) "Using pooled exposure assessment to
+improve efficiency in case-control studies." \emph{Biometrics} \strong{55}:
+718--726.
+
+Weinberg, C.R. and Umbach, D.M. (2014) "Correction to 'Using pooled exposure
+assessment to improve efficiency in case-control studies' by Clarice R.
+Weinberg and David M. Umbach; 55, 718--726, September 1999."
+\emph{Biometrics} \strong{70}: 1061.
 }

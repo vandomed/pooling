@@ -8,7 +8,9 @@ p_logreg_xerrors(g, y, xtilde, c = NULL, errors = "processing",
   nondiff_pe = TRUE, nondiff_me = TRUE, constant_pe = TRUE, prev = NULL,
   samp_y1y0 = NULL, approx_integral = TRUE, integrate_tol = 1e-08,
   integrate_tol_hessian = integrate_tol, estimate_var = TRUE,
-  fix_posdef = FALSE, ...)
+  fix_posdef = FALSE, start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500))
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -65,7 +67,17 @@ matrix for parameter estimates.}
 \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
 to avoid non-positive definite variance-covariance matrix.}
 
-\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
+\item{start_nonvar_var}{Numeric vector of length 2 specifying starting value
+for non-variance terms and variance terms, respectively.}
+
+\item{lower_nonvar_var}{Numeric vector of length 2 specifying lower bound for
+non-variance terms and variance terms, respectively.}
+
+\item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
+non-variance terms and variance terms, respectively.}
+
+\item{control}{List of control parameters for \code{\link[stats]{nlminb}},
+which is used to maximize the log-likelihood function.}
 }
 \value{
 List containing:
@@ -88,15 +100,23 @@ exposure. Manuscript fully describing the approach is under review.
 data(pdat1)
 
 # Estimate log-OR for X and Y adjusted for C, ignoring processing error
-fit1 <- p_logreg_xerrors(g = pdat1$g, y = pdat1$allcases,
-                         xtilde = pdat1$xtilde, c = pdat1$c,
-                         errors = "neither")
+fit1 <- p_logreg_xerrors(
+  g = pdat1$g,
+  y = pdat1$allcases,
+  xtilde = pdat1$xtilde,
+  c = pdat1$c,
+  errors = "neither"
+)
 fit1$theta.hat
 
 # Repeat, but accounting for processing error. Closer to true log-OR of 0.5.
-fit2 <- p_logreg_xerrors(g = pdat1$g, y = pdat1$allcases,
-                         xtilde = pdat1$xtilde, c = pdat1$c,
-                         errors = "processing")
+fit2 <- p_logreg_xerrors(
+  g = pdat1$g,
+  y = pdat1$allcases,
+  xtilde = pdat1$xtilde,
+  c = pdat1$c,
+  errors = "processing"
+)
 fit2$theta.hat
 
 

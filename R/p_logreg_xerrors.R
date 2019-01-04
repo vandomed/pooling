@@ -44,7 +44,14 @@
 #' @param fix_posdef Logical value for whether to repeatedly reduce
 #' \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
 #' to avoid non-positive definite variance-covariance matrix.
-#' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
+#' @param start_nonvar_var Numeric vector of length 2 specifying starting value
+#' for non-variance terms and variance terms, respectively.
+#' @param lower_nonvar_var Numeric vector of length 2 specifying lower bound for
+#' non-variance terms and variance terms, respectively.
+#' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
+#' non-variance terms and variance terms, respectively.
+#' @param control List of control parameters for \code{\link[stats]{nlminb}},
+#' which is used to maximize the log-likelihood function.
 #'
 #'
 #' @return
@@ -57,8 +64,6 @@
 #' \item Akaike information criterion (AIC).
 #' }
 #'
-#'
-#' @inherit p_logreg references
 #'
 #' @references
 #' Schisterman, E.F., Vexler, A., Mumford, S.L. and Perkins, N.J. (2010) "Hybrid
@@ -81,30 +86,48 @@
 #' data(pdat1)
 #'
 #' # Estimate log-OR for X and Y adjusted for C, ignoring processing error
-#' fit1 <- p_logreg_xerrors(g = pdat1$g, y = pdat1$allcases,
-#'                          xtilde = pdat1$xtilde, c = pdat1$c,
-#'                          errors = "neither")
+#' fit1 <- p_logreg_xerrors(
+#'   g = pdat1$g,
+#'   y = pdat1$allcases,
+#'   xtilde = pdat1$xtilde,
+#'   c = pdat1$c,
+#'   errors = "neither"
+#' )
 #' fit1$theta.hat
 #'
 #' # Repeat, but accounting for processing error. Closer to true log-OR of 0.5.
-#' fit2 <- p_logreg_xerrors(g = pdat1$g, y = pdat1$allcases,
-#'                          xtilde = pdat1$xtilde, c = pdat1$c,
-#'                          errors = "processing")
+#' fit2 <- p_logreg_xerrors(
+#'   g = pdat1$g,
+#'   y = pdat1$allcases,
+#'   xtilde = pdat1$xtilde,
+#'   c = pdat1$c,
+#'   errors = "processing"
+#' )
 #' fit2$theta.hat
 #'
 #'
 #' @export
-p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
-                             errors = "processing",
-                             nondiff_pe = TRUE, nondiff_me = TRUE,
-                             constant_pe = TRUE,
-                             prev = NULL, samp_y1y0 = NULL,
-                             approx_integral = TRUE,
-                             integrate_tol = 1e-8,
-                             integrate_tol_hessian = integrate_tol,
-                             estimate_var = TRUE,
-                             fix_posdef = FALSE,
-                             ...) {
+p_logreg_xerrors <- function(
+  g,
+  y,
+  xtilde,
+  c = NULL,
+  errors = "processing",
+  nondiff_pe = TRUE,
+  nondiff_me = TRUE,
+  constant_pe = TRUE,
+  prev = NULL,
+  samp_y1y0 = NULL,
+  approx_integral = TRUE,
+  integrate_tol = 1e-8,
+  integrate_tol_hessian = integrate_tol,
+  estimate_var = TRUE,
+  fix_posdef = FALSE,
+  start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf),
+  upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500)
+) {
 
   # Check that inputs are valid
   if (! errors %in% c("neither", "processing", "measurement", "both")) {
@@ -142,6 +165,15 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   }
   if (! is.logical(estimate_var)) {
     stop("The input 'estimate_var' should be TRUE or FALSE.")
+  }
+  if (! (is.numeric(start_nonvar_var) & length(start_nonvar_var) == 2)) {
+    stop("The input 'start_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(lower_nonvar_var) & length(lower_nonvar_var) == 2)) {
+    stop("The input 'lower_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(upper_nonvar_var) & length(upper_nonvar_var) == 2)) {
+    stop("The input 'upper_nonvar_var' should be a numeric vector of length 2.")
   }
 
   # Get name of xtilde input
@@ -354,7 +386,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   }
 
   # Log-likelihood function
-  ll.f <- function(f.theta, estimating.hessian = FALSE) {
+  llf <- function(f.theta, estimating.hessian = FALSE) {
 
     # Extract parameters
     f.betas <- matrix(f.theta[loc.betas], ncol = 1)
@@ -855,43 +887,45 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
 
   }
 
-  # Create list of extra arguments, and assign default starting values and
-  # lower values if not specified by user
-  extra.args <- list(...)
-  if (is.null(extra.args$start)) {
-    if (errors == "neither") {
-      extra.args$start <- c(rep(0.01, n.betas + n.alphas), 1)
-    } else if (errors == "processing") {
-      extra.args$start <- c(rep(0.01, n.betas + n.alphas),
-                            rep(1, loc.sigsq_p0 - loc.sigsq_x.c + 1))
-    } else if (errors %in% c("measurement", "both")) {
-      extra.args$start <- c(rep(0.01, n.betas + n.alphas),
-                            rep(1, loc.sigsq_m0 - loc.sigsq_x.c + 1))
-    }
+  # Starting values
+  if (errors == "neither") {
+    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+               start_nonvar_var[2])
+  } else if (errors == "processing") {
+    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+               rep(start_nonvar_var[2], loc.sigsq_p0 - loc.sigsq_x.c + 1))
+  } else if (errors %in% c("measurement", "both")) {
+    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+               rep(start_nonvar_var[2], loc.sigsq_m0 - loc.sigsq_x.c + 1))
   }
-  if (is.null(extra.args$lower)) {
-    if (errors == "neither") {
-      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas), 1e-3)
-    } else if (errors == "processing") {
-      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas),
-                            rep(1e-3, loc.sigsq_p0 - loc.sigsq_x.c + 1))
-    } else if (errors %in% c("measurement", "both")) {
-      extra.args$lower <- c(rep(-Inf, n.betas + n.alphas),
-                            rep(1e-3, loc.sigsq_m0 - loc.sigsq_x.c + 1))
-    }
+
+  # Lower bounds
+  if (errors == "neither") {
+    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+               lower_nonvar_var[2])
+  } else if (errors == "processing") {
+    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+               rep(lower_nonvar_var[2], loc.sigsq_p0 - loc.sigsq_x.c + 1))
+  } else if (errors %in% c("measurement", "both")) {
+    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+               rep(lower_nonvar_var[2], loc.sigsq_m0 - loc.sigsq_x.c + 1))
   }
-  if (is.null(extra.args$control$rel.tol)) {
-    extra.args$control$rel.tol <- 1e-6
-  }
-  if (is.null(extra.args$control$eval.max)) {
-    extra.args$control$eval.max <- 1000
-  }
-  if (is.null(extra.args$control$iter.max)) {
-    extra.args$control$iter.max <- 750
+
+  # Upper bounds
+  if (errors == "neither") {
+    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+               upper_nonvar_var[2])
+  } else if (errors == "processing") {
+    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+               rep(upper_nonvar_var[2], loc.sigsq_p0 - loc.sigsq_x.c + 1))
+  } else if (errors %in% c("measurement", "both")) {
+    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+               rep(upper_nonvar_var[2], loc.sigsq_m0 - loc.sigsq_x.c + 1))
   }
 
   # Obtain ML estimates
-  ml.max <- do.call(nlminb, c(list(objective = ll.f), extra.args))
+  ml.max <- nlminb(start = start, objective = llf,
+                   lower = lower, upper = upper, control = control)
 
   # Create list to return
   theta.hat <- ml.max$par
@@ -902,7 +936,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
   if (estimate_var) {
 
     # Estimate Hessian
-    hessian.mat <- hessian(f = ll.f, estimating.hessian = TRUE, x0 = theta.hat)
+    hessian.mat <- hessian(f = llf, estimating.hessian = TRUE, x0 = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error" ||
         ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
@@ -910,7 +944,7 @@ p_logreg_xerrors <- function(g, y, xtilde, c = NULL,
       # Repeatedly divide integrate_tol_hessian by 5 and re-try
       while (integrate_tol_hessian > 1e-15 & fix_posdef) {
         integrate_tol_hessian <- integrate_tol_hessian / 5
-        hessian.mat <- hessian(f = ll.f, estimating.hessian = TRUE,
+        hessian.mat <- hessian(f = llf, estimating.hessian = TRUE,
                                x0 = theta.hat)
         theta.variance <- try(solve(hessian.mat), silent = TRUE)
         if (class(theta.variance) != "try-error" &&

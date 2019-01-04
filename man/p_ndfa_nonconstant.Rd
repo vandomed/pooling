@@ -6,7 +6,10 @@
 Measured in Pools and Potentially Subject to Additive Normal Errors
 (Non-constant Odds Ratio Version)}
 \usage{
-p_ndfa_nonconstant(g, y, xtilde, c = NULL, errors = "processing", ...)
+p_ndfa_nonconstant(g, y, xtilde, c = NULL, errors = "processing",
+  start_nonvar_var = c(0.01, 1), lower_nonvar_var = c(-Inf, -Inf),
+  upper_nonvar_var = c(Inf, Inf), control = list(trace = 1, eval.max = 500,
+  iter.max = 500))
 }
 \arguments{
 \item{g}{Numeric vector of pool sizes, i.e. number of members in each pool.}
@@ -23,7 +26,17 @@ row for each pool. Can be a vector if there is only 1 covariate.}
 Choices are \code{"neither"}, \code{"processing"} for processing error only,
 \code{"measurement"} for measurement error only, and \code{"both"}.}
 
-\item{...}{Additional arguments to pass to \code{\link[stats]{nlminb}}.}
+\item{start_nonvar_var}{Numeric vector of length 2 specifying starting value
+for non-variance terms and variance terms, respectively.}
+
+\item{lower_nonvar_var}{Numeric vector of length 2 specifying lower bound for
+non-variance terms and variance terms, respectively.}
+
+\item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
+non-variance terms and variance terms, respectively.}
+
+\item{control}{List of control parameters for \code{\link[stats]{nlminb}},
+which is used to maximize the log-likelihood function.}
 }
 \value{
 List containing:

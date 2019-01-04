@@ -31,7 +31,15 @@
 #' @param fix_posdef Logical value for whether to repeatedly reduce
 #' \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
 #' to avoid non-positive definite variance-covariance matrix.
-#' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
+#' @param start_nonvar_var Numeric vector of length 2 specifying starting value
+#' for non-variance terms and variance terms, respectively.
+#' @param lower_nonvar_var Numeric vector of length 2 specifying lower bound for
+#' non-variance terms and variance terms, respectively.
+#' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
+#' non-variance terms and variance terms, respectively.
+#' @param control List of control parameters for \code{\link[stats]{nlminb}},
+#' which is used to maximize the log-likelihood function.
+#'
 #'
 #' @return List containing:
 #' \enumerate{
@@ -148,17 +156,22 @@
 #'
 #'
 #' @export
-p_gdfa <- function(g,
-                   y,
-                   xtilde,
-                   c = NULL,
-                   constant_or = TRUE,
-                   errors = "processing",
-                   integrate_tol = 1e-8,
-                   integrate_tol_hessian = integrate_tol,
-                   estimate_var = TRUE,
-                   fix_posdef = FALSE,
-                   ...) {
+p_gdfa <- function(
+  g,
+  y,
+  xtilde,
+  c = NULL,
+  constant_or = TRUE,
+  errors = "processing",
+  integrate_tol = 1e-8,
+  integrate_tol_hessian = integrate_tol,
+  estimate_var = TRUE,
+  fix_posdef = FALSE,
+  start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf),
+  upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500)
+) {
 
   # Check that inputs are valid
   if (! is.null(constant_or) && ! is.logical(constant_or)) {
@@ -180,6 +193,15 @@ p_gdfa <- function(g,
   if (! is.logical(fix_posdef)) {
     stop("The input 'fix_posdef' should be TRUE or FALSE.")
   }
+  if (! (is.numeric(start_nonvar_var) & length(start_nonvar_var) == 2)) {
+    stop("The input 'start_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(lower_nonvar_var) & length(lower_nonvar_var) == 2)) {
+    stop("The input 'lower_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(upper_nonvar_var) & length(upper_nonvar_var) == 2)) {
+    stop("The input 'upper_nonvar_var' should be a numeric vector of length 2.")
+  }
 
   if (is.null(constant_or)) {
 
@@ -194,7 +216,10 @@ p_gdfa <- function(g,
       integrate_tol_hessian = integrate_tol_hessian,
       estimate_var = estimate_var,
       fix_posdef = fix_posdef,
-      ...
+      start_nonvar_var = start_nonvar_var,
+      lower_nonvar_var = lower_nonvar_var,
+      upper_nonvar_var = upper_nonvar_var,
+      control = control
     )
 
     # Fit model with non-constant odds ratio
@@ -208,7 +233,10 @@ p_gdfa <- function(g,
       integrate_tol_hessian = integrate_tol_hessian,
       estimate_var = estimate_var,
       fix_posdef = fix_posdef,
-      ...
+      start_nonvar_var = start_nonvar_var,
+      lower_nonvar_var = lower_nonvar_var,
+      upper_nonvar_var = upper_nonvar_var,
+      control = control
     )
 
     # Likelihood ratio test for H0: gamma_y = 0, which is equivalent to
@@ -239,7 +267,10 @@ p_gdfa <- function(g,
       integrate_tol_hessian = integrate_tol_hessian,
       estimate_var = estimate_var,
       fix_posdef = fix_posdef,
-      ...
+      start_nonvar_var = start_nonvar_var,
+      lower_nonvar_var = lower_nonvar_var,
+      upper_nonvar_var = upper_nonvar_var,
+      control = control
     )
 
   } else {
@@ -254,7 +285,10 @@ p_gdfa <- function(g,
       integrate_tol_hessian = integrate_tol_hessian,
       estimate_var = estimate_var,
       fix_posdef = fix_posdef,
-      ...
+      start_nonvar_var = start_nonvar_var,
+      lower_nonvar_var = lower_nonvar_var,
+      upper_nonvar_var = upper_nonvar_var,
+      control = control
     )
 
   }

@@ -118,11 +118,16 @@
 #'
 #' @export
 p_logreg_xerrors2 <- function(
-  g = NULL, y, xtilde, c = NULL,
+  g = NULL,
+  y,
+  xtilde,
+  c = NULL,
   errors = "processing",
-  nondiff_pe = TRUE, nondiff_me = TRUE,
+  nondiff_pe = TRUE,
+  nondiff_me = TRUE,
   constant_pe = TRUE,
-  prev = NULL, samp_y1y0 = NULL,
+  prev = NULL,
+  samp_y1y0 = NULL,
   integrate_tol = 1e-8,
   integrate_tol_hessian = integrate_tol,
   estimate_var = TRUE,
@@ -401,7 +406,7 @@ p_logreg_xerrors2 <- function(
   }
 
   # Log-likelihood function
-  ll.f <- function(f.theta, estimating.hessian = FALSE) {
+  llf <- function(f.theta, estimating.hessian = FALSE) {
 
     # Extract parameters
     f.betas <- matrix(f.theta[loc.betas], ncol = 1)
@@ -674,7 +679,6 @@ p_logreg_xerrors2 <- function(
     start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
                rep(start_nonvar_var[2], loc.sigsq_m0 - loc.b + 1))
   }
-  print(start)
 
   # Lower bounds
   if (errors == "neither") {
@@ -701,7 +705,7 @@ p_logreg_xerrors2 <- function(
   }
 
   # Obtain ML estimates
-  ml.max <- nlminb(start = start, objective = ll.f,
+  ml.max <- nlminb(start = start, objective = llf,
                    lower = lower, upper = upper, control = control)
 
   # Create list to return
@@ -713,7 +717,7 @@ p_logreg_xerrors2 <- function(
   if (estimate_var) {
 
     # Estimate Hessian
-    hessian.mat <- hessian(f = ll.f, estimating.hessian = TRUE, x0 = theta.hat)
+    hessian.mat <- hessian(f = llf, estimating.hessian = TRUE, x0 = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error" ||
         ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
@@ -721,7 +725,7 @@ p_logreg_xerrors2 <- function(
       # Repeatedly divide integrate_tol_hessian by 5 and re-try
       while (integrate_tol_hessian > 1e-15 & fix_posdef) {
         integrate_tol_hessian <- integrate_tol_hessian / 5
-        hessian.mat <- hessian(f = ll.f, estimating.hessian = TRUE,
+        hessian.mat <- hessian(f = llf, estimating.hessian = TRUE,
                                x0 = theta.hat)
         theta.variance <- try(solve(hessian.mat), silent = TRUE)
         if (class(theta.variance) != "try-error" &&

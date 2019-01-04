@@ -20,7 +20,14 @@
 #' @param errors Character string specifying the errors that X is subject to.
 #' Choices are \code{"neither"}, \code{"processing"} for processing error only,
 #' \code{"measurement"} for measurement error only, and \code{"both"}.
-#' @param ... Additional arguments to pass to \code{\link[stats]{nlminb}}.
+#' @param start_nonvar_var Numeric vector of length 2 specifying starting value
+#' for non-variance terms and variance terms, respectively.
+#' @param lower_nonvar_var Numeric vector of length 2 specifying lower bound for
+#' non-variance terms and variance terms, respectively.
+#' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
+#' non-variance terms and variance terms, respectively.
+#' @param control List of control parameters for \code{\link[stats]{nlminb}},
+#' which is used to maximize the log-likelihood function.
 #'
 #'
 #' @return List containing:
@@ -132,13 +139,18 @@
 #'
 #'
 #' @export
-p_ndfa <- function(g,
-                   y,
-                   xtilde,
-                   c = NULL,
-                   constant_or = TRUE,
-                   errors = "processing",
-                   ...) {
+p_ndfa <- function(
+  g,
+  y,
+  xtilde,
+  c = NULL,
+  constant_or = TRUE,
+  errors = "processing",
+  start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, -Inf),
+  upper_nonvar_var = c(Inf, Inf),
+  control = list(trace = 1, eval.max = 500, iter.max = 500)
+) {
 
   # Check that inputs are valid
   if (! is.null(constant_or) && ! is.logical(constant_or)) {
@@ -147,6 +159,15 @@ p_ndfa <- function(g,
   if (! errors %in% c("neither", "processing", "measurement", "both")) {
     stop("The input 'errors' should be set to 'neither', 'processing',
          'measurement', or 'both'.")
+  }
+  if (! (is.numeric(start_nonvar_var) & length(start_nonvar_var) == 2)) {
+    stop("The input 'start_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(lower_nonvar_var) & length(lower_nonvar_var) == 2)) {
+    stop("The input 'lower_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! (is.numeric(upper_nonvar_var) & length(upper_nonvar_var) == 2)) {
+    stop("The input 'upper_nonvar_var' should be a numeric vector of length 2.")
   }
 
   if (is.null(constant_or)) {
@@ -158,7 +179,10 @@ p_ndfa <- function(g,
       xtilde = xtilde,
       c = c,
       errors = errors,
-      ...
+      start_nonvar_var = start_nonvar_var,
+      lower_nonvar_var = lower_nonvar_var,
+      upper_nonvar_var = upper_nonvar_var,
+      control = control
     )
 
     # Fit model with non-constant odds ratio
@@ -168,7 +192,10 @@ p_ndfa <- function(g,
       xtilde = xtilde,
       c = c,
       errors = errors,
-      ...
+      start_nonvar_var = start_nonvar_var,
+      lower_nonvar_var = lower_nonvar_var,
+      upper_nonvar_var = upper_nonvar_var,
+      control = control
     )
 
     # Likelihood ratio test for H0: sigsq_1 = sigsq_0, which is equivalent to
@@ -195,7 +222,10 @@ p_ndfa <- function(g,
       xtilde = xtilde,
       c = c,
       errors = errors,
-      ...
+      start_nonvar_var = start_nonvar_var,
+      lower_nonvar_var = lower_nonvar_var,
+      upper_nonvar_var = upper_nonvar_var,
+      control = control
     )
 
   } else {
@@ -206,7 +236,10 @@ p_ndfa <- function(g,
       xtilde = xtilde,
       c = c,
       errors = errors,
-      ...
+      start_nonvar_var = start_nonvar_var,
+      lower_nonvar_var = lower_nonvar_var,
+      upper_nonvar_var = upper_nonvar_var,
+      control = control
     )
 
   }
