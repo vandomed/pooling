@@ -616,7 +616,7 @@ p_logreg_xerrors <- function(
                       sigsq_m_i = sigsq_m_i)
 
           # If integral 0 and sigsq_m_i small, look at region around Xtilde
-          if (int.ii$integral == 0 & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
+          if ((is.na(int.ii$integral) | int.ii$integral == 0) & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
 
             center.s <- mean(xtilde_i)
             center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
@@ -634,7 +634,7 @@ p_logreg_xerrors <- function(
                           qg_i = qg_i, mu_x.c_i = mu_x.c_i,
                           sigsq_x.c_i = sigsq_x.c_i, xtilde_i = xtilde_i,
                           sigsq_p_i = sigsq_p_i, sigsq_m_i = sigsq_m_i)
-              if (int.ii$integral > 0) {
+              if (! is.na(int.ii$integral) & int.ii$integral > 0) {
                 break
               }
             }
@@ -642,7 +642,7 @@ p_logreg_xerrors <- function(
           }
 
           # If integral 0 and f.sigsq_x.c small, look at region around E(X|C)
-          if (int.ii$integral == 0 & f.sigsq_x.c < 0.1) {
+          if ((is.na(int.ii$integral) | int.ii$integral == 0) & f.sigsq_x.c < 0.1) {
 
             center.s <- mu_x.c_i
             center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
@@ -660,7 +660,7 @@ p_logreg_xerrors <- function(
                           qg_i = qg_i, mu_x.c_i = mu_x.c_i,
                           sigsq_x.c_i = sigsq_x.c_i, xtilde_i = xtilde_i,
                           sigsq_p_i = sigsq_p_i, sigsq_m_i = sigsq_m_i)
-              if (int.ii$integral > 0) {
+              if (! is.na(int.ii$integral) & int.ii$integral > 0) {
                 break
               }
             }
@@ -670,10 +670,9 @@ p_logreg_xerrors <- function(
           int.vals[ii] <- int.ii$integral
 
           # If integral 0, set skip.rest to TRUE to skip further LL calculations
-          if (int.ii$integral == 0) {
-            print(paste("Integral is 0 for ii = ", ii, sep = ""))
+          if (is.na(int.ii$integral) | int.ii$integral == 0) {
+            print(paste("Integral is ", int.ii$integral, " for ii = ", ii, sep = ""))
             print(f.theta)
-            print(int.ii)
             skip.rest <- TRUE
             break
           }
@@ -810,7 +809,7 @@ p_logreg_xerrors <- function(
                       sigsq_m_i = sigsq_m_i)
 
           # If integral 0 and f.sigsq_m small, look at region around Xtilde
-          if (int.ii$integral == 0 & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
+          if ((is.na(int.ii$integral) | int.ii$integral == 0) & inside(sigsq_m_i, c(0, 0.1), FALSE)) {
 
             center.s <- xtilde_i
             center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
@@ -828,7 +827,7 @@ p_logreg_xerrors <- function(
                           mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
                           xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
                           sigsq_m_i = sigsq_m_i)
-              if (int.ii$integral > 0) {
+              if (! is.na(int.ii$integral) & int.ii$integral > 0) {
                 break
               }
             }
@@ -836,7 +835,7 @@ p_logreg_xerrors <- function(
           }
 
           # If integral 0 and f.sigsq_x.c small, look at region around E(X|C)
-          if (int.ii$integral == 0 & inside(f.sigsq_x.c, c(0, 0.1), FALSE)) {
+          if ((! is.na(int.ii$integral) & int.ii$integral == 0) & inside(f.sigsq_x.c, c(0, 0.1), FALSE)) {
 
             center.s <- mu_x.c_i
             center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
@@ -854,7 +853,7 @@ p_logreg_xerrors <- function(
                           mu_x.c_i = mu_x.c_i, sigsq_x.c_i = sigsq_x.c_i,
                           xtilde_i = xtilde_i, sigsq_p_i = sigsq_p_i,
                           sigsq_m_i = sigsq_m_i)
-              if (int.ii$integral > 0) {
+              if (! is.na(int.ii$integral) & int.ii$integral > 0) {
                 break
               }
             }
@@ -864,10 +863,9 @@ p_logreg_xerrors <- function(
           int.vals[ii] <- int.ii$integral
 
           # If integral 0, set skip.rest to TRUE to skip further LL calculations
-          if (int.ii$integral == 0) {
-            print(paste("Integral is 0 for ii = ", ii, sep = ""))
+          if (is.na(int.ii$integral) | int.ii$integral == 0) {
+            print(paste("Integral is ", int.ii$integral, " for ii = ", ii, sep = ""))
             print(f.theta)
-            print(int.ii)
             skip.rest <- TRUE
             break
           }

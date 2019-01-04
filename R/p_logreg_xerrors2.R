@@ -552,9 +552,8 @@ p_logreg_xerrors2 <- function(
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
         if (is.na(int.ii$integral) | int.ii$integral == 0) {
-          print(paste("Integral is 0 for ii = ", ii, sep = ""))
+          print(paste("Integral is ", int.ii$integral, " for ii = ", ii, sep = ""))
           print(f.theta)
-          print(int.ii)
           skip.rest <- TRUE
           break
         }
@@ -648,9 +647,8 @@ p_logreg_xerrors2 <- function(
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
         if (is.na(int.ii$integral) | int.ii$integral == 0) {
-          print(paste("Integral is 0 for ii = ", ii, sep = ""))
+          print(paste("Integral is ", int.ii$integral, " for ii = ", ii, sep = ""))
           print(f.theta)
-          print(int.ii)
           skip.rest <- TRUE
           break
         }
