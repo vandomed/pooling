@@ -387,8 +387,8 @@ p_gdfa_constant <- function(
         int.vals[ii] <- int.ii$integral
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
-        if (int.ii$integral == 0) {
-          print(paste("Integral is 0 for ii = ", ii, sep = ""))
+        if (is.na(int.ii$integral) | int.ii$integral == 0) {
+          print(paste("Integral is ", int.ii$integral, " for ii = ", ii, sep = ""))
           print(f.theta)
           skip.rest <- TRUE
           break
@@ -433,8 +433,8 @@ p_gdfa_constant <- function(
         int.vals[ii] <- int.ii$integral
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
-        if (int.ii$integral == 0) {
-          print(paste("Integral is 0 for ii = ", ii, sep = ""))
+        if (is.na(int.ii$integral) | int.ii$integral == 0) {
+          print(paste("Integral is ", int.ii$integral, " for ii = ", ii, sep = ""))
           print(f.theta)
           skip.rest <- TRUE
           break
@@ -512,6 +512,7 @@ p_gdfa_constant <- function(
       # Repeatedly divide integrate_tol_hessian by 5 and re-try
       while (integrate_tol_hessian > 1e-15 & fix_posdef) {
         integrate_tol_hessian <- integrate_tol_hessian / 5
+        message(paste("Trying integrate_tol_hessian = ", integrate_tol_hessian, "...", sep = ""))
         hessian.mat <- hessian(f = llf, estimating.hessian = TRUE,
                                x0 = ml.estimates)
         theta.variance <- try(solve(hessian.mat), silent = TRUE)

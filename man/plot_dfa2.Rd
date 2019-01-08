@@ -4,8 +4,8 @@
 \alias{plot_dfa2}
 \title{Plot Log-OR vs. X for Gamma Discriminant Function Approach}
 \usage{
-plot_dfa2(estimates, varcov = NULL, xrange, xname = "X", cvals = NULL,
-  set_labels = NULL, set_panels = TRUE)
+plot_dfa2(estimates, varcov = NULL, xrange, xname = "X",
+  cvals = NULL, set_labels = NULL, set_panels = TRUE)
 }
 \arguments{
 \item{estimates}{Numeric vector of point estimates for

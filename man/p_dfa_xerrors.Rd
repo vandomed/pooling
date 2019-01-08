@@ -5,8 +5,8 @@
 \title{Discriminant Function Approach for Estimating Odds Ratio with Normal Exposure
 Measured in Pools and Potentially Subject to Errors}
 \usage{
-p_dfa_xerrors(g, y, xtilde, c = NULL, constant_or = TRUE, errors = "both",
-  ...)
+p_dfa_xerrors(g, y, xtilde, c = NULL, constant_or = TRUE,
+  errors = "both", ...)
 }
 \arguments{
 \item{g}{Numeric vector of pool sizes, i.e. number of members in each pool.}

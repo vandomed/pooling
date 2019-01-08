@@ -5,8 +5,8 @@
 \title{Poolwise Logistic Regression}
 \usage{
 p_logreg(g, y, x, method = "glm", prev = NULL, samp_y1y0 = NULL,
-  estimate_var = TRUE, control = list(trace = 1, eval.max = 500, iter.max =
-  500))
+  estimate_var = TRUE, control = list(trace = 1, eval.max = 500,
+  iter.max = 500))
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}

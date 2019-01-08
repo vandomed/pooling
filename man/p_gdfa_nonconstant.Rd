@@ -8,8 +8,8 @@ Measured in Pools and Potentially Subject to Multiplicative Lognormal Errors
 \usage{
 p_gdfa_nonconstant(g, y, xtilde, c = NULL, errors = "processing",
   integrate_tol = 1e-08, integrate_tol_hessian = integrate_tol,
-  estimate_var = TRUE, fix_posdef = TRUE, start_nonvar_var = c(0.01, 1),
-  lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
+  estimate_var = TRUE, fix_posdef = TRUE, start_nonvar_var = c(0.01,
+  1), lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
   control = list(trace = 1, eval.max = 500, iter.max = 500))
 }
 \arguments{

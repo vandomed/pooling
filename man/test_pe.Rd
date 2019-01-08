@@ -4,8 +4,8 @@
 \alias{test_pe}
 \title{Test for Underestimated Processing Error Variance in Pooling Studies}
 \usage{
-test_pe(xtilde, g, sigsq, sigsq_m = 0, multiplicative = FALSE, mu = NULL,
-  alpha = 0.05, boots = 1000, seed = NULL)
+test_pe(xtilde, g, sigsq, sigsq_m = 0, multiplicative = FALSE,
+  mu = NULL, alpha = 0.05, boots = 1000, seed = NULL)
 }
 \arguments{
 \item{xtilde}{Numeric vector of pooled measurements.}

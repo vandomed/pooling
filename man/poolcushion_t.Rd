@@ -5,10 +5,10 @@
 \title{Visualize T-test Power for Pooling Design as Function of Processing Error
 Variance}
 \usage{
-poolcushion_t(g = NULL, n = NULL, d = NULL, mu1 = NULL, mu2 = NULL,
-  sigsq = NULL, sigsq1 = sigsq, sigsq2 = sigsq, sigsq_p_predicted = 0,
-  sigsq_p_range = NULL, sigsq_m = 0, multiplicative = FALSE,
-  alpha = 0.05, beta = 0.2, labels = TRUE)
+poolcushion_t(g = NULL, n = NULL, d = NULL, mu1 = NULL,
+  mu2 = NULL, sigsq = NULL, sigsq1 = sigsq, sigsq2 = sigsq,
+  sigsq_p_predicted = 0, sigsq_p_range = NULL, sigsq_m = 0,
+  multiplicative = FALSE, alpha = 0.05, beta = 0.2, labels = TRUE)
 }
 \arguments{
 \item{g}{Numeric value specifying the pool size.}

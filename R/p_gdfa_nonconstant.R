@@ -393,8 +393,8 @@ p_gdfa_nonconstant <- function(
         int.vals[ii] <- int.ii$integral
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
-        if (int.ii$integral == 0) {
-          print(paste("Integral is 0 for ii = ", ii, sep = ""))
+        if (is.na(int.ii$integral) | int.ii$integral == 0) {
+          print(paste("Integral is ", int.ii$integral, " for ii = ", ii, sep = ""))
           print(f.theta)
           skip.rest <- TRUE
           break
@@ -435,8 +435,8 @@ p_gdfa_nonconstant <- function(
         int.vals[ii] <- int.ii$integral
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
-        if (int.ii$integral == 0) {
-          print(paste("Integral is 0 for ii = ", ii, sep = ""))
+        if (is.na(int.ii$integral) | int.ii$integral == 0) {
+          print(paste("Integral is ", int.ii$integral, " for ii = ", ii, sep = ""))
           print(f.theta)
           skip.rest <- TRUE
           break
