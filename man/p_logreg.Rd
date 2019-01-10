@@ -5,8 +5,8 @@
 \title{Poolwise Logistic Regression}
 \usage{
 p_logreg(g, y, x, method = "glm", prev = NULL, samp_y1y0 = NULL,
-  estimate_var = TRUE, control = list(trace = 1, eval.max = 500,
-  iter.max = 500))
+  estimate_var = TRUE, start = 0.01, control = list(trace = 1,
+  eval.max = 500, iter.max = 500))
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -31,6 +31,9 @@ case-control sampling. Can specify \code{prev} instead if it's easier.}
 
 \item{estimate_var}{Logical value for whether to return variance-covariance
 matrix for parameter estimates.}
+
+\item{start}{Numeric value specifying starting values for log-likelihood
+maximization. Only used if \code{method = "ml"}.}
 
 \item{control}{List of control parameters for \code{\link[stats]{nlminb}},
 which is used to maximize the log-likelihood function. Only used if

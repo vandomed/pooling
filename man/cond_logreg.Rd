@@ -7,7 +7,7 @@
 cond_logreg(g = rep(1, length(xtilde1)), xtilde1, xtilde0, c1 = NULL,
   c0 = NULL, errors = "processing", approx_integral = TRUE,
   integrate_tol = 1e-04, integrate_tol_hessian = integrate_tol,
-  estimate_var = FALSE, start_nonvar_var = c(0.01, 1),
+  estimate_var = FALSE, start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
   control = list(trace = 1, eval.max = 500, iter.max = 500))
 }

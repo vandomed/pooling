@@ -167,7 +167,7 @@ p_gdfa <- function(
   integrate_tol_hessian = integrate_tol,
   estimate_var = TRUE,
   fix_posdef = FALSE,
-  start_nonvar_var = c(0.01, 1),
+  start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
   control = list(trace = 1, eval.max = 500, iter.max = 500)

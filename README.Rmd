@@ -1,5 +1,5 @@
 ---
-output: github_document
+output: md_document
 title: "Fit Poolwise Regression Models"
 author: "Dane Van Domelen <br> vandomed@gmail.com"
 date: "`r Sys.Date()`"

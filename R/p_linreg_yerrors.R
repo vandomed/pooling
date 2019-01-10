@@ -117,7 +117,7 @@ p_linreg_yerrors <- function(
   x = NULL,
   errors = "processing",
   estimate_var = TRUE,
-  start_nonvar_var = c(0.01, 1),
+  start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
   control = list(trace = 1, eval.max = 500, iter.max = 500)
@@ -340,6 +340,11 @@ p_linreg_yerrors <- function(
   # Obtain ML estimates
   ml.max <- nlminb(start = start, objective = llf,
                    lower = lower, upper = upper, control = control)
+
+  # Print message if nlminb indicates non-convergence
+  if (ml.max$convergence == 1) {
+    message("'nlminb' indicates non-convergence. It may be a good idea to re-run with different starting values.")
+  }
 
   # Create list to return
   theta.hat <- ml.max$par

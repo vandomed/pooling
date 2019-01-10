@@ -9,8 +9,8 @@ p_logreg_xerrors2(g = NULL, y, xtilde, c = NULL,
   constant_pe = TRUE, prev = NULL, samp_y1y0 = NULL,
   integrate_tol = 1e-08, integrate_tol_hessian = integrate_tol,
   estimate_var = TRUE, fix_posdef = FALSE, start_nonvar_var = c(0.01,
-  1), lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
-  control = list(trace = 1, eval.max = 500, iter.max = 500))
+  0.5), lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf,
+  Inf), control = list(trace = 1, eval.max = 500, iter.max = 500))
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}

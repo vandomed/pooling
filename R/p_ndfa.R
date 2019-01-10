@@ -146,7 +146,7 @@ p_ndfa <- function(
   c = NULL,
   constant_or = TRUE,
   errors = "processing",
-  start_nonvar_var = c(0.01, 1),
+  start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
   control = list(trace = 1, eval.max = 500, iter.max = 500)

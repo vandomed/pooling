@@ -20,6 +20,8 @@
 #' case-control sampling. Can specify \code{prev} instead if it's easier.
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
+#' @param start Numeric value specifying starting values for log-likelihood
+#' maximization. Only used if \code{method = "ml"}.
 #' @param control List of control parameters for \code{\link[stats]{nlminb}},
 #' which is used to maximize the log-likelihood function. Only used if
 #' \code{method = "ml"}.
@@ -65,6 +67,7 @@ p_logreg <- function(
   prev = NULL,
   samp_y1y0 = NULL,
   estimate_var = TRUE,
+  start = 0.01,
   control = list(trace = 1, eval.max = 500, iter.max = 500)
 ) {
 
@@ -198,7 +201,14 @@ p_logreg <- function(
     }
 
     # Obtain ML estimates
-    ml.max <- nlminb(start = start, objective = llf, control = control)
+    ml.max <- nlminb(start = rep(start, n.betas),
+                     objective = llf,
+                     control = control)
+
+    # Print message if nlminb indicates non-convergence
+    if (ml.max$convergence == 1) {
+      message("'nlminb' indicates non-convergence. It may be a good idea to re-run with different starting values.")
+    }
 
     # Create list to return
     theta.hat <- ml.max$par

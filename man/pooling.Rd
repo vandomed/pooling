@@ -15,8 +15,8 @@ Schisterman et al. (2010) <doi:10.1002/sim.3823>.
 \tabular{ll}{
 Package: \tab pooling \cr
 Type: \tab Package \cr
-Version: \tab 1.1.1 \cr
-Date: \tab 2019-01-08 \cr
+Version: \tab 1.1.2 \cr
+Date: \tab 2019-01-10 \cr
 License: \tab GPL-3 \cr
 }
 }
