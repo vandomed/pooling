@@ -814,8 +814,8 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
     if (estimate_var) {
 
       # Estimate Hessian
-      hessian.mat <- numDeriv::hessian(f = ll.f2, estimating.hessian = TRUE,
-                                       x0 = ml.estimates)
+      hessian.mat <- numDeriv::hessian(func = ll.f2, estimating.hessian = TRUE,
+                                       x = ml.estimates)
       theta.variance <- try(solve(hessian.mat), silent = TRUE)
       if (class(theta.variance) == "try-error" ||
           ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {

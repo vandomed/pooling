@@ -289,7 +289,7 @@ p_ndfa_nonconstant <- function(
   }
 
   # Obtain variance estimates
-  hessian.mat <- numDeriv::hessian(f = llf, x0 = ml.estimates)
+  hessian.mat <- numDeriv::hessian(func = llf, x = ml.estimates)
   theta.variance <- try(solve(hessian.mat), silent = TRUE)
   if (class(theta.variance) == "try-error") {
     message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")

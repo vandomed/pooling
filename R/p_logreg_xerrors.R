@@ -939,7 +939,8 @@ p_logreg_xerrors <- function(
   if (estimate_var) {
 
     # Estimate Hessian
-    hessian.mat <- numDeriv::hessian(f = llf, estimating.hessian = TRUE, x0 = theta.hat)
+    hessian.mat <- numDeriv::hessian(func = llf, estimating.hessian = TRUE,
+                                     x = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error" ||
         ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
@@ -948,8 +949,8 @@ p_logreg_xerrors <- function(
       while (integrate_tol_hessian > 1e-15 & fix_posdef) {
         integrate_tol_hessian <- integrate_tol_hessian / 5
         message(paste("Trying integrate_tol_hessian = ", integrate_tol_hessian, "...", sep = ""))
-        hessian.mat <- numDeriv::hessian(f = llf, estimating.hessian = TRUE,
-                                         x0 = theta.hat)
+        hessian.mat <- numDeriv::hessian(func = llf, estimating.hessian = TRUE,
+                                         x = theta.hat)
         theta.variance <- try(solve(hessian.mat), silent = TRUE)
         if (class(theta.variance) != "try-error" &&
             all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {

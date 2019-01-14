@@ -537,7 +537,8 @@ cond_logreg <- function(
 
   # If requested, add variance-covariance matrix to ret.list
   if (estimate_var) {
-    hessian.mat <- numDeriv::hessian(f = llf, estimating.hessian = TRUE, x0 = theta.hat)
+    hessian.mat <- numDeriv::hessian(func = llf, estimating.hessian = TRUE,
+                                     x = theta.hat)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
       print(hessian.mat)
