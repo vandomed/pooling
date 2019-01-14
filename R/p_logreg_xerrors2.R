@@ -30,17 +30,8 @@
 #' @param samp_y1y0 Numeric vector of length 2 specifying sampling probabilities
 #' for cases and controls, allowing for valid estimation of the intercept with
 #' case-control sampling. Can specify \code{prev} instead if it's easier.
-#' @param integrate_tol Numeric value specifying the \code{tol} input to
-#' \code{\link{hcubature}}.
-#' @param integrate_tol_hessian Same as \code{integrate_tol}, but for use when
-#' estimating the Hessian matrix only. Sometimes more precise integration
-#' (i.e. smaller tolerance) than used for maximizing the likelihood helps
-#' prevent cases where the inverse Hessian is not positive definite.
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
-#' @param fix_posdef Logical value for whether to repeatedly reduce
-#' \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
-#' to avoid non-positive definite variance-covariance matrix.
 #' @param start_nonvar_var Numeric vector of length 2 specifying starting value
 #' for non-variance terms and variance terms, respectively.
 #' @param lower_nonvar_var Numeric vector of length 2 specifying lower bound for

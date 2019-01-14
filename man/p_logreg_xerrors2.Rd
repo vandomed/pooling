@@ -79,18 +79,6 @@ used if \code{estimate_var = TRUE}.}
 \item{nlminb_object}{Object returned from \code{\link[stats]{nlminb}} in a
 prior call. Useful for bypassing log-likelihood maximization if you just want
 to re-estimate the Hessian matrix with different options.}
-
-\item{integrate_tol}{Numeric value specifying the \code{tol} input to
-\code{\link{hcubature}}.}
-
-\item{integrate_tol_hessian}{Same as \code{integrate_tol}, but for use when
-estimating the Hessian matrix only. Sometimes more precise integration
-(i.e. smaller tolerance) than used for maximizing the likelihood helps
-prevent cases where the inverse Hessian is not positive definite.}
-
-\item{fix_posdef}{Logical value for whether to repeatedly reduce
-\code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
-to avoid non-positive definite variance-covariance matrix.}
 }
 \value{
 List containing:
