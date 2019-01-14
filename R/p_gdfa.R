@@ -31,15 +31,14 @@
 #' @param jitter_start Numeric value specifying standard deviation for mean-0
 #' normal jitters to add to starting values for a second try at maximizing the
 #' log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
-#' in non-convergence.
+#' in non-convergence. Set to \code{NULL} for no second try.
 #' @param hcubature_list List of arguments to pass to
 #' \code{\link[cubature]{hcubature}} for numerical integration.
 #' @param nlminb_list List of arguments to pass to \code{\link[stats]{nlminb}}
 #' for log-likelihood maximization.
 #' @param hessian_list List of arguments to pass to
-#' \code{\link[numDeriv]{hessian}}
-#' for approximating the Hessian matrix. Only used if
-#' \code{estimate_var = TRUE}.
+#' \code{\link[numDeriv]{hessian}} for approximating the Hessian matrix. Only
+#' used if \code{estimate_var = TRUE}.
 #' @param nlminb_object Object returned from \code{\link[stats]{nlminb}} in a
 #' prior call. Useful for bypassing log-likelihood maximization if you just want
 #' to re-estimate the Hessian matrix with different options.

@@ -18,13 +18,6 @@
 #' @param approx_integral Logical value for whether to use the probit
 #' approximation for the logistic-normal integral, to avoid numerically
 #' integrating X's out of the likelihood function.
-#' @param integrate_tol Numeric value specifying the \code{tol} input to
-#' \code{\link[cubature]{hcubature}}. Only used if
-#' \code{approx_integral = FALSE}.
-#' @param integrate_tol_hessian Same as \code{integrate_tol}, but for use when
-#' estimating the Hessian matrix only. Sometimes more precise integration
-#' (i.e. smaller tolerance) than used for maximizing the likelihood helps
-#' prevent cases where the inverse Hessian is not positive definite.
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
 #' @param start_nonvar_var Numeric vector of length 2 specifying starting value
@@ -33,8 +26,21 @@
 #' non-variance terms and variance terms, respectively.
 #' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
 #' non-variance terms and variance terms, respectively.
-#' @param control List of control parameters for \code{\link[stats]{nlminb}},
-#' which is used to maximize the log-likelihood function.
+#' @param jitter_start Numeric value specifying standard deviation for mean-0
+#' normal jitters to add to starting values for a second try at maximizing the
+#' log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
+#' in non-convergence. Set to \code{NULL} for no second try.
+#' @param hcubature_list List of arguments to pass to
+#' \code{\link[cubature]{hcubature}} for numerical integration. Only used if
+#' \code{approx_integral = FALSE}.
+#' @param nlminb_list List of arguments to pass to \code{\link[stats]{nlminb}}
+#' for log-likelihood maximization.
+#' @param hessian_list List of arguments to pass to
+#' \code{\link[numDeriv]{hessian}} for approximating the Hessian matrix. Only
+#' used if \code{estimate_var = TRUE}.
+#' @param nlminb_object Object returned from \code{\link[stats]{nlminb}} in a
+#' prior call. Useful for bypassing log-likelihood maximization if you just want
+#' to re-estimate the Hessian matrix with different options.
 #'
 #'
 #' @return
@@ -83,8 +89,7 @@
 #'   xtilde0 = dat$x0,
 #'   c1 = dat$c1.model,
 #'   c0 = dat$c0.model,
-#'   errors = "neither",
-#'   control = list(trace = 1)
+#'   errors = "neither"
 #' )
 #' truth$theta.hat
 #'
@@ -99,8 +104,7 @@
 #'   c1 = dat$c1.model,
 #'   c0 = dat$c0.model,
 #'   errors = "both",
-#'   approx_integral = TRUE,
-#'   control = list(trace = 1)
+#'   approx_integral = TRUE
 #' )
 #' corrected$theta.hat
 #'
@@ -114,13 +118,15 @@ cond_logreg <- function(
   c0 = NULL,
   errors = "processing",
   approx_integral = TRUE,
-  integrate_tol = 1e-4,
-  integrate_tol_hessian = integrate_tol,
   estimate_var = FALSE,
   start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
-  control = list(trace = 1, eval.max = 500, iter.max = 500)
+  jitter_start = 0.01,
+  hcubature_list = list(tol = 1e-8),
+  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max = 500)),
+  hessian_list = list(method.args = list(r = 4)),
+  nlminb_object = NULL
 ) {
 
   # Get number of pools
@@ -355,7 +361,7 @@ cond_logreg <- function(
   }
 
   # Log-likelihood function
-  llf <- function(f.theta, estimating.hessian = FALSE) {
+  llf <- function(f.theta) {
 
     # Extract parameters
     f.betas <- matrix(f.theta[loc.betas], ncol = 1)
@@ -447,24 +453,25 @@ cond_logreg <- function(
         for (ii in 1: n.i) {
 
           # Perform integration
-          int.ii <- hcubature(f = lf.full,
-                              tol = integrate_tol,
-                              lowerLimit = rep(-1, 2),
-                              upperLimit = rep(1, 2),
-                              vectorInterface = TRUE,
-                              g = g.i[ii],
-                              Ig = Ig.i[ii],
-                              k1 = k1.i[ii],
-                              k0 = k0.i[ii],
-                              xtilde1 = unlist(xtilde1.i[ii]),
-                              xtilde0 = unlist(xtilde0.i[ii]),
-                              mu_x1.c1 = mu_x1.c1s[ii],
-                              mu_x0.c0 = mu_x0.c0s[ii],
-                              sigsq_x.c = sigsq_x.cs[ii],
-                              f.sigsq_p = f.sigsq_p,
-                              f.sigsq_m = f.sigsq_m,
-                              f.beta_x = f.beta_x,
-                              cterm = cterms[ii])
+          int.ii <- do.call(hcubature,
+                            c(list(f = lf.full,
+                                   lowerLimit = rep(-1, 2),
+                                   upperLimit = rep(1, 2),
+                                   vectorInterface = TRUE,
+                                   g = g.i[ii],
+                                   Ig = Ig.i[ii],
+                                   k1 = k1.i[ii],
+                                   k0 = k0.i[ii],
+                                   xtilde1 = unlist(xtilde1.i[ii]),
+                                   xtilde0 = unlist(xtilde0.i[ii]),
+                                   mu_x1.c1 = mu_x1.c1s[ii],
+                                   mu_x0.c0 = mu_x0.c0s[ii],
+                                   sigsq_x.c = sigsq_x.cs[ii],
+                                   f.sigsq_p = f.sigsq_p,
+                                   f.sigsq_m = f.sigsq_m,
+                                   f.beta_x = f.beta_x,
+                                   cterm = cterms[ii]),
+                              hcubature_list))
           int.vals[ii] <- int.ii$integral
           if (int.ii$integral == 0) {
             print(paste("Integral is 0 for ii = ", ii, sep = ""))
@@ -526,9 +533,34 @@ cond_logreg <- function(
                rep(upper_nonvar_var[2], 3))
   }
 
-  # Obtain ML estimates
-  ml.max <- nlminb(start = start, objective = llf,
-                   lower = lower, upper = upper, control = control)
+  if (is.null(nlminb_object)) {
+
+    # Obtain ML estimates
+    ml.max <- do.call(nlminb,
+                      c(list(start = start,
+                             objective = llf,
+                             lower = lower,
+                             upper = upper),
+                        nlminb_list))
+
+    # If non-convergence, try with jittered starting values if requested
+    if (ml.max$convergence == 1) {
+      if (! is.null(jitter_start)) {
+        message("Trying jittered starting values...")
+        start <- start + rnorm(n = length(start), sd = jitter_start)
+        ml.max <- do.call(nlminb,
+                          c(list(start = start,
+                                 objective = llf,
+                                 lower = lower,
+                                 upper = upper),
+                            nlminb_list))
+      }
+      if (ml.max$convergence == 1) {
+        message("Object returned by 'nlminb' function indicates non-convergence. You may want to try different starting values.")
+      }
+    }
+
+  }
 
   # Create list to return
   theta.hat <- ml.max$par
@@ -537,8 +569,9 @@ cond_logreg <- function(
 
   # If requested, add variance-covariance matrix to ret.list
   if (estimate_var) {
-    hessian.mat <- numDeriv::hessian(func = llf, estimating.hessian = TRUE,
-                                     x = theta.hat)
+    hessian.mat <- do.call(numDeriv::hessian,
+                           c(list(func = llf, x = theta.hat),
+                             hessian_list))
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
       print(hessian.mat)

@@ -44,8 +44,10 @@
 #' non-variance terms and variance terms, respectively.
 #' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
 #' non-variance terms and variance terms, respectively.
-#' @param control List of control parameters for \code{\link[stats]{nlminb}},
-#' which is used to maximize the log-likelihood function.
+#' @param nlminb_list List of arguments to pass to \code{\link[stats]{nlminb}}
+#' for log-likelihood maximization.
+#' @param hessian_list List of arguments to pass to
+#' \code{\link[numDeriv]{hessian}}.
 #'
 #'
 #' @return
@@ -120,7 +122,8 @@ p_linreg_yerrors <- function(
   start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
-  control = list(trace = 1, eval.max = 500, iter.max = 500)
+  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max = 500)),
+  hessian_list = list(method.args = list(r = 4))
 ) {
 
   # Check that inputs are valid
@@ -338,12 +341,16 @@ p_linreg_yerrors <- function(
   }
 
   # Obtain ML estimates
-  ml.max <- nlminb(start = start, objective = llf,
-                   lower = lower, upper = upper, control = control)
+  ml.max <- do.call(nlminb,
+                    c(list(start = start,
+                           objective = llf,
+                           lower = lower,
+                           upper = upper),
+                      nlminb_list))
 
   # Print message if nlminb indicates non-convergence
   if (ml.max$convergence == 1) {
-    message("'nlminb' indicates non-convergence. It may be a good idea to re-run with different starting values.")
+    message("Object returned by 'nlminb' function indicates non-convergence. You may want to try different starting values.")
   }
 
   # Create list to return
@@ -354,7 +361,9 @@ p_linreg_yerrors <- function(
   # If requested, add variance-covariance matrix to ret.list
   if (estimate_var) {
 
-    hessian.mat <- numDeriv::hessian(func = llf, x = theta.hat)
+    hessian.mat <- do.call(numDeriv::hessian,
+                           c(list(func = llf, x = theta.hat),
+                             hessian_list))
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
       message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")

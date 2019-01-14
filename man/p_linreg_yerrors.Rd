@@ -8,7 +8,8 @@
 p_linreg_yerrors(g, ytilde, x = NULL, errors = "processing",
   estimate_var = TRUE, start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
-  control = list(trace = 1, eval.max = 500, iter.max = 500))
+  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max =
+  500)), hessian_list = list(method.args = list(r = 4)))
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -35,8 +36,11 @@ non-variance terms and variance terms, respectively.}
 \item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
 non-variance terms and variance terms, respectively.}
 
-\item{control}{List of control parameters for \code{\link[stats]{nlminb}},
-which is used to maximize the log-likelihood function.}
+\item{nlminb_list}{List of arguments to pass to \code{\link[stats]{nlminb}}
+for log-likelihood maximization.}
+
+\item{hessian_list}{List of arguments to pass to
+\code{\link[numDeriv]{hessian}}.}
 }
 \value{
 List containing:

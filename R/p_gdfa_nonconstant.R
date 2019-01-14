@@ -26,15 +26,14 @@
 #' @param jitter_start Numeric value specifying standard deviation for mean-0
 #' normal jitters to add to starting values for a second try at maximizing the
 #' log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
-#' in non-convergence.
+#' in non-convergence. Set to \code{NULL} for no second try.
 #' @param hcubature_list List of arguments to pass to
 #' \code{\link[cubature]{hcubature}} for numerical integration.
 #' @param nlminb_list List of arguments to pass to \code{\link[stats]{nlminb}}
 #' for log-likelihood maximization.
 #' @param hessian_list List of arguments to pass to
-#' \code{\link[numDeriv]{hessian}}
-#' for approximating the Hessian matrix. Only used if
-#' \code{estimate_var = TRUE}.
+#' \code{\link[numDeriv]{hessian}} for approximating the Hessian matrix. Only
+#' used if \code{estimate_var = TRUE}.
 #' @param nlminb_object Object returned from \code{\link[stats]{nlminb}} in a
 #' prior call. Useful for bypassing log-likelihood maximization if you just want
 #' to re-estimate the Hessian matrix with different options.
@@ -409,7 +408,8 @@ p_gdfa_nonconstant <- function(
         int.ii <- do.call(cubature::hcubature,
                           c(list(f = lf,
                                  vectorInterface = TRUE,
-                                 lowerLimit = 0, upperLimit = 1,
+                                 lowerLimit = 0,
+                                 upperLimit = 1,
                                  Ig = Ig.i[ii],
                                  k = 1,
                                  xtilde = xtilde.i[ii],
@@ -477,50 +477,47 @@ p_gdfa_nonconstant <- function(
                rep(upper_nonvar_var[2], 4))
   }
 
-  # Obtain ML estimates
   if (is.null(nlminb_object)) {
-  ml.max <- do.call(nlminb, c(list(start = start,
-                                   objective = llf,
-                                   lower = lower,
-                                   upper = upper),
-                              nlminb_list))
 
-  # If non-convergence, try with jittered starting values if requested
-  if (ml.max$convergence == 1) {
-    if (! is.null(jitter_start)) {
-      message("Trying jittered starting values...")
-      start <- start + rnorm(n = length(start), sd = jitter_start)
-      ml.max <- do.call(nlminb,
-                        c(list(start = start,
-                               objective = llf,
-                               lower = lower,
-                               upper = upper),
-                          nlminb_list))
-    }
+    # Obtain ML estimates
+    ml.max <- do.call(nlminb, c(list(start = start,
+                                     objective = llf,
+                                     lower = lower,
+                                     upper = upper),
+                                nlminb_list))
+
+    # If non-convergence, try with jittered starting values if requested
     if (ml.max$convergence == 1) {
-      message("Object returned by 'nlminb' function indicates non-convergence. You may want to try different starting values.")
+      if (! is.null(jitter_start)) {
+        message("Trying jittered starting values...")
+        start <- start + rnorm(n = length(start), sd = jitter_start)
+        ml.max <- do.call(nlminb,
+                          c(list(start = start,
+                                 objective = llf,
+                                 lower = lower,
+                                 upper = upper),
+                            nlminb_list))
+      }
+      if (ml.max$convergence == 1) {
+        message("Object returned by 'nlminb' function indicates non-convergence. You may want to try different starting values.")
+      }
     }
-  }
+
   } else {
     ml.max <- nlminb_object
   }
   ml.estimates <- ml.max$par
 
-  # Print message if nlminb indicates non-convergence
-  if (ml.max$convergence == 1) {
-    message("'nlminb' indicates non-convergence. It may be a good idea to re-run with different starting values.")
-  }
-
   # Obtain variance estimates
   if (estimate_var) {
 
-    # Estimate Hessian
+    # Estimate Hessian and variance-covariance matrix
     hessian.mat <- do.call(numDeriv::hessian,
                            c(list(func = llf, x = ml.estimates),
                              hessian_list))
-    theta.variance <- try(solve(hessian.mat), silent = TRUE)
 
     # Estimate variance-covariance matrix
+    theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error" ||
         ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
 

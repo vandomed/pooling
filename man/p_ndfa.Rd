@@ -8,7 +8,9 @@ Measured in Pools and Potentially Subject to Additive Normal Errors}
 p_ndfa(g, y, xtilde, c = NULL, constant_or = TRUE,
   errors = "processing", start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
-  control = list(trace = 1, eval.max = 500, iter.max = 500))
+  jitter_start = 0.01, nlminb_list = list(control = list(trace = 1,
+  eval.max = 500, iter.max = 500)), hessian_list = list(method.args =
+  list(r = 4)), nlminb_object = NULL)
 }
 \arguments{
 \item{g}{Numeric vector of pool sizes, i.e. number of members in each pool.}
@@ -39,8 +41,21 @@ non-variance terms and variance terms, respectively.}
 \item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
 non-variance terms and variance terms, respectively.}
 
-\item{control}{List of control parameters for \code{\link[stats]{nlminb}},
-which is used to maximize the log-likelihood function.}
+\item{jitter_start}{Numeric value specifying standard deviation for mean-0
+normal jitters to add to starting values for a second try at maximizing the
+log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
+in non-convergence. Set to \code{NULL} for no second try.}
+
+\item{nlminb_list}{List of arguments to pass to \code{\link[stats]{nlminb}}
+for log-likelihood maximization.}
+
+\item{hessian_list}{List of arguments to pass to
+\code{\link[numDeriv]{hessian}} for approximating the Hessian matrix. Only
+used if \code{estimate_var = TRUE}.}
+
+\item{nlminb_object}{Object returned from \code{\link[stats]{nlminb}} in a
+prior call. Useful for bypassing log-likelihood maximization if you just want
+to re-estimate the Hessian matrix with different options.}
 }
 \value{
 List containing:

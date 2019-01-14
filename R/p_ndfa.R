@@ -26,8 +26,18 @@
 #' non-variance terms and variance terms, respectively.
 #' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
 #' non-variance terms and variance terms, respectively.
-#' @param control List of control parameters for \code{\link[stats]{nlminb}},
-#' which is used to maximize the log-likelihood function.
+#' @param jitter_start Numeric value specifying standard deviation for mean-0
+#' normal jitters to add to starting values for a second try at maximizing the
+#' log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
+#' in non-convergence. Set to \code{NULL} for no second try.
+#' @param nlminb_list List of arguments to pass to \code{\link[stats]{nlminb}}
+#' for log-likelihood maximization.
+#' @param hessian_list List of arguments to pass to
+#' \code{\link[numDeriv]{hessian}} for approximating the Hessian matrix. Only
+#' used if \code{estimate_var = TRUE}.
+#' @param nlminb_object Object returned from \code{\link[stats]{nlminb}} in a
+#' prior call. Useful for bypassing log-likelihood maximization if you just want
+#' to re-estimate the Hessian matrix with different options.
 #'
 #'
 #' @return List containing:
@@ -149,7 +159,10 @@ p_ndfa <- function(
   start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
-  control = list(trace = 1, eval.max = 500, iter.max = 500)
+  jitter_start = 0.01,
+  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max = 500)),
+  hessian_list = list(method.args = list(r = 4)),
+  nlminb_object = NULL
 ) {
 
   # Check that inputs are valid
@@ -169,6 +182,9 @@ p_ndfa <- function(
   if (! (is.numeric(upper_nonvar_var) & length(upper_nonvar_var) == 2)) {
     stop("The input 'upper_nonvar_var' should be a numeric vector of length 2.")
   }
+  if (! is.null(jitter_start) & jitter_start <= 0) {
+    stop("The input 'jitter_start' should be a non-negative value, if specified.")
+  }
 
   if (is.null(constant_or)) {
 
@@ -182,7 +198,9 @@ p_ndfa <- function(
       start_nonvar_var = start_nonvar_var,
       lower_nonvar_var = lower_nonvar_var,
       upper_nonvar_var = upper_nonvar_var,
-      control = control
+      nlminb_list = nlminb_list,
+      hessian_list = hessian_list,
+      nlminb_object = nlminb_object
     )
 
     # Fit model with non-constant odds ratio
@@ -195,7 +213,9 @@ p_ndfa <- function(
       start_nonvar_var = start_nonvar_var,
       lower_nonvar_var = lower_nonvar_var,
       upper_nonvar_var = upper_nonvar_var,
-      control = control
+      nlminb_list = nlminb_list,
+      hessian_list = hessian_list,
+      nlminb_object = nlminb_object
     )
 
     # Likelihood ratio test for H0: sigsq_1 = sigsq_0, which is equivalent to
@@ -225,7 +245,9 @@ p_ndfa <- function(
       start_nonvar_var = start_nonvar_var,
       lower_nonvar_var = lower_nonvar_var,
       upper_nonvar_var = upper_nonvar_var,
-      control = control
+      nlminb_list = nlminb_list,
+      hessian_list = hessian_list,
+      nlminb_object = nlminb_object
     )
 
   } else {
@@ -239,7 +261,9 @@ p_ndfa <- function(
       start_nonvar_var = start_nonvar_var,
       lower_nonvar_var = lower_nonvar_var,
       upper_nonvar_var = upper_nonvar_var,
-      control = control
+      nlminb_list = nlminb_list,
+      hessian_list = hessian_list,
+      nlminb_object = nlminb_object
     )
 
   }

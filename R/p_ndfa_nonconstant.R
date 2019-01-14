@@ -23,8 +23,18 @@
 #' non-variance terms and variance terms, respectively.
 #' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
 #' non-variance terms and variance terms, respectively.
-#' @param control List of control parameters for \code{\link[stats]{nlminb}},
-#' which is used to maximize the log-likelihood function.
+#' @param jitter_start Numeric value specifying standard deviation for mean-0
+#' normal jitters to add to starting values for a second try at maximizing the
+#' log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
+#' in non-convergence. Set to \code{NULL} for no second try.
+#' @param nlminb_list List of arguments to pass to \code{\link[stats]{nlminb}}
+#' for log-likelihood maximization.
+#' @param hessian_list List of arguments to pass to
+#' \code{\link[numDeriv]{hessian}} for approximating the Hessian matrix. Only
+#' used if \code{estimate_var = TRUE}.
+#' @param nlminb_object Object returned from \code{\link[stats]{nlminb}} in a
+#' prior call. Useful for bypassing log-likelihood maximization if you just want
+#' to re-estimate the Hessian matrix with different options.
 #'
 #'
 #' @return List containing:
@@ -58,7 +68,10 @@ p_ndfa_nonconstant <- function(
   start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
-  control = list(trace = 1, eval.max = 500, iter.max = 500)
+  jitter_start = 0.01,
+  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max = 500)),
+  hessian_list = list(method.args = list(r = 4)),
+  nlminb_object = NULL
 ) {
 
   # Check that inputs are valid
@@ -74,6 +87,9 @@ p_ndfa_nonconstant <- function(
   }
   if (! (is.numeric(upper_nonvar_var) & length(upper_nonvar_var) == 2)) {
     stop("The input 'upper_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! is.null(jitter_start) & jitter_start <= 0) {
+    stop("The input 'jitter_start' should be a non-negative value, if specified.")
   }
 
   # Get number of C variables (and assign names)
@@ -278,18 +294,40 @@ p_ndfa_nonconstant <- function(
                rep(upper_nonvar_var[2], 4))
   }
 
-  # Obtain ML estimates
-  ml.max <- nlminb(start = start, objective = llf,
-                   lower = lower, upper = upper, control = control)
+  if (is.null(nlminb_object)) {
+
+    # Obtain ML estimates
+    ml.max <- do.call(nlminb,
+                      c(list(start = start, objective = llf,
+                             lower = lower, upper = upper),
+                        nlminb_object))
+
+    # If non-convergence, try with jittered starting values if requested
+    if (ml.max$convergence == 1) {
+      if (! is.null(jitter_start)) {
+        message("Trying jittered starting values...")
+        start <- start + rnorm(n = length(start), sd = jitter_start)
+        ml.max <- do.call(nlminb,
+                          c(list(start = start,
+                                 objective = llf,
+                                 lower = lower,
+                                 upper = upper),
+                            nlminb_list))
+      }
+      if (ml.max$convergence == 1) {
+        message("Object returned by 'nlminb' function indicates non-convergence. You may want to try different starting values.")
+      }
+    }
+
+  } else {
+    ml.max <- nlminb_object
+  }
   ml.estimates <- ml.max$par
 
-  # Print message if nlminb indicates non-convergence
-  if (ml.max$convergence == 1) {
-    message("'nlminb' indicates non-convergence. It may be a good idea to re-run with different starting values.")
-  }
-
   # Obtain variance estimates
-  hessian.mat <- numDeriv::hessian(func = llf, x = ml.estimates)
+  hessian.mat <- do.call(numDeriv::hessian,
+                         c(list(func = llf, x = ml.estimates),
+                           hessian_list))
   theta.variance <- try(solve(hessian.mat), silent = TRUE)
   if (class(theta.variance) == "try-error") {
     message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")

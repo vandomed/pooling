@@ -20,11 +20,17 @@
 #' case-control sampling. Can specify \code{prev} instead if it's easier.
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
-#' @param start Numeric value specifying starting values for log-likelihood
-#' maximization. Only used if \code{method = "ml"}.
-#' @param control List of control parameters for \code{\link[stats]{nlminb}},
-#' which is used to maximize the log-likelihood function. Only used if
-#' \code{method = "ml"}.
+#' @param start Numeric value specifying starting values for parameters. Only
+#' used if \code{method = "ml"}.
+#' @param lower Numeric value specifying lower bounds for parameters. Only used
+#' if \code{method = "ml"}.
+#' @param upper Numeric value specifying upper bounds for parameters. Only used
+#' if \code{method = "ml"}.
+#' @param nlminb_list List of arguments to pass to \code{\link[stats]{nlminb}}
+#' for log-likelihood maximization.
+#' @param hessian_list List of arguments to pass to
+#' \code{\link[numDeriv]{hessian}} for approximating the Hessian matrix. Only
+#' used if \code{method = "ml"} and \code{estimate_var = TRUE}.
 #'
 #'
 #' @return
@@ -68,7 +74,10 @@ p_logreg <- function(
   samp_y1y0 = NULL,
   estimate_var = TRUE,
   start = 0.01,
-  control = list(trace = 1, eval.max = 500, iter.max = 500)
+  lower = -Inf,
+  upper = Inf,
+  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max = 500)),
+  hessian_list = list(method.args = list(r = 4))
 ) {
 
   # Check that inputs are valid
@@ -201,13 +210,16 @@ p_logreg <- function(
     }
 
     # Obtain ML estimates
-    ml.max <- nlminb(start = rep(start, n.betas),
-                     objective = llf,
-                     control = control)
+    ml.max <- do.call(nlminb,
+                      c(list(start = rep(start, n.betas),
+                             objective = llf,
+                             lower = lower,
+                             upper = upper),
+                        nlminb_list))
 
-    # Print message if nlminb indicates non-convergence
+    # Output message if nlminb indicates non-convergence
     if (ml.max$convergence == 1) {
-      message("'nlminb' indicates non-convergence. It may be a good idea to re-run with different starting values.")
+      message("Object returned by 'nlminb' function indicates non-convergence. You may want to try different starting values.")
     }
 
     # Create list to return
@@ -217,7 +229,9 @@ p_logreg <- function(
 
     # If requested, add variance-covariance matrix to ret.list
     if (estimate_var) {
-      hessian.mat <- numDeriv::hessian(func = llf, x = theta.hat)
+      hessian.mat <- do.call(numDeriv::hessian,
+                             c(list(func = llf, x = theta.hat),
+                               hessian_list))
       theta.variance <- solve(hessian.mat)
       colnames(theta.variance) <- rownames(theta.variance) <- beta.labels
       ret.list$theta.var <- theta.variance

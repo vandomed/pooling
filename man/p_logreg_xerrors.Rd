@@ -7,10 +7,12 @@
 p_logreg_xerrors(g, y, xtilde, c = NULL, errors = "processing",
   nondiff_pe = TRUE, nondiff_me = TRUE, constant_pe = TRUE,
   prev = NULL, samp_y1y0 = NULL, approx_integral = TRUE,
-  integrate_tol = 1e-08, integrate_tol_hessian = integrate_tol,
-  estimate_var = TRUE, fix_posdef = FALSE, start_nonvar_var = c(0.01,
-  0.5), lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf,
-  Inf), control = list(trace = 1, eval.max = 500, iter.max = 500))
+  estimate_var = TRUE, start_nonvar_var = c(0.01, 0.5),
+  lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
+  jitter_start = 0.01, hcubature_list = list(tol = 1e-08),
+  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max =
+  500)), hessian_list = list(method.args = list(r = 4)),
+  nlminb_object = NULL)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -51,21 +53,8 @@ case-control sampling. Can specify \code{prev} instead if it's easier.}
 approximation for the logistic-normal integral, to avoid numerically
 integrating X's out of the likelihood function.}
 
-\item{integrate_tol}{Numeric value specifying the \code{tol} input to
-\code{\link[cubature]{hcubature}}. Only used if
-\code{approx_integral = FALSE}.}
-
-\item{integrate_tol_hessian}{Same as \code{integrate_tol}, but for use when
-estimating the Hessian matrix only. Sometimes more precise integration
-(i.e. smaller tolerance) than used for maximizing the likelihood helps
-prevent cases where the inverse Hessian is not positive definite.}
-
 \item{estimate_var}{Logical value for whether to return variance-covariance
 matrix for parameter estimates.}
-
-\item{fix_posdef}{Logical value for whether to repeatedly reduce
-\code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
-to avoid non-positive definite variance-covariance matrix.}
 
 \item{start_nonvar_var}{Numeric vector of length 2 specifying starting value
 for non-variance terms and variance terms, respectively.}
@@ -76,8 +65,25 @@ non-variance terms and variance terms, respectively.}
 \item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
 non-variance terms and variance terms, respectively.}
 
-\item{control}{List of control parameters for \code{\link[stats]{nlminb}},
-which is used to maximize the log-likelihood function.}
+\item{jitter_start}{Numeric value specifying standard deviation for mean-0
+normal jitters to add to starting values for a second try at maximizing the
+log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
+in non-convergence. Set to \code{NULL} for no second try.}
+
+\item{hcubature_list}{List of arguments to pass to
+\code{\link[cubature]{hcubature}} for numerical integration. Only used if
+\code{approx_integral = FALSE}.}
+
+\item{nlminb_list}{List of arguments to pass to \code{\link[stats]{nlminb}}
+for log-likelihood maximization.}
+
+\item{hessian_list}{List of arguments to pass to
+\code{\link[numDeriv]{hessian}} for approximating the Hessian matrix. Only
+used if \code{estimate_var = TRUE}.}
+
+\item{nlminb_object}{Object returned from \code{\link[stats]{nlminb}} in a
+prior call. Useful for bypassing log-likelihood maximization if you just want
+to re-estimate the Hessian matrix with different options.}
 }
 \value{
 List containing:
