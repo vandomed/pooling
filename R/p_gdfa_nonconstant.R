@@ -23,7 +23,7 @@
 #' non-variance terms and variance terms, respectively.
 #' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
 #' non-variance terms and variance terms, respectively.
-#' @param start_jitter Numeric value specifying standard deviation for mean-0
+#' @param jitter_start Numeric value specifying standard deviation for mean-0
 #' normal jitters to add to starting values for a second try at maximizing the
 #' log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
 #' in non-convergence.
@@ -91,7 +91,7 @@ p_gdfa_nonconstant <- function(
   start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
-  start_jitter = 0.01,
+  jitter_start = 0.01,
   hcubature_list = list(tol = 1e-8),
   nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max = 500)),
   hessian_list = list(method.args = list(r = 4)),
@@ -114,8 +114,8 @@ p_gdfa_nonconstant <- function(
   if (! (is.numeric(upper_nonvar_var) & length(upper_nonvar_var) == 2)) {
     stop("The input 'upper_nonvar_var' should be a numeric vector of length 2.")
   }
-  if (! is.null(start_jitter) & start_jitter <= 0) {
-    stop("The input 'start_jitter' should be a non-negative value, if specified.")
+  if (! is.null(jitter_start) & jitter_start <= 0) {
+    stop("The input 'jitter_start' should be a non-negative value, if specified.")
   }
 
   # Get name of y input

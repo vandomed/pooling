@@ -8,10 +8,10 @@ Measured in Pools and Potentially Subject to Multiplicative Lognormal Errors}
 p_gdfa(g, y, xtilde, c = NULL, constant_or = TRUE,
   errors = "processing", estimate_var = TRUE,
   start_nonvar_var = c(0.01, 0.5), lower_nonvar_var = c(-Inf, -Inf),
-  upper_nonvar_var = c(Inf, Inf), hcubature_list = list(tol = 1e-08),
-  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max =
-  500)), hessian_list = list(method.args = list(r = 4)),
-  nlminb_object = NULL)
+  upper_nonvar_var = c(Inf, Inf), jitter_start = 0.01,
+  hcubature_list = list(tol = 1e-08), nlminb_list = list(control =
+  list(trace = 1, eval.max = 500, iter.max = 500)),
+  hessian_list = list(method.args = list(r = 4)), nlminb_object = NULL)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -44,6 +44,11 @@ non-variance terms and variance terms, respectively.}
 
 \item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
 non-variance terms and variance terms, respectively.}
+
+\item{jitter_start}{Numeric value specifying standard deviation for mean-0
+normal jitters to add to starting values for a second try at maximizing the
+log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
+in non-convergence.}
 
 \item{hcubature_list}{List of arguments to pass to
 \code{\link[cubature]{hcubature}} for numerical integration.}

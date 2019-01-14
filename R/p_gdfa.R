@@ -28,6 +28,10 @@
 #' non-variance terms and variance terms, respectively.
 #' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
 #' non-variance terms and variance terms, respectively.
+#' @param jitter_start Numeric value specifying standard deviation for mean-0
+#' normal jitters to add to starting values for a second try at maximizing the
+#' log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
+#' in non-convergence.
 #' @param hcubature_list List of arguments to pass to
 #' \code{\link[cubature]{hcubature}} for numerical integration.
 #' @param nlminb_list List of arguments to pass to \code{\link[stats]{nlminb}}
@@ -162,6 +166,7 @@ p_gdfa <- function(
   start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
+  jitter_start = 0.01,
   hcubature_list = list(tol = 1e-8),
   nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max = 500)),
   hessian_list = list(method.args = list(r = 4)),
