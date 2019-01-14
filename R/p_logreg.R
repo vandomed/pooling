@@ -217,7 +217,7 @@ p_logreg <- function(
 
     # If requested, add variance-covariance matrix to ret.list
     if (estimate_var) {
-      hessian.mat <- hessian(f = llf, x0 = theta.hat)
+      hessian.mat <- numDeriv::hessian(f = llf, x0 = theta.hat)
       theta.variance <- solve(hessian.mat)
       colnames(theta.variance) <- rownames(theta.variance) <- beta.labels
       ret.list$theta.var <- theta.variance

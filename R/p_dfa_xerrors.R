@@ -297,7 +297,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     ml.estimates <- ml.max1$par
 
     # Variance estimates
-    hessian.mat <- hessian(f = ll.f1, x0 = ml.estimates)
+    hessian.mat <- numDeriv::hessian(f = ll.f1, x0 = ml.estimates)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
       message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
@@ -436,7 +436,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     logOR.hat <- gamma_y.hat / sigsq.hat
 
     # Estimate variance of logOR.hat and perform bias adjustment
-    hessian.mat <- hessian(f = ll.f2, x0 = ml.estimates)
+    hessian.mat <- numDeriv::hessian(f = ll.f2, x0 = ml.estimates)
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
       message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained and bias adjustment cannot be applied.")

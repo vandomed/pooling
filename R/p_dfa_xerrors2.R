@@ -814,8 +814,8 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
     if (estimate_var) {
 
       # Estimate Hessian
-      hessian.mat <- hessian(f = ll.f2, estimating.hessian = TRUE,
-                             x0 = ml.estimates)
+      hessian.mat <- numDeriv::hessian(f = ll.f2, estimating.hessian = TRUE,
+                                       x0 = ml.estimates)
       theta.variance <- try(solve(hessian.mat), silent = TRUE)
       if (class(theta.variance) == "try-error" ||
           ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
@@ -823,8 +823,8 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
         # Repeatedly divide integrate_tol_hessian by 5 and re-try
         while (integrate_tol_hessian > 1e-15 & fix_posdef) {
           integrate_tol_hessian <- integrate_tol_hessian / 5
-          hessian.mat <- hessian(f = ll.f2, estimating.hessian = TRUE,
-                                 x0 = ml.estimates)
+          hessian.mat <- numDeriv::hessian(f = ll.f2, estimating.hessian = TRUE,
+                                           x0 = ml.estimates)
           theta.variance <- try(solve(hessian.mat), silent = TRUE)
           if (class(theta.variance) != "try-error" &&
               all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
