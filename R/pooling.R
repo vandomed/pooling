@@ -10,7 +10,7 @@
 #' Package: \tab pooling \cr
 #' Type: \tab Package \cr
 #' Version: \tab 1.1.2 \cr
-#' Date: \tab 2019-01-10 \cr
+#' Date: \tab 2019-01-13 \cr
 #' License: \tab GPL-3 \cr
 #' }
 #'
@@ -30,7 +30,6 @@
 #' @import ggplot2
 #' @import ggrepel
 #' @importFrom mvtnorm dmvnorm
-#' @importFrom pracma hessian
 #' @import stats
 #' @name pooling
 NULL

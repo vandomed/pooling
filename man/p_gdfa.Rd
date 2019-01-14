@@ -6,11 +6,12 @@
 Measured in Pools and Potentially Subject to Multiplicative Lognormal Errors}
 \usage{
 p_gdfa(g, y, xtilde, c = NULL, constant_or = TRUE,
-  errors = "processing", integrate_tol = 1e-08,
-  integrate_tol_hessian = integrate_tol, estimate_var = TRUE,
-  fix_posdef = FALSE, start_nonvar_var = c(0.01, 0.5),
-  lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
-  control = list(trace = 1, eval.max = 500, iter.max = 500))
+  errors = "processing", estimate_var = TRUE,
+  start_nonvar_var = c(0.01, 0.5), lower_nonvar_var = c(-Inf, -Inf),
+  upper_nonvar_var = c(Inf, Inf), hcubature_list = list(tol = 1e-08),
+  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max =
+  500)), hessian_list = list(method.args = list(r = 4)),
+  nlminb_object = NULL)
 }
 \arguments{
 \item{g}{Numeric vector with pool sizes, i.e. number of members in each pool.}
@@ -32,20 +33,8 @@ without this assumption, and a likelihood ratio test is performed to test it.}
 to. Choices are \code{"neither"}, \code{"processing"} for processing error
 only, \code{"measurement"} for measurement error only, and \code{"both"}.}
 
-\item{integrate_tol}{Numeric value specifying the \code{tol} input to
-\code{\link[cubature]{hcubature}}.}
-
-\item{integrate_tol_hessian}{Same as \code{integrate_tol}, but for use when
-estimating the Hessian matrix only. Sometimes more precise integration
-(i.e. smaller tolerance) helps prevent cases where the inverse Hessian is not
-positive definite.}
-
 \item{estimate_var}{Logical value for whether to return variance-covariance
 matrix for parameter estimates.}
-
-\item{fix_posdef}{Logical value for whether to repeatedly reduce
-\code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
-to avoid non-positive definite variance-covariance matrix.}
 
 \item{start_nonvar_var}{Numeric vector of length 2 specifying starting value
 for non-variance terms and variance terms, respectively.}
@@ -56,8 +45,20 @@ non-variance terms and variance terms, respectively.}
 \item{upper_nonvar_var}{Numeric vector of length 2 specifying upper bound for
 non-variance terms and variance terms, respectively.}
 
-\item{control}{List of control parameters for \code{\link[stats]{nlminb}},
-which is used to maximize the log-likelihood function.}
+\item{hcubature_list}{List of arguments to pass to
+\code{\link[cubature]{hcubature}} for numerical integration.}
+
+\item{nlminb_list}{List of arguments to pass to \code{\link[stats]{nlminb}}
+for log-likelihood maximization.}
+
+\item{hessian_list}{List of arguments to pass to
+\code{\link[numDeriv]{hessian}}
+for approximating the Hessian matrix. Only used if
+\code{estimate_var = TRUE}.}
+
+\item{nlminb_object}{Object returned from \code{\link[stats]{nlminb}} in a
+prior call. Useful for bypassing log-likelihood maximization if you just want
+to re-estimate the Hessian matrix with different options.}
 }
 \value{
 List containing:
@@ -119,9 +120,7 @@ fit.noreps <- p_gdfa(
   y = dat$y,
   xtilde = dat$xtilde,
   c = c.list,
-  errors = "both",
-  integrate_tol = 1e-4,
-  control = list(trace = 1),
+  errors = "both"
 )
 fit.noreps$estimates
 
@@ -131,9 +130,7 @@ fit.reps <- p_gdfa(
   y = dat$y,
   xtilde = reps,
   c = c.list,
-  errors = "both",
-  integrate_tol = 1e-4,
-  control = list(trace = 1)
+  errors = "both"
 )
 fit.reps$estimates
 
@@ -145,8 +142,7 @@ fit.nonconstant <- p_gdfa(
   c = c.list,
   constant_or = FALSE,
   errors = "both",
-  integrate_tol = 1e-4,
-  control = list(trace = 1)
+  hcubature_list = list(tol = 1e-4)
 )
 fit.nonconstant$estimates
 

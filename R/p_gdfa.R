@@ -20,25 +20,25 @@
 #' @param errors Character string specifying the errors that \code{X} is subject
 #' to. Choices are \code{"neither"}, \code{"processing"} for processing error
 #' only, \code{"measurement"} for measurement error only, and \code{"both"}.
-#' @param integrate_tol Numeric value specifying the \code{tol} input to
-#' \code{\link[cubature]{hcubature}}.
-#' @param integrate_tol_hessian Same as \code{integrate_tol}, but for use when
-#' estimating the Hessian matrix only. Sometimes more precise integration
-#' (i.e. smaller tolerance) helps prevent cases where the inverse Hessian is not
-#' positive definite.
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
-#' @param fix_posdef Logical value for whether to repeatedly reduce
-#' \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
-#' to avoid non-positive definite variance-covariance matrix.
 #' @param start_nonvar_var Numeric vector of length 2 specifying starting value
 #' for non-variance terms and variance terms, respectively.
 #' @param lower_nonvar_var Numeric vector of length 2 specifying lower bound for
 #' non-variance terms and variance terms, respectively.
 #' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
 #' non-variance terms and variance terms, respectively.
-#' @param control List of control parameters for \code{\link[stats]{nlminb}},
-#' which is used to maximize the log-likelihood function.
+#' @param hcubature_list List of arguments to pass to
+#' \code{\link[cubature]{hcubature}} for numerical integration.
+#' @param nlminb_list List of arguments to pass to \code{\link[stats]{nlminb}}
+#' for log-likelihood maximization.
+#' @param hessian_list List of arguments to pass to
+#' \code{\link[numDeriv]{hessian}}
+#' for approximating the Hessian matrix. Only used if
+#' \code{estimate_var = TRUE}.
+#' @param nlminb_object Object returned from \code{\link[stats]{nlminb}} in a
+#' prior call. Useful for bypassing log-likelihood maximization if you just want
+#' to re-estimate the Hessian matrix with different options.
 #'
 #'
 #' @return List containing:
@@ -95,9 +95,7 @@
 #'   y = dat$y,
 #'   xtilde = dat$xtilde,
 #'   c = c.list,
-#'   errors = "both",
-#'   integrate_tol = 1e-4,
-#'   control = list(trace = 1),
+#'   errors = "both"
 #' )
 #' fit.noreps$estimates
 #'
@@ -107,9 +105,7 @@
 #'   y = dat$y,
 #'   xtilde = reps,
 #'   c = c.list,
-#'   errors = "both",
-#'   integrate_tol = 1e-4,
-#'   control = list(trace = 1)
+#'   errors = "both"
 #' )
 #' fit.reps$estimates
 #'
@@ -121,8 +117,7 @@
 #'   c = c.list,
 #'   constant_or = FALSE,
 #'   errors = "both",
-#'   integrate_tol = 1e-4,
-#'   control = list(trace = 1)
+#'   hcubature_list = list(tol = 1e-4)
 #' )
 #' fit.nonconstant$estimates
 #'
@@ -163,14 +158,14 @@ p_gdfa <- function(
   c = NULL,
   constant_or = TRUE,
   errors = "processing",
-  integrate_tol = 1e-8,
-  integrate_tol_hessian = integrate_tol,
   estimate_var = TRUE,
-  fix_posdef = FALSE,
   start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
-  control = list(trace = 1, eval.max = 500, iter.max = 500)
+  hcubature_list = list(tol = 1e-8),
+  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max = 500)),
+  hessian_list = list(method.args = list(r = 4)),
+  nlminb_object = NULL
 ) {
 
   # Check that inputs are valid
@@ -181,17 +176,8 @@ p_gdfa <- function(
     stop("The input 'errors' should be set to 'neither', 'processing',
          'measurement', or 'both'.")
   }
-  if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
-    stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
-  }
-  if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
-    stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
-  }
   if (! is.logical(estimate_var)) {
     stop("The input 'estimate_var' should be TRUE or FALSE.")
-  }
-  if (! is.logical(fix_posdef)) {
-    stop("The input 'fix_posdef' should be TRUE or FALSE.")
   }
   if (! (is.numeric(start_nonvar_var) & length(start_nonvar_var) == 2)) {
     stop("The input 'start_nonvar_var' should be a numeric vector of length 2.")
@@ -212,14 +198,14 @@ p_gdfa <- function(
       xtilde = xtilde,
       c = c,
       errors = errors,
-      integrate_tol = integrate_tol,
-      integrate_tol_hessian = integrate_tol_hessian,
       estimate_var = estimate_var,
-      fix_posdef = fix_posdef,
       start_nonvar_var = start_nonvar_var,
       lower_nonvar_var = lower_nonvar_var,
       upper_nonvar_var = upper_nonvar_var,
-      control = control
+      hcubature_list = hcubature_list,
+      nlminb_list = nlminb_list,
+      hessian_list = hessian_list,
+      nlminb_object = nlminb_object
     )
 
     # Fit model with non-constant odds ratio
@@ -229,14 +215,14 @@ p_gdfa <- function(
       xtilde = xtilde,
       c = c,
       errors = errors,
-      integrate_tol = integrate_tol,
-      integrate_tol_hessian = integrate_tol_hessian,
       estimate_var = estimate_var,
-      fix_posdef = fix_posdef,
       start_nonvar_var = start_nonvar_var,
       lower_nonvar_var = lower_nonvar_var,
       upper_nonvar_var = upper_nonvar_var,
-      control = control
+      hcubature_list = hcubature_list,
+      nlminb_list = nlminb_list,
+      hessian_list = hessian_list,
+      nlminb_object = nlminb_object
     )
 
     # Likelihood ratio test for H0: gamma_y = 0, which is equivalent to
@@ -263,14 +249,14 @@ p_gdfa <- function(
       xtilde = xtilde,
       c = c,
       errors = errors,
-      integrate_tol = integrate_tol,
-      integrate_tol_hessian = integrate_tol_hessian,
       estimate_var = estimate_var,
-      fix_posdef = fix_posdef,
       start_nonvar_var = start_nonvar_var,
       lower_nonvar_var = lower_nonvar_var,
       upper_nonvar_var = upper_nonvar_var,
-      control = control
+      hcubature_list = hcubature_list,
+      nlminb_list = nlminb_list,
+      hessian_list = hessian_list,
+      nlminb_object = nlminb_object
     )
 
   } else {
@@ -281,14 +267,14 @@ p_gdfa <- function(
       xtilde = xtilde,
       c = c,
       errors = errors,
-      integrate_tol = integrate_tol,
-      integrate_tol_hessian = integrate_tol_hessian,
       estimate_var = estimate_var,
-      fix_posdef = fix_posdef,
       start_nonvar_var = start_nonvar_var,
       lower_nonvar_var = lower_nonvar_var,
       upper_nonvar_var = upper_nonvar_var,
-      control = control
+      hcubature_list = hcubature_list,
+      nlminb_list = nlminb_list,
+      hessian_list = hessian_list,
+      nlminb_object = nlminb_object
     )
 
   }

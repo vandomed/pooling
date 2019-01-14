@@ -15,25 +15,29 @@
 #' @param errors Character string specifying the errors that X is subject to.
 #' Choices are \code{"neither"}, \code{"processing"} for processing error only,
 #' \code{"measurement"} for measurement error only, and \code{"both"}.
-#' @param integrate_tol Numeric value specifying the \code{tol} input to
-#' \code{\link[cubature]{hcubature}}.
-#' @param integrate_tol_hessian Same as \code{integrate_tol}, but for use when
-#' estimating the Hessian matrix only. Sometimes more precise integration
-#' (i.e. smaller tolerance) helps prevent cases where the inverse Hessian is not
-#' positive definite.
 #' @param estimate_var Logical value for whether to return variance-covariance
 #' matrix for parameter estimates.
-#' @param fix_posdef Logical value for whether to repeatedly reduce
-#' \code{integrate_tol_hessian} by factor of 5 and re-estimate Hessian to try
-#' to avoid non-positive definite variance-covariance matrix.
 #' @param start_nonvar_var Numeric vector of length 2 specifying starting value
 #' for non-variance terms and variance terms, respectively.
 #' @param lower_nonvar_var Numeric vector of length 2 specifying lower bound for
 #' non-variance terms and variance terms, respectively.
 #' @param upper_nonvar_var Numeric vector of length 2 specifying upper bound for
 #' non-variance terms and variance terms, respectively.
-#' @param control List of control parameters for \code{\link[stats]{nlminb}},
-#' which is used to maximize the log-likelihood function.
+#' @param start_jitter Numeric value specifying standard deviation for mean-0
+#' normal jitters to add to starting values for a second try at maximizing the
+#' log-likelihood, should the initial call to \code{\link[stats]{nlminb}} result
+#' in non-convergence.
+#' @param hcubature_list List of arguments to pass to
+#' \code{\link[cubature]{hcubature}} for numerical integration.
+#' @param nlminb_list List of arguments to pass to \code{\link[stats]{nlminb}}
+#' for log-likelihood maximization.
+#' @param hessian_list List of arguments to pass to
+#' \code{\link[numDeriv]{hessian}}
+#' for approximating the Hessian matrix. Only used if
+#' \code{estimate_var = TRUE}.
+#' @param nlminb_object Object returned from \code{\link[stats]{nlminb}} in a
+#' prior call. Useful for bypassing log-likelihood maximization if you just want
+#' to re-estimate the Hessian matrix with different options.
 #'
 #'
 #' @return List containing:
@@ -76,42 +80,30 @@
 # xtilde <- reps
 # c <- c.list
 # errors <- "both"
-# integrate_tol <- 1e-4
-# integrate_tol_hessian <- integrate_tol
 # estimate_var <- TRUE
-# fix_posdef <- TRUE
 p_gdfa_constant <- function(
   g,
   y,
   xtilde,
   c = NULL,
   errors = "processing",
-  integrate_tol = 1e-8,
-  integrate_tol_hessian = integrate_tol,
   estimate_var = TRUE,
-  fix_posdef = TRUE,
   start_nonvar_var = c(0.01, 0.5),
   lower_nonvar_var = c(-Inf, -Inf),
   upper_nonvar_var = c(Inf, Inf),
-  control = list(trace = 1, eval.max = 500, iter.max = 500)
+  start_jitter = 0.01,
+  hcubature_list = list(tol = 1e-8),
+  nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max = 500)),
+  hessian_list = list(method.args = list(r = 4)),
+  nlminb_object = NULL
 ) {
 
   # Check that inputs are valid
   if (! errors %in% c("neither", "processing", "measurement", "both")) {
-    stop("The input 'errors' should be set to 'neither', 'processing',
-         'measurement', or 'both'.")
-  }
-  if (! (is.numeric(integrate_tol) & inside(integrate_tol, c(1e-32, Inf)))) {
-    stop("The input 'integrate_tol' must be a numeric value greater than 1e-32.")
-  }
-  if (! (is.numeric(integrate_tol_hessian) & inside(integrate_tol_hessian, c(1e-32, Inf)))) {
-    stop("The input 'integrate_tol_hessian' must be a numeric value greater than 1e-32.")
+    stop("The input 'errors' should be set to 'neither', 'processing', 'measurement', or 'both'.")
   }
   if (! is.logical(estimate_var)) {
     stop("The input 'estimate_var' should be TRUE or FALSE.")
-  }
-  if (! is.logical(fix_posdef)) {
-    stop("The input 'fix_posdef' should be TRUE or FALSE.")
   }
   if (! (is.numeric(start_nonvar_var) & length(start_nonvar_var) == 2)) {
     stop("The input 'start_nonvar_var' should be a numeric vector of length 2.")
@@ -121,6 +113,9 @@ p_gdfa_constant <- function(
   }
   if (! (is.numeric(upper_nonvar_var) & length(upper_nonvar_var) == 2)) {
     stop("The input 'upper_nonvar_var' should be a numeric vector of length 2.")
+  }
+  if (! is.null(start_jitter) & start_jitter <= 0) {
+    stop("The input 'start_jitter' should be a non-negative value, if specified.")
   }
 
   # Get information about covariates C
@@ -305,7 +300,7 @@ p_gdfa_constant <- function(
   }
 
   # Log-likelihood function
-  llf <- function(f.theta, estimating.hessian = FALSE) {
+  llf <- function(f.theta) {
 
     # Extract parameters
     f.gammas <- matrix(f.theta[loc.gammas], ncol = 1)
@@ -361,29 +356,21 @@ p_gdfa_constant <- function(
       }
       scales <- ifelse(y.r == 1, f.b1, f.b0)
 
-      # Get integration tolerance
-      if (estimating.hessian) {
-        int_tol <- integrate_tol_hessian
-      } else {
-        int_tol <- integrate_tol
-      }
-
       int.vals <- c()
       for (ii in 1: length(xtilde.r)) {
 
-        int.ii <- hcubature(
-          f = lf,
-          tol = integrate_tol,
-          vectorInterface = TRUE,
-          lowerLimit = 0, upperLimit = 1,
-          Ig = Ig.r[ii],
-          k = k.r[ii],
-          xtilde = xtilde.r[[ii]],
-          shape = shapes[ii],
-          scale = scales[ii],
-          sigsq_p = f.sigsq_p,
-          sigsq_m = f.sigsq_m
-        )
+        int.ii <- do.call(cubature::hcubature,
+                          c(list(f = lf,
+                                 vectorInterface = TRUE,
+                                 lowerLimit = 0, upperLimit = 1,
+                                 Ig = Ig.r[ii],
+                                 k = k.r[ii],
+                                 xtilde = xtilde.r[[ii]],
+                                 shape = shapes[ii],
+                                 scale = scales[ii],
+                                 sigsq_p = f.sigsq_p,
+                                 sigsq_m = f.sigsq_m),
+                            hcubature_list))
         int.vals[ii] <- int.ii$integral
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
@@ -417,19 +404,19 @@ p_gdfa_constant <- function(
       int.vals <- c()
       for (ii in 1: length(xtilde.i)) {
 
-        int.ii <- hcubature(
-          f = lf,
-          tol = integrate_tol,
-          vectorInterface = TRUE,
-          lowerLimit = 0, upperLimit = 1,
-          Ig = Ig.i[ii],
-          k = 1,
-          xtilde = xtilde.i[ii],
-          shape = shapes[ii],
-          scale = scales[ii],
-          sigsq_p = f.sigsq_p,
-          sigsq_m = f.sigsq_m
-        )
+        int.ii <- do.call(cubature::hcubature,
+                          c(list(f = lf,
+                                 vectorInterface = TRUE,
+                                 lowerLimit = 0, upperLimit = 1,
+                                 Ig = Ig.i[ii],
+                                 k = 1,
+                                 xtilde = xtilde.i[ii],
+                                 shape = shapes[ii],
+                                 scale = scales[ii],
+                                 sigsq_p = f.sigsq_p,
+                                 sigsq_m = f.sigsq_m
+                          ),
+                          hcubature_list))
         int.vals[ii] <- int.ii$integral
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
@@ -490,14 +477,34 @@ p_gdfa_constant <- function(
   }
 
   # Obtain ML estimates
-  ml.max <- nlminb(start = start, objective = llf,
-                   lower = lower, upper = upper, control = control)
-  ml.estimates <- ml.max$par
+  if (is.null(nlminb_object)) {
+    ml.max <- do.call(nlminb,
+                      c(list(start = start,
+                             objective = llf,
+                             lower = lower,
+                             upper = upper),
+                        nlminb_list))
 
-  # Print message if nlminb indicates non-convergence
-  if (ml.max$convergence == 1) {
-    message("'nlminb' indicates non-convergence. It may be a good idea to re-run with different starting values.")
+    # If non-convergence, try with jittered starting values if requested
+    if (ml.max$convergence == 1) {
+      if (! is.null(jitter_start)) {
+        message("Trying jittered starting values...")
+        start <- start + rnorm(n = length(start), sd = jitter_start)
+        ml.max <- do.call(nlminb,
+                          c(list(start = start,
+                                 objective = llf,
+                                 lower = lower,
+                                 upper = upper),
+                            nlminb_list))
+      }
+      if (ml.max$convergence == 1) {
+        message("Object returned by 'nlminb' function indicates non-convergence. You may want to try different starting values.")
+      }
+    }
+  } else {
+    ml.max <- nlminb_object
   }
+  ml.estimates <- ml.max$par
 
   # Obtain point estimate for log-odds ratio
   b1.hat <- ml.estimates[loc.bs[1]]
@@ -508,27 +515,12 @@ p_gdfa_constant <- function(
   if (estimate_var) {
 
     # Estimate Hessian
-    hessian.mat <- hessian(f = llf, estimating.hessian = TRUE,
-                           x0 = ml.estimates)
+    hessian.mat <- do.call(numDeriv::hessian,
+                           c(list(func = llf, x = ml.estimates),
+                             hessian_list))
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
-    if (class(theta.variance) == "try-error" ||
-        ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
 
-      # Repeatedly divide integrate_tol_hessian by 5 and re-try
-      while (integrate_tol_hessian > 1e-15 & fix_posdef) {
-        integrate_tol_hessian <- integrate_tol_hessian / 5
-        message(paste("Trying integrate_tol_hessian = ", integrate_tol_hessian, "...", sep = ""))
-        hessian.mat <- hessian(f = llf, estimating.hessian = TRUE,
-                               x0 = ml.estimates)
-        theta.variance <- try(solve(hessian.mat), silent = TRUE)
-        if (class(theta.variance) != "try-error" &&
-            all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
-          break
-        }
-
-      }
-    }
-
+    # Estimate variance-covariance matrix
     if (class(theta.variance) == "try-error" ||
         ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
 
