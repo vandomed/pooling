@@ -2,7 +2,7 @@ Package: pooling
 Type: Package
 Title: Fit Poolwise Regression Models
 Version: 1.1.2
-Date: 2019-01-13
+Date: 2019-01-30
 Author: Dane R. Van Domelen
 Maintainer: Dane R. Van Domelen <vandomed@gmail.com>
 Description: Functions for calculating power and fitting regression models in studies where a biomarker is measured in "pooled" samples rather than for each individual. Approaches for handling measurement error follow the framework of Schisterman et al. (2010) <doi:10.1002/sim.3823>.
@@ -11,4 +11,4 @@ LazyData: true
 Encoding: UTF-8
 RoxygenNote: 6.1.1
 Remotes: vandomed/dvmisc
-Imports: cubature, dplyr, dvmisc, ggplot2, ggrepel, mvtnorm, numDeriv, stats
+Imports: cubature, data.table, dplyr, dvmisc, ggplot2, ggrepel, mvtnorm, numDeriv, stats
