@@ -132,8 +132,8 @@ p_logreg_xerrors2 <- function(
   prev = NULL,
   samp_y1y0 = NULL,
   estimate_var = TRUE,
-  start_nonvar_var = c(0.01, 0.5),
-  lower_nonvar_var = c(-Inf, -Inf),
+  start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, 1e-4),
   upper_nonvar_var = c(Inf, Inf),
   jitter_start = 0.01,
   hcubature_list = list(tol = 1e-8),
@@ -750,11 +750,10 @@ p_logreg_xerrors2 <- function(
 
     # Estimate variance-covariance matrix
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
-    if (class(theta.variance) == "try-error" ||
-        ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
+    if (class(theta.variance) == "try-error") {
 
       print(hessian.mat)
-      message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
+      message("Estimated Hessian matrix (printed here) is singular, so variance-covariance matrix cannot be obtained.")
       ret.list$theta.var <- NULL
 
     } else {

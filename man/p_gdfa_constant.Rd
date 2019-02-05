@@ -7,8 +7,8 @@ Measured in Pools and Potentially Subject to Multiplicative Lognormal Errors
 (Constant Odds Ratio Version)}
 \usage{
 p_gdfa_constant(g, y, xtilde, c = NULL, errors = "processing",
-  estimate_var = TRUE, start_nonvar_var = c(0.01, 0.5),
-  lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
+  estimate_var = TRUE, start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, 1e-04), upper_nonvar_var = c(Inf, Inf),
   jitter_start = 0.01, hcubature_list = list(tol = 1e-08),
   nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max =
   500)), hessian_list = list(method.args = list(r = 4)),

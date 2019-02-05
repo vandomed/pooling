@@ -119,8 +119,8 @@ p_linreg_yerrors <- function(
   x = NULL,
   errors = "processing",
   estimate_var = TRUE,
-  start_nonvar_var = c(0.01, 0.5),
-  lower_nonvar_var = c(-Inf, -Inf),
+  start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, 1e-4),
   upper_nonvar_var = c(Inf, Inf),
   nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max = 500)),
   hessian_list = list(method.args = list(r = 4))
@@ -361,9 +361,12 @@ p_linreg_yerrors <- function(
   # If requested, add variance-covariance matrix to ret.list
   if (estimate_var) {
 
+    # Estimate Hessian
     hessian.mat <- do.call(numDeriv::hessian,
                            c(list(func = llf, x = theta.hat),
                              hessian_list))
+
+    # Estimate variance-covariance matrix
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
       message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")

@@ -6,8 +6,8 @@
 (Potentially) Subject to Additive Normal Errors}
 \usage{
 p_linreg_yerrors(g, ytilde, x = NULL, errors = "processing",
-  estimate_var = TRUE, start_nonvar_var = c(0.01, 0.5),
-  lower_nonvar_var = c(-Inf, -Inf), upper_nonvar_var = c(Inf, Inf),
+  estimate_var = TRUE, start_nonvar_var = c(0.01, 1),
+  lower_nonvar_var = c(-Inf, 1e-04), upper_nonvar_var = c(Inf, Inf),
   nlminb_list = list(control = list(trace = 1, eval.max = 500, iter.max =
   500)), hessian_list = list(method.args = list(r = 4)))
 }

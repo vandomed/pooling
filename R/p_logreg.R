@@ -229,12 +229,17 @@ p_logreg <- function(
 
     # If requested, add variance-covariance matrix to ret.list
     if (estimate_var) {
+
+      # Estimate Hessian
       hessian.mat <- do.call(numDeriv::hessian,
                              c(list(func = llf, x = theta.hat),
                                hessian_list))
+
+      # Estimate variance-covariance matrix
       theta.variance <- solve(hessian.mat)
       colnames(theta.variance) <- rownames(theta.variance) <- beta.labels
       ret.list$theta.var <- theta.variance
+
     }
 
     # Add nlminb object and AIC to ret.list
