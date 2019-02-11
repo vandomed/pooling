@@ -64,3 +64,14 @@ NULL
 #' @docType data
 #' @source Simulated data in R.
 NULL
+#'
+#'
+#' Dataset for a Paper Under Review
+#'
+#' Simulated data intended to mimic the motivating example from a paper under
+#' review.
+#'
+#' @name simdata
+#' @docType data
+#' @source Simulated data in R.
+NULL
