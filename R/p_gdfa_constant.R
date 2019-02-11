@@ -525,7 +525,8 @@ p_gdfa_constant <- function(
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
 
-      message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
+      print(hessian.mat)
+      message("The estimated Hessian matrix (printed here) is singular, so variance-covariance matrix could not be obtained. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
       theta.variance <- NULL
       logOR.var <- NA
 
@@ -534,6 +535,10 @@ p_gdfa_constant <- function(
       fprime <- matrix(c(1 / b1.hat^2, -1 / b0.hat^2), nrow = 1)
       colnames(theta.variance) <- rownames(theta.variance) <- theta.labels
       logOR.var <- fprime %*% theta.variance[loc.bs, loc.bs] %*% t(fprime)
+
+      if (sum(diag(theta.variance) <= 0) > 0) {
+        message("The estimated variance-covariance matrix has some non-positive diagonal elements, so it may not be reliable. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
+      }
 
     }
 

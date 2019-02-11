@@ -330,10 +330,20 @@ p_ndfa_nonconstant <- function(
                            hessian_list))
   theta.variance <- try(solve(hessian.mat), silent = TRUE)
   if (class(theta.variance) == "try-error") {
-    message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
+
+
+    print(hessian.mat)
+    message("The estimated Hessian matrix (printed here) is singular, so variance-covariance matrix could not be obtained. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
     theta.variance <- NULL
+
   } else {
+
     colnames(theta.variance) <- rownames(theta.variance) <- theta.labels
+
+    if (sum(diag(theta.variance) <= 0) > 0) {
+      message("The estimated variance-covariance matrix has some non-positive diagonal elements, so it may not be reliable. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
+    }
+
   }
 
   # Create vector of estimates to return

@@ -333,10 +333,14 @@ p_ndfa_constant <- function(
                            hessian_list))
   theta.variance <- try(solve(hessian.mat), silent = TRUE)
   if (class(theta.variance) == "try-error") {
-    message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained and bias adjustment cannot be applied.")
+
+    print(hessian.mat)
+    message("The estimated Hessian matrix (printed here) is singular, so variance-covariance matrix cannot not be obtained and bias adjustment cannot be applied. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
     theta.variance <- NULL
     logOR.var <- logOR.var <- logOR_adj.hat <- logOR_adj.var <- NA
+
   } else {
+
     fprime <- matrix(c(1 / sigsq.hat, -gamma_y.hat / sigsq.hat^2), nrow = 1)
     colnames(theta.variance) <- rownames(theta.variance) <- theta.labels
     logOR.var <- fprime %*%
@@ -344,9 +348,15 @@ p_ndfa_constant <- function(
     sigsq.var <- theta.variance[loc.sigsq, loc.sigsq]
     logOR_adj.hat <- logOR.hat - gamma_y.hat * sigsq.var / sigsq.hat^3
     logOR_adj.var <- logOR.var * (logOR_adj.hat / logOR.hat)^2
+
     if (sign(logOR.hat) != sign(logOR_adj.hat)) {
       message("Bias adjustment flipped the sign of the log-OR estimate, so you may want to use the non-bias adjusted version.")
     }
+
+    if (sum(diag(theta.variance) <= 0) > 0) {
+      message("The estimated variance-covariance matrix has some non-positive diagonal elements, so it may not be reliable. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
+    }
+
   }
 
   # Create vector of estimates to return

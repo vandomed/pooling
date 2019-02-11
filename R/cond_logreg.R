@@ -579,14 +579,19 @@ cond_logreg <- function(
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
 
+
       print(hessian.mat)
-      message("Estimated Hessian matrix (printed here) is singular, so variance-covariance matrix cannot be obtained.")
+      message("Estimated Hessian matrix (printed here) is singular, so variance-covariance matrix could not be obtained. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
       ret.list$theta.var <- NULL
 
     } else {
 
       colnames(theta.variance) <- rownames(theta.variance) <- theta.labels
       ret.list$theta.var <- theta.variance
+
+      if (sum(diag(theta.variance) <= 0) > 0) {
+        message("The estimated variance-covariance matrix has some non-positive diagonal elements, so it may not be reliable. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
+      }
 
     }
   }
