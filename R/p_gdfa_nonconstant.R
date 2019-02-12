@@ -364,10 +364,11 @@ p_gdfa_nonconstant <- function(
       int.vals <- c()
       for (ii in 1: length(xtilde.r)) {
 
-        int.ii <- do.call(cubature::hcubature,
+        int.ii <- do.call(hcubature,
                           c(list(f = lf,
                                  vectorInterface = TRUE,
-                                 lowerLimit = 0, upperLimit = 1,
+                                 lowerLimit = 0,
+                                 upperLimit = 1,
                                  Ig = Ig.r[ii],
                                  k = k.r[ii],
                                  xtilde = xtilde.r[[ii]],
@@ -376,7 +377,36 @@ p_gdfa_nonconstant <- function(
                                  sigsq_p = f.sigsq_p,
                                  sigsq_m = f.sigsq_m),
                             hcubature_list))
-        int.vals[ii] <- int.ii$integral
+
+        # If integral 0, find region with density
+        if (is.na(int.ii$integral) | int.ii$integral == 0) {
+
+          limits <- seq(1e-5, 1 - 1e-5, 1e-5)
+          fs <- lf(x = limits,
+                   Ig = Ig.r[ii],
+                   k = k.r[ii],
+                   xtilde = xtilde.r[[ii]],
+                   shape = shapes[ii],
+                   scale = scales[ii],
+                   sigsq_p = f.sigsq_p,
+                   sigsq_m = f.sigsq_m)
+          limits <- limits[fs > 0]
+          limits <- c(max(0, min(limits) - 1e-5), min(1, max(limits) + 1e-5))
+          int.ii <- do.call(hcubature,
+                            c(list(f = lf,
+                                   vectorInterface = TRUE,
+                                   lowerLimit = limits[1],
+                                   upperLimit = limits[2],
+                                   Ig = Ig.r[ii],
+                                   k = k.r[ii],
+                                   xtilde = xtilde.r[[ii]],
+                                   shape = shapes[ii],
+                                   scale = scales[ii],
+                                   sigsq_p = f.sigsq_p,
+                                   sigsq_m = f.sigsq_m),
+                              hcubature_list))
+
+        }
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
         if (is.na(int.ii$integral) | int.ii$integral == 0) {
@@ -385,6 +415,8 @@ p_gdfa_nonconstant <- function(
           skip.rest <- TRUE
           break
         }
+
+        int.vals[ii] <- int.ii$integral
 
       }
       ll.r <- sum(log(int.vals))
@@ -405,7 +437,7 @@ p_gdfa_nonconstant <- function(
       int.vals <- c()
       for (ii in 1: length(xtilde.i)) {
 
-        int.ii <- do.call(cubature::hcubature,
+        int.ii <- do.call(hcubature,
                           c(list(f = lf,
                                  vectorInterface = TRUE,
                                  lowerLimit = 0,
@@ -418,7 +450,35 @@ p_gdfa_nonconstant <- function(
                                  sigsq_p = f.sigsq_p,
                                  sigsq_m = f.sigsq_m),
                             hcubature_list))
-        int.vals[ii] <- int.ii$integral
+
+        # If integral 0, find region with density
+        if (is.na(int.ii$integral) | int.ii$integral == 0) {
+
+          limits <- seq(1e-5, 1 - 1e-5, 1e-5)
+          fs <- lf(x = limits,
+                   k = 1,
+                   xtilde = xtilde.i[ii],
+                   shape = shapes[ii],
+                   scale = scales[ii],
+                   sigsq_p = f.sigsq_p,
+                   sigsq_m = f.sigsq_m)
+          limits <- limits[fs > 0]
+          limits <- c(max(0, min(limits) - 1e-5), min(1, max(limits) + 1e-5))
+          int.ii <- do.call(hcubature,
+                            c(list(f = lf,
+                                   vectorInterface = TRUE,
+                                   lowerLimit = limits[1],
+                                   upperLimit = limits[2],
+                                   Ig = Ig.i[ii],
+                                   k = 1,
+                                   xtilde = xtilde.i[ii],
+                                   shape = shapes[ii],
+                                   scale = scales[ii],
+                                   sigsq_p = f.sigsq_p,
+                                   sigsq_m = f.sigsq_m),
+                              hcubature_list))
+
+        }
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
         if (is.na(int.ii$integral) | int.ii$integral == 0) {
@@ -427,6 +487,8 @@ p_gdfa_nonconstant <- function(
           skip.rest <- TRUE
           break
         }
+
+        int.vals[ii] <- int.ii$integral
 
       }
       ll.i <- sum(log(int.vals))

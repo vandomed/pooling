@@ -550,7 +550,42 @@ p_logreg_xerrors2 <- function(
                                  sigsq_p_i = sigsq_p_i,
                                  sigsq_m_i = sigsq_m_i),
                             hcubature_list))
-        int.vals[ii] <- int.ii$integral
+
+        # If integral 0, find region with density
+        if (is.na(int.ii$integral) | int.ii$integral == 0) {
+
+          limits <- seq(1e-5, 1 - 1e-5, 1e-5)
+          fs <- int.f_i1(x_i = limits,
+                         g_i = g_i,
+                         Ig_i = Ig_i,
+                         k_i = k_i,
+                         y_i = y_i,
+                         cstar_i = cstar_i,
+                         qg_i = qg_i,
+                         xtilde_i = xtilde_i,
+                         a_i = a_i,
+                         sigsq_p_i = sigsq_p_i,
+                         sigsq_m_i = sigsq_m_i)
+          limits <- limits[fs > 0]
+          limits <- c(max(0, min(limits) - 1e-5), min(1, max(limits) + 1e-5))
+          int.ii <- do.call(hcubature,
+                            c(list(f = int.f_i1,
+                                   lowerLimit = limits[1],
+                                   upperLimit = limits[2],
+                                   vectorInterface = TRUE,
+                                   g_i = g_i,
+                                   Ig_i = Ig_i,
+                                   k_i = k_i,
+                                   y_i = y_i,
+                                   cstar_i = cstar_i,
+                                   qg_i = qg_i,
+                                   xtilde_i = xtilde_i,
+                                   a_i = a_i,
+                                   sigsq_p_i = sigsq_p_i,
+                                   sigsq_m_i = sigsq_m_i),
+                              hcubature_list))
+
+        }
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
         if (is.na(int.ii$integral) | int.ii$integral == 0) {
@@ -559,6 +594,8 @@ p_logreg_xerrors2 <- function(
           skip.rest <- TRUE
           break
         }
+
+        int.vals[ii] <- int.ii$integral
 
       }
       ll.r <- sum(log(int.vals))
@@ -645,7 +682,40 @@ p_logreg_xerrors2 <- function(
                                  sigsq_p_i = sigsq_p_i,
                                  sigsq_m_i = sigsq_m_i),
                             hcubature_list))
-        int.vals[ii] <- int.ii$integral
+
+        # If integral 0, find region with density
+        if (is.na(int.ii$integral) | int.ii$integral == 0) {
+
+          limits <- seq(1e-5, 1 - 1e-5, 1e-5)
+          fs <- int.f_i2(x_i = limits,
+                         g_i = g_i,
+                         Ig_i = Ig_i,
+                         y_i = y_i,
+                         cstar_i = cstar_i,
+                         qg_i = qg_i,
+                         xtilde_i = xtilde_i,
+                         a_i = a_i,
+                         sigsq_p_i = sigsq_p_i,
+                         sigsq_m_i = sigsq_m_i)
+          limits <- limits[fs > 0]
+          limits <- c(max(0, min(limits) - 1e-5), min(1, max(limits) + 1e-5))
+          int.ii <- do.call(hcubature,
+                            c(list(f = int.f_i2,
+                                   lowerLimit = limits[1],
+                                   upperLimit = limits[2],
+                                   vectorInterface = TRUE,
+                                   g_i = g_i,
+                                   Ig_i = Ig_i,
+                                   y_i = y_i,
+                                   cstar_i = cstar_i,
+                                   qg_i = qg_i,
+                                   xtilde_i = xtilde_i,
+                                   a_i = a_i,
+                                   sigsq_p_i = sigsq_p_i,
+                                   sigsq_m_i = sigsq_m_i),
+                              hcubature_list))
+
+        }
 
         # If integral 0, set skip.rest to TRUE to skip further LL calculations
         if (is.na(int.ii$integral) | int.ii$integral == 0) {
@@ -654,6 +724,8 @@ p_logreg_xerrors2 <- function(
           skip.rest <- TRUE
           break
         }
+
+        int.vals[ii] <- int.ii$integral
 
       }
       ll.i <- sum(log(int.vals))
