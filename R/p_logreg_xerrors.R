@@ -616,74 +616,41 @@ p_logreg_xerrors <- function(
                                    sigsq_m_i = sigsq_m_i),
                               hcubature_list))
 
-          # If integral 0 and sigsq_m_i small, look at region around Xtilde
-          if ((is.na(int.ii$integral) | int.ii$integral == 0) &
-              inside(sigsq_m_i, c(0, 0.1), FALSE)) {
+          # If integral 0, find region with density
+          if (is.na(int.ii$integral) | int.ii$integral == 0) {
 
-            center.s <- mean(xtilde_i)
-            center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
-            incr <- 1
-            for (jj in 1: 6) {
-              #print(list("sigsq_m_i small", c(ii, jj)))
-              incr <- incr / 10
-              lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
-              int.ii <- do.call(hcubature,
-                                c(list(f = int.f_i1,
-                                       lowerLimit = lowupp.x[1],
-                                       upperLimit = lowupp.x[2],
-                                       vectorInterface = TRUE,
-                                       k_i = k_i,
-                                       g_i = g_i,
-                                       y_i = y_i,
-                                       gc_i = gc_i,
-                                       qg_i = qg_i,
-                                       mu_x.c_i = mu_x.c_i,
-                                       sigsq_x.c_i = sigsq_x.c_i,
-                                       xtilde_i = xtilde_i,
-                                       sigsq_p_i = sigsq_p_i,
-                                       sigsq_m_i = sigsq_m_i),
-                                  hcubature_list))
-              if (! is.na(int.ii$integral) & int.ii$integral > 0) {
-                break
-              }
-            }
-
-          }
-
-          # If integral 0 and f.sigsq_x.c small, look at region around E(X|C)
-          if ((is.na(int.ii$integral) | int.ii$integral == 0) & f.sigsq_x.c < 0.1) {
-
-            center.s <- mu_x.c_i
-            center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
-            incr <- 1
-            for (jj in 1: 6) {
-              #print(list("f.sigsq_x.c small", c(ii, jj)))
-              incr <- incr / 10
-              lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
-              int.ii <- do.call(hcubature,
-                                c(list(f = int.f_i1,
-                                       lowerLimit = lowupp.x[1],
-                                       upperLimit = lowupp.x[2],
-                                       vectorInterface = TRUE,
-                                       k_i = k_i,
-                                       g_i = g_i,
-                                       y_i = y_i,
-                                       gc_i = gc_i,
-                                       qg_i = qg_i,
-                                       mu_x.c_i = mu_x.c_i,
-                                       sigsq_x.c_i = sigsq_x.c_i,
-                                       xtilde_i = xtilde_i,
-                                       sigsq_p_i = sigsq_p_i,
-                                       sigsq_m_i = sigsq_m_i),
-                                  hcubature_list))
-              if (! is.na(int.ii$integral) & int.ii$integral > 0) {
-                break
-              }
-            }
+            limits <- seq(-1 + 1e-5, 1 - 1e-5, 1e-5)
+            fs <- int.f_i1(x_i = limits,
+                           k_i = k_i,
+                           g_i = g_i,
+                           y_i = y_i,
+                           gc_i = gc_i,
+                           qg_i = qg_i,
+                           mu_x.c_i = mu_x.c_i,
+                           sigsq_x.c_i = sigsq_x.c_i,
+                           xtilde_i = xtilde_i,
+                           sigsq_p_i = sigsq_p_i,
+                           sigsq_m_i = sigsq_m_i)
+            limits <- limits[fs > 0]
+            limits <- c(max(-1, min(limits) - 1e-5), min(1, max(limits) + 1e-5))
+            int.ii <- do.call(hcubature,
+                              c(list(f = int.f_i1,
+                                     lowerLimit = limits[1],
+                                     upperLimit = limits[2],
+                                     vectorInterface = TRUE,
+                                     k_i = k_i,
+                                     g_i = g_i,
+                                     y_i = y_i,
+                                     gc_i = gc_i,
+                                     qg_i = qg_i,
+                                     mu_x.c_i = mu_x.c_i,
+                                     sigsq_x.c_i = sigsq_x.c_i,
+                                     xtilde_i = xtilde_i,
+                                     sigsq_p_i = sigsq_p_i,
+                                     sigsq_m_i = sigsq_m_i),
+                                hcubature_list))
 
           }
-
-          int.vals[ii] <- int.ii$integral
 
           # If integral 0, set skip.rest to TRUE to skip further LL calculations
           if (is.na(int.ii$integral) | int.ii$integral == 0) {
@@ -692,6 +659,8 @@ p_logreg_xerrors <- function(
             skip.rest <- TRUE
             break
           }
+
+          int.vals[ii] <- int.ii$integral
 
         }
         ll.r <- sum(log(int.vals))
@@ -824,73 +793,39 @@ p_logreg_xerrors <- function(
                                    sigsq_m_i = sigsq_m_i),
                               hcubature_list))
 
-          # If integral 0 and f.sigsq_m small, look at region around Xtilde
-          if ((is.na(int.ii$integral) | int.ii$integral == 0) &
-              inside(sigsq_m_i, c(0, 0.1), FALSE)) {
+          # If integral 0, find region with density
+          if (is.na(int.ii$integral) | int.ii$integral == 0) {
 
-            center.s <- xtilde_i
-            center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
-            incr <- 1
-            for (jj in 1: 6) {
-              #print(list("sigsq_m_i small", c(ii, jj)))
-              incr <- incr / 10
-              lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
-              int.ii <- do.call(hcubature,
-                                c(list(f = int.f_i2,
-                                       lowerLimit = lowupp.x[1],
-                                       upperLimit = lowupp.x[2],
-                                       vectorInterface = TRUE,
-                                       g_i = g_i,
-                                       y_i = y_i,
-                                       gc_i = gc_i,
-                                       qg_i = qg_i,
-                                       mu_x.c_i = mu_x.c_i,
-                                       sigsq_x.c_i = sigsq_x.c_i,
-                                       xtilde_i = xtilde_i,
-                                       sigsq_p_i = sigsq_p_i,
-                                       sigsq_m_i = sigsq_m_i),
-                                  hcubature_list))
-              if (! is.na(int.ii$integral) & int.ii$integral > 0) {
-                break
-              }
-            }
-
-          }
-
-          # If integral 0 and f.sigsq_x.c small, look at region around E(X|C)
-          if ((! is.na(int.ii$integral) & int.ii$integral == 0) &
-              inside(f.sigsq_x.c, c(0, 0.1), FALSE)) {
-
-            center.s <- mu_x.c_i
-            center.x <- (sqrt(4 * center.s^2 + 1) - 1) / (2 * center.s)
-            incr <- 1
-            for (jj in 1: 6) {
-              #print(list("f.sigsq_x.c small", c(ii, jj)))
-              incr <- incr / 10
-              lowupp.x <- c(max(center.x - incr, -1), min(center.x + incr, 1))
-              int.ii <- do.call(hcubature,
-                                c(list(f = int.f_i2,
-                                       lowerLimit = lowupp.x[1],
-                                       upperLimit = lowupp.x[2],
-                                       vectorInterface = TRUE,
-                                       g_i = g_i,
-                                       y_i = y_i,
-                                       gc_i = gc_i,
-                                       qg_i = qg_i,
-                                       mu_x.c_i = mu_x.c_i,
-                                       sigsq_x.c_i = sigsq_x.c_i,
-                                       xtilde_i = xtilde_i,
-                                       sigsq_p_i = sigsq_p_i,
-                                       sigsq_m_i = sigsq_m_i),
-                                  hcubature_list))
-              if (! is.na(int.ii$integral) & int.ii$integral > 0) {
-                break
-              }
-            }
+            limits <- seq(-1 + 1e-5, 1 - 1e-5, 1e-5)
+            fs <- int.f_i2(x_i = limits,
+                           g_i = g_i,
+                           y_i = y_i,
+                           gc_i = gc_i,
+                           qg_i = qg_i,
+                           mu_x.c_i = mu_x.c_i,
+                           sigsq_x.c_i = sigsq_x.c_i,
+                           xtilde_i = xtilde_i,
+                           sigsq_p_i = sigsq_p_i,
+                           sigsq_m_i = sigsq_m_i)
+            limits <- limits[fs > 0]
+            limits <- c(max(-1, min(limits) - 1e-5), min(1, max(limits) + 1e-5))
+            int.ii <- do.call(hcubature,
+                              c(list(f = int.f_i2,
+                                     lowerLimit = -1,
+                                     upperLimit = 1,
+                                     vectorInterface = TRUE,
+                                     g_i = g_i,
+                                     y_i = y_i,
+                                     gc_i = gc_i,
+                                     qg_i = qg_i,
+                                     mu_x.c_i = mu_x.c_i,
+                                     sigsq_x.c_i = sigsq_x.c_i,
+                                     xtilde_i = xtilde_i,
+                                     sigsq_p_i = sigsq_p_i,
+                                     sigsq_m_i = sigsq_m_i),
+                                hcubature_list))
 
           }
-
-          int.vals[ii] <- int.ii$integral
 
           # If integral 0, set skip.rest to TRUE to skip further LL calculations
           if (is.na(int.ii$integral) | int.ii$integral == 0) {
@@ -899,6 +834,8 @@ p_logreg_xerrors <- function(
             skip.rest <- TRUE
             break
           }
+
+          int.vals[ii] <- int.ii$integral
 
         }
         ll.i <- sum(log(int.vals))
