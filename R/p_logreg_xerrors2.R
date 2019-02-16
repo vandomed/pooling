@@ -838,7 +838,8 @@ p_logreg_xerrors2 <- function(
       ret.list$theta.var <- theta.variance
 
       if (sum(diag(theta.variance) <= 0) > 0) {
-        message("The estimated variance-covariance matrix has some non-positive diagonal elements, so it may not be reliable. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
+        print(theta.variance)
+        message("The estimated variance-covariance matrix (printed here) has some non-positive diagonal elements, so it may not be reliable. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
       }
 
     }
