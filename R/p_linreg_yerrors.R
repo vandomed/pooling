@@ -305,48 +305,50 @@ p_linreg_yerrors <- function(
   }
 
   # Starting values
-  if (errors == "neither") {
-    start <- c(rep(start_nonvar_var[1], n.betas),
-               start_nonvar_var[2])
-  } else if (errors %in% c("measurement", "processing")) {
-    start <- c(rep(start_nonvar_var[1], n.betas),
-               rep(start_nonvar_var[2], 2))
-  } else if (errors == "both") {
-    start <- c(rep(start_nonvar_var[1], n.betas),
-               rep(start_nonvar_var[2], 3))
+  if (is.null(nlminb_list$start)) {
+    if (errors == "neither") {
+      nlminb_list$start <- c(rep(start_nonvar_var[1], n.betas),
+                             start_nonvar_var[2])
+    } else if (errors %in% c("measurement", "processing")) {
+      nlminb_list$start <- c(rep(start_nonvar_var[1], n.betas),
+                             rep(start_nonvar_var[2], 2))
+    } else if (errors == "both") {
+      nlminb_list$start <- c(rep(start_nonvar_var[1], n.betas),
+                             rep(start_nonvar_var[2], 3))
+    }
   }
+  names(nlminb_list$start) <- theta.labels
 
   # Lower bounds
-  if (errors == "neither") {
-    lower <- c(rep(lower_nonvar_var[1], n.betas),
-               lower_nonvar_var[2])
-  } else if (errors %in% c("measurement", "processing")) {
-    lower <- c(rep(lower_nonvar_var[1], n.betas),
-               rep(lower_nonvar_var[2], 2))
-  } else if (errors == "both") {
-    lower <- c(rep(lower_nonvar_var[1], n.betas),
-               rep(lower_nonvar_var[2], 3))
+  if (is.null(nlminb_list$lower)) {
+    if (errors == "neither") {
+      nlminb_list$lower <- c(rep(lower_nonvar_var[1], n.betas),
+                             lower_nonvar_var[2])
+    } else if (errors %in% c("measurement", "processing")) {
+      nlminb_list$lower <- c(rep(lower_nonvar_var[1], n.betas),
+                             rep(lower_nonvar_var[2], 2))
+    } else if (errors == "both") {
+      nlminb_list$lower <- c(rep(lower_nonvar_var[1], n.betas),
+                             rep(lower_nonvar_var[2], 3))
+    }
   }
 
   # Upper bounds
-  if (errors == "neither") {
-    upper <- c(rep(upper_nonvar_var[1], n.betas),
-               upper_nonvar_var[2])
-  } else if (errors %in% c("measurement", "processing")) {
-    upper <- c(rep(upper_nonvar_var[1], n.betas),
-               rep(upper_nonvar_var[2], 2))
-  } else if (errors == "both") {
-    upper <- c(rep(upper_nonvar_var[1], n.betas),
-               rep(upper_nonvar_var[2], 3))
+  if (is.null(nlminb_list$upper)) {
+    if (errors == "neither") {
+      nlminb_list$upper <- c(rep(upper_nonvar_var[1], n.betas),
+                             upper_nonvar_var[2])
+    } else if (errors %in% c("measurement", "processing")) {
+      nlminb_list$upper <- c(rep(upper_nonvar_var[1], n.betas),
+                             rep(upper_nonvar_var[2], 2))
+    } else if (errors == "both") {
+      nlminb_list$upper <- c(rep(upper_nonvar_var[1], n.betas),
+                             rep(upper_nonvar_var[2], 3))
+    }
   }
 
   # Obtain ML estimates
-  ml.max <- do.call(nlminb,
-                    c(list(start = start,
-                           objective = llf,
-                           lower = lower,
-                           upper = upper),
-                      nlminb_list))
+  ml.max <- do.call(nlminb, c(list(objective = llf), nlminb_list))
 
   # Print message if nlminb indicates non-convergence
   if (ml.max$convergence == 1) {

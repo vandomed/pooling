@@ -498,62 +498,60 @@ cond_logreg <- function(
   }
 
   # Starting values
-  if (errors == "neither") {
-    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
-               start_nonvar_var[2])
-  } else if (errors %in% c("processing", "measurement")) {
-    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
-               rep(start_nonvar_var[2], 2))
-  } else if (errors == "both") {
-    start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
-               rep(start_nonvar_var[2], 3))
+  if (is.null(nlminb_list$start)) {
+    if (errors == "neither") {
+      nlminb_list$start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+                             start_nonvar_var[2])
+    } else if (errors %in% c("processing", "measurement")) {
+      nlminb_list$start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+                             rep(start_nonvar_var[2], 2))
+    } else if (errors == "both") {
+      nlminb_list$start <- c(rep(start_nonvar_var[1], n.betas + n.alphas),
+                             rep(start_nonvar_var[2], 3))
+    }
   }
+  names(nlminb_list$start) <- theta.labels
 
   # Lower bounds
-  if (errors == "neither") {
-    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
-               lower_nonvar_var[2])
-  } else if (errors %in% c("processing", "measurement")) {
-    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
-               rep(lower_nonvar_var[2], 2))
-  } else if (errors == "both") {
-    lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
-               rep(lower_nonvar_var[2], 3))
+  if (is.null(nlminb_list$lower)) {
+    if (errors == "neither") {
+      nlminb_list$lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+                             lower_nonvar_var[2])
+    } else if (errors %in% c("processing", "measurement")) {
+      nlminb_list$lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+                             rep(lower_nonvar_var[2], 2))
+    } else if (errors == "both") {
+      nlminb_list$lower <- c(rep(lower_nonvar_var[1], n.betas + n.alphas),
+                             rep(lower_nonvar_var[2], 3))
+    }
   }
 
   # Upper bounds
-  if (errors == "neither") {
-    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
-               upper_nonvar_var[2])
-  } else if (errors %in% c("processing", "measurement")) {
-    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
-               rep(upper_nonvar_var[2], 2))
-  } else if (errors == "both") {
-    upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
-               rep(upper_nonvar_var[2], 3))
+  if (is.null(nlminb_list$upper)) {
+    if (errors == "neither") {
+      nlminb_list$upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+                             upper_nonvar_var[2])
+    } else if (errors %in% c("processing", "measurement")) {
+      nlminb_list$upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+                             rep(upper_nonvar_var[2], 2))
+    } else if (errors == "both") {
+      nlminb_list$upper <- c(rep(upper_nonvar_var[1], n.betas + n.alphas),
+                             rep(upper_nonvar_var[2], 3))
+    }
   }
 
   if (is.null(nlminb_object)) {
 
     # Obtain ML estimates
-    ml.max <- do.call(nlminb,
-                      c(list(start = start,
-                             objective = llf,
-                             lower = lower,
-                             upper = upper),
-                        nlminb_list))
+    ml.max <- do.call(nlminb, c(list(objective = llf), nlminb_list))
 
     # If non-convergence, try with jittered starting values if requested
     if (ml.max$convergence == 1) {
       if (! is.null(jitter_start)) {
         message("Trying jittered starting values...")
-        start <- start + rnorm(n = length(start), sd = jitter_start)
-        ml.max <- do.call(nlminb,
-                          c(list(start = start,
-                                 objective = llf,
-                                 lower = lower,
-                                 upper = upper),
-                            nlminb_list))
+        nlminb_list$start <- nlminb_list$start +
+          rnorm(n = length(nlminb_list$start), sd = jitter_start)
+        ml.max <- do.call(nlminb, c(list(objective = llf), nlminb_list))
       }
       if (ml.max$convergence == 1) {
         message("Object returned by 'nlminb' function indicates non-convergence. You may want to try different starting values.")
@@ -578,7 +576,6 @@ cond_logreg <- function(
     # Estimate variance-covariance matrix
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
     if (class(theta.variance) == "try-error") {
-
 
       print(hessian.mat)
       message("Estimated Hessian matrix (printed here) is singular, so variance-covariance matrix could not be obtained. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")
