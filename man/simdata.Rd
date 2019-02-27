@@ -9,5 +9,5 @@ Simulated data in R.
 }
 \description{
 Simulated data intended to mimic the motivating example from a paper under
-review.
+review. Generated under GLR with true log-OR = 0.05.
 }
