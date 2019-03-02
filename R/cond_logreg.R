@@ -551,7 +551,8 @@ cond_logreg <- function(
         message("Trying jittered starting values...")
         nlminb_list$start <- nlminb_list$start +
           rnorm(n = length(nlminb_list$start), sd = jitter_start)
-        ml.max <- do.call(nlminb, c(list(objective = llf), nlminb_list))
+        ml.max2 <- do.call(nlminb, c(list(objective = llf), nlminb_list))
+        if (ml.max2$objective < ml.max$objective) ml.max <- ml.max2
       }
       if (ml.max$convergence == 1) {
         message("Object returned by 'nlminb' function indicates non-convergence. You may want to try different starting values.")
