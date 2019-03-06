@@ -97,6 +97,7 @@
 #' # and we observe Xtilde1 and Xtilde0 rather than X1 and X0. Fit model with
 #' # Xtilde's, accounting for errors (numerical integration avoided by using
 #' # probit approximation).
+#' \dontrun{
 #' corrected <- cond_logreg(
 #'   g = dat$g,
 #'   xtilde1 = xtilde1,
@@ -107,6 +108,7 @@
 #'   approx_integral = TRUE
 #' )
 #' corrected$theta.hat
+#' }
 #'
 #'
 #' @export

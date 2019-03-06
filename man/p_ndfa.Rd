@@ -109,6 +109,7 @@ fit.naive$estimates
 
 # Corrected estimator - use Xtilde's and account for errors (not using
 # replicates here)
+\dontrun{
 fit.noreps <- p_ndfa(
   g = dat$g,
   y = dat$numcases,
@@ -158,6 +159,7 @@ test.constantOR <- p_ndfa(
   errors = "both"
 )
 test.constantOR$lrt
+}
 
 
 }
