@@ -332,7 +332,7 @@ p_ndfa_constant <- function(
                          c(list(func = llf, x = ml.estimates),
                            hessian_list))
   theta.variance <- try(solve(hessian.mat), silent = TRUE)
-  if (class(theta.variance) == "try-error") {
+  if (class(theta.variance) == "try-error" | sum(is.na(hessian.mat)) > 0) {
 
     print(hessian.mat)
     message("The estimated Hessian matrix (printed here) is singular, so variance-covariance matrix cannot not be obtained and bias adjustment cannot be applied. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")

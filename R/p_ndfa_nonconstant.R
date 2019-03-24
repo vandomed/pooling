@@ -330,7 +330,7 @@ p_ndfa_nonconstant <- function(
                          c(list(func = llf, x = ml.estimates),
                            hessian_list))
   theta.variance <- try(solve(hessian.mat), silent = TRUE)
-  if (class(theta.variance) == "try-error") {
+  if (class(theta.variance) == "try-error" | sum(is.na(hessian.mat)) > 0) {
 
 
     print(hessian.mat)

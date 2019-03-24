@@ -370,7 +370,7 @@ p_linreg_yerrors <- function(
 
     # Estimate variance-covariance matrix
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
-    if (class(theta.variance) == "try-error") {
+    if (class(theta.variance) == "try-error" | sum(is.na(hessian.mat)) > 0) {
       message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
       ret.list$theta.var <- NULL
     } else {

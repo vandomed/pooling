@@ -10,7 +10,7 @@
 #' Package: \tab pooling \cr
 #' Type: \tab Package \cr
 #' Version: \tab 1.1.2 \cr
-#' Date: \tab 2019-03-06 \cr
+#' Date: \tab 2019-03-24 \cr
 #' License: \tab GPL-3 \cr
 #' }
 #'
