@@ -68,8 +68,8 @@ poolpower_t <- function(g = c(1, 3, 10),
       d <- abs(mu1 - mu2)
     }
 
-    # Calculate assays per group for 99.9% power with traditional design
-    n.max <- (qnorm(0.999) * qnorm(1 - alpha / 2))^2 / d^2 *
+    # Calculate assays per group for 99% power with traditional design
+    n.max <- (qnorm(0.99) + qnorm(1 - alpha / 2))^2 / d^2 *
       (sigsq1 + sigsq2 + 2 * sigsq_m)
     n <- 3: ceiling(n.max)
 
@@ -116,8 +116,8 @@ poolpower_t <- function(g = c(1, 3, 10),
       d <- mu1 - mu2
     }
 
-    # Calculate assays per group for 99.9% power with traditional design
-    n.max <- (qnorm(0.999) * qnorm(1 - alpha / 2))^2 / d^2 *
+    # Calculate assays per group for 99% power with traditional design
+    n.max <- (qnorm(0.99) + qnorm(1 - alpha / 2))^2 / d^2 *
       (sigsq_m * (mu1^2 + sigsq1) + sigsq1 + sigsq_m * (mu2^2 + sigsq2) + sigsq2)
     n <- 3: n.max
 
