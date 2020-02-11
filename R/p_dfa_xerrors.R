@@ -86,7 +86,7 @@ p_dfa_xerrors <- function(g, y, xtilde, c = NULL,
     n.cvars <- 0
   } else {
     c.varname <- deparse(substitute(c))
-    if (class(c) != "matrix") {
+    if (! is.matrix(c)) {
       c <- as.matrix(c)
     }
     n.cvars <- ncol(c)
