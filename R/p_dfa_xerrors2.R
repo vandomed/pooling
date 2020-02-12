@@ -525,7 +525,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
       hessian.mat <- numDeriv::hessian(func = ll.f1, estimating.hessian = TRUE,
                                        x = ml.estimates)
       theta.variance <- try(solve(hessian.mat), silent = TRUE)
-      if (class(theta.variance) == "try-error" ||
+      if (class(theta.variance)[1] == "try-error" ||
           ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
 
         # Repeatedly divide integrate_tol_hessian by 5 and re-try
@@ -534,7 +534,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
           hessian.mat <- numDeriv::hessian(func = ll.f1, estimating.hessian = TRUE,
                                            x = ml.estimates)
           theta.variance <- try(solve(hessian.mat), silent = TRUE)
-          if (class(theta.variance) != "try-error" &&
+          if (class(theta.variance)[1] != "try-error" &&
               all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
             break
           }
@@ -542,7 +542,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
         }
       }
 
-      if (class(theta.variance) == "try-error" ||
+      if (class(theta.variance)[1] == "try-error" ||
           ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
 
         message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
@@ -817,7 +817,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
       hessian.mat <- numDeriv::hessian(func = ll.f2, estimating.hessian = TRUE,
                                        x = ml.estimates)
       theta.variance <- try(solve(hessian.mat), silent = TRUE)
-      if (class(theta.variance) == "try-error" ||
+      if (class(theta.variance)[1] == "try-error" ||
           ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
 
         # Repeatedly divide integrate_tol_hessian by 5 and re-try
@@ -826,7 +826,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
           hessian.mat <- numDeriv::hessian(func = ll.f2, estimating.hessian = TRUE,
                                            x = ml.estimates)
           theta.variance <- try(solve(hessian.mat), silent = TRUE)
-          if (class(theta.variance) != "try-error" &&
+          if (class(theta.variance)[1] != "try-error" &&
               all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
             break
           }
@@ -834,7 +834,7 @@ p_dfa_xerrors2 <- function(g, y, xtilde, c = NULL,
         }
       }
 
-      if (class(theta.variance) == "try-error" ||
+      if (class(theta.variance)[1] == "try-error" ||
           ! all(eigen(x = theta.variance, only.values = TRUE)$values > 0)) {
 
         message("Estimated Hessian matrix is singular, so variance-covariance matrix cannot be obtained.")
