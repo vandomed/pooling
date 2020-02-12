@@ -192,7 +192,7 @@ p_logreg_xerrors <- function(
     some.cs <- FALSE
   } else {
     c.varname <- deparse(substitute(c))
-    if (class(c) != "matrix") {
+    if (! is.matrix(c)) {
       c <- as.matrix(c)
     }
     n.cvars <- ncol(c)
@@ -937,7 +937,7 @@ p_logreg_xerrors <- function(
 
     # Estimate variance-covariance matrix
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
-    if (class(theta.variance) == "try-error" | sum(is.na(hessian.mat)) > 0) {
+    if (class(theta.variance)[1] == "try-error" | sum(is.na(hessian.mat)) > 0) {
 
       print(hessian.mat)
       message("The estimated Hessian matrix (printed here) is singular, so variance-covariance matrix could not be obtained. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")

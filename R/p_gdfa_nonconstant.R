@@ -584,7 +584,7 @@ p_gdfa_nonconstant <- function(
 
     # Estimate variance-covariance matrix
     theta.variance <- try(solve(hessian.mat), silent = TRUE)
-    if (class(theta.variance) == "try-error" | sum(is.na(hessian.mat)) > 0) {
+    if (class(theta.variance)[1] == "try-error" | sum(is.na(hessian.mat)) > 0) {
 
       print(hessian.mat)
       message("The estimated Hessian matrix (printed here) is singular, so variance-covariance matrix could not be obtained. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")

@@ -98,7 +98,7 @@ p_ndfa_constant <- function(
     n.cvars <- 0
   } else {
     c.varname <- deparse(substitute(c))
-    if (class(c) != "matrix") {
+    if (! is.matrix(c)) {
       c <- as.matrix(c)
     }
     n.cvars <- ncol(c)
@@ -332,7 +332,7 @@ p_ndfa_constant <- function(
                          c(list(func = llf, x = ml.estimates),
                            hessian_list))
   theta.variance <- try(solve(hessian.mat), silent = TRUE)
-  if (class(theta.variance) == "try-error" | sum(is.na(hessian.mat)) > 0) {
+  if (class(theta.variance)[1] == "try-error" | sum(is.na(hessian.mat)) > 0) {
 
     print(hessian.mat)
     message("The estimated Hessian matrix (printed here) is singular, so variance-covariance matrix cannot not be obtained and bias adjustment cannot be applied. You could try tweaking 'start_nonvar_var' or 'hessian_list' (e.g. increase 'r')")

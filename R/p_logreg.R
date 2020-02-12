@@ -101,7 +101,7 @@ p_logreg <- function(
 
   # Get number of X variables (and assign names)
   x.varname <- deparse(substitute(x))
-  if (class(x) != "matrix") {
+  if (! is.matrix(x)) {
     x <- as.matrix(x)
   }
   n.xvars <- ncol(x)
